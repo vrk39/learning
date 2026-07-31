@@ -1,0 +1,27 @@
+---
+id: deep-mastery-prompt-template
+title: Deep Mastery Prompt Template
+slug: /prompt-template
+---
+
+import Flashcard from '@site/src/components/Flashcard';
+
+# The "Deep Mastery" AI Prompt Template
+
+This is the master prompt template to generate fast-learning, senior-level study guides for any new technical topic. It skips beginner tutorials and focuses strictly on architecture, production realities, and interview preparation.
+
+## The Master Prompt
+
+Copy and paste the text below into any AI model. Just replace the bracketed text **`[INSERT TOPIC HERE]`** with your desired subject.
+
+```text
+Act as a Principal Engineer and Technical Interviewer. I am a software engineer with 8+ years of experience. I need a 'Fast Learning & Deep Mastery' guide on [INSERT TOPIC HERE]. 
+
+Please structure your response exactly as follows:
+
+1. The 'Fast Learning' Summary (TL;DR): A high-density, 3-bullet-point summary of what this technology is, why it exists, and the primary enterprise problem it solves. 
+2. Deep Architecture & Internal Mechanics: Explain how it works under the hood. Avoid beginner tutorials; focus on memory management, execution threads, and system architecture.
+3. Enterprise-Grade Coding Example: Provide a production-ready, advanced code snippet (e.g., custom implementations, error handling, performance optimization). Include inline comments explaining *why* certain architectural choices were made.
+4. Senior Interview Q&A (8+ YOE): Provide 3-4 interview questions ranging from advanced to architect-level. Answer them exactly as a highly experienced candidate should—focusing on trade-offs, edge cases, production risks, and performance implications rather than just textbook definitions.
+5. Production Anti-Patterns: List 2 common ways senior developers misuse this technology and how to avoid them.
+
