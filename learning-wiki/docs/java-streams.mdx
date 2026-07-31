@@ -1,0 +1,17 @@
+---
+id: java-streams
+title: Java Stream API
+---
+
+import Flashcard from '@site/src/components/Flashcard';
+
+# Core Mechanics
+
+Streams use internal iteration and are lazily evaluated. This prevents unnecessary memory overhead when processing large data sets.
+
+<Flashcard 
+  question="What is the primary risk of using parallelStream() in a web application?" 
+  answer="Thread pool starvation. It uses the shared ForkJoinPool.commonPool(), which can halt the entire JVM if blocked by high-latency I/O." 
+/>
+
+To optimize streams, always avoid stateful operations like `sorted()` when possible.
