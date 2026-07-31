@@ -1,0 +1,40 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main 
+
+jobs:
+  deploy:
+    name: Deploy to GitHub Pages
+    runs-on: ubuntu-latest
+    
+    # This tells the action to run all commands inside your subfolder
+    defaults:
+      run:
+        working-directory: ./learning-wiki
+
+    steps:
+      - uses: actions/checkout@v3
+      
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18 
+          cache: npm
+          # Tells the caching step exactly where to find the lockfile
+          cache-dependency-path: ./learning-wiki/package-lock.json 
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Build website
+        run: npm run build
+        
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          # Tells the deployment step to grab the build from inside the subfolder
+          publish_dir: ./learning-wiki/build 
+      
