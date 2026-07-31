@@ -1,0 +1,76 @@
+---
+id: java-garbage-collection
+title: Java Garbage Collection & Memory Management
+slug: /java-garbage-collection
+---
+
+import Flashcard from '@site/src/components/Flashcard';
+
+# Java Garbage Collection: Deep Mastery & Interview Guide
+
+## 1. The "Fast Learning" Summary (TL;DR)
+*   **The Generational Hypothesis:** The JVM splits the heap into Young and Old generations because empirically, most objects die almost immediately[span_0](start_span)[span_0](end_span). This allows the GC to cheaply and frequently check "likely garbage" (Young Gen) while rarely checking "likely alive" objects (Old Gen)[span_1](start_span)[span_1](end_span).
+*   **The Collector Trade-off:** Parallel GC optimizes total throughput by accepting long Stop-The-World (STW) pauses[span_2](start_span)[span_2](end_span). G1 balances throughput and latency with configurable pause-time goals, while ZGC and Shenandoah nearly eliminate STW pauses in exchange for higher CPU overhead[span_3](start_span)[span_3](end_span).
+*   **G1 Full GC is a Failure Mode:** Under G1 GC, a Full GC is a single-threaded, whole-heap fallback failure mode (often due to evacuation failure), not routine behavior[span_4](start_span)[span_4](end_span). Regular steady-state operation consists of Young-only and Mixed GCs[span_5](start_span)[span_5](end_span).
+
+---
+
+## 2. Deep Architecture & Internal Mechanics
+
+### Minor GC & The Card Table
+New objects are bump-allocated into the Eden space, making Java allocation extremely fast[span_6](start_span)[span_6](end_span). When Eden fills, a Minor GC copies live objects to an active Survivor space, discarding dead objects for free simply by not copying them[span_7](start_span)[span_7](end_span). 
+
+To avoid scanning the entire Old Gen for references pointing to the Young Gen during a Minor GC, the JVM uses a **Card Table**[span_8](start_span)[span_8](end_span). A write barrier marks memory cards "dirty" whenever a write creates an Old→Young pointer, allowing the Minor GC to only scan dirty cards[span_9](start_span)[span_9](end_span).
+
+### G1 GC & Concurrent Marking
+G1 divides the heap into equal-sized regions dynamically labeled as Eden, Survivor, Old, or Humongous[span_10](start_span)[span_10](end_span). Its concurrent marking cycle uses **Snapshot-At-The-Beginning (SATB)**[span_11](start_span)[span_11](end_span). A write barrier records any reference overwritten during concurrent marking, ensuring objects reachable at the start of the cycle aren't missed if mutator threads remove their references mid-cycle[span_12](start_span)[span_12](end_span).
+
+### ZGC & Colored Pointers
+ZGC achieves concurrent relocation by repurposing unused upper bits of a 64-bit reference as metadata "colors" to track the reference's state[span_13](start_span)[span_13](end_span). 
+When an application thread reads a reference field, a JIT-inserted **load barrier** checks these color bits[span_14](start_span)[span_14](end_span). If the object was relocated concurrently but the pointer is stale, the load barrier transparently fixes the pointer before the thread is allowed to use it[span_15](start_span)[span_15](end_span).
+
+---
+
+## 3. Enterprise-Grade Coding Example: Escape Analysis
+
+Object allocation has a real cost, but the JVM can optimize this away if it can prove an object never leaves its creating method[span_16](start_span)[span_16](end_span).
+
+```java
+class Point {
+    int x, y;
+    Point(int x, int y) { this.x = x; this.y = y; }
+}
+
+int distanceSquaredFromOrigin(int a, int b) {
+    // 1. Allocation
+    Point p = new Point(a, b);      
+    
+    // 2. Only p.x and p.y are ever read
+    return p.x * p.x + p.y * p.y;   
+    
+    // 3. 'p' never escapes this method's scope
+}
+```
+
+**Architectural Mechanics:**
+*   **Scalar Replacement:** Because `p` does not escape the method, C2 JIT compilation applies scalar replacement[span_17](start_span)[span_17](end_span). It treats `p.x` and `p.y` as separate local `int` variables that can live entirely in CPU registers[span_18](start_span)[span_18](end_span).
+*   **Zero Heap Impact:** The compiled machine code never touches the heap or the allocator[span_19](start_span)[span_19](end_span). There is no object header, Mark Word, or Klass Word generated, meaning the GC never sees this object[span_20](start_span)[span_20](end_span).
+*   **Lock Elision:** If there were a `synchronized(p)` block inside this method, the JVM would strip the locking machinery entirely, as no other thread could contend for an object that doesn't escape the local thread[span_21](start_span)[span_21](end_span).
+
+---
+
+## 4. Senior Interview Q&A (8+ YOE)
+
+<Flashcard answer="No. For the batch ETL job, throughput matters most, making Parallel GC the better choice because it avoids the concurrent-marking overhead that competes with worker threads[span_22](start_span)[span_22](end_span). The API service requires low p99 latencies, making G1 or ZGC/Shenandoah the correct choice[span_23](start_span)[span_23](end_span)." question="A batch ETL job and a low-latency API service both run on the same JVM. Should they use the same GC configuration?"/>
+
+<Flashcard answer="The spikes are likely Full GC fallback events caused by evacuation failures or the concurrent mark cycle failing to finish before the Old Gen fills[span_24](start_span)[span_24](end_span). If G1 tuning cannot consistently resolve this on a 64GB heap, migrating to ZGC or Shenandoah is recommended to decouple pause times from heap size[span_25](start_span)[span_25](end_span)." question="Users report occasional 2-3 second latency spikes in a service with a 64GB heap. You discover it is running G1 GC. What is the likely cause and the next step?"/>
+
+<Flashcard answer="This is the signature of a classloader leak[span_26](start_span)[span_26](end_span). Use jcmd VM.classloader_stats to confirm a growing count of dead classloaders[span_27](start_span)[span_27](end_span). Take a heap dump, use Eclipse MAT to find the retaining GC roots, and look for un-shutdown thread pools, uncleared ThreadLocals, or registered JDBC drivers keeping the old classloader alive[span_28](start_span)[span_28](end_span)." question="After every blue-green deployment, Metaspace usage climbs and never returns. How do you investigate this?"/>
+
+---
+
+## 5. Production Anti-Patterns
+
+1. **Unbounded `HashMap` Caching:** Using a plain `HashMap` for an LRU cache with manual size checks is not thread-safe under concurrent access and is a classic root cause of heap leaks[span_29](start_span)[span_29](end_span). Instead, use a purpose-built library like Caffeine or Guava Cache with explicit `maximumSize` or `expireAfterWrite` policies[span_30](start_span)[span_30](end_span). 
+2. **"Fixing" Metaspace Leaks by Raising the Limit:** Increasing `-XX:MaxMetaspaceSize` does not fix classloader leaks; it only postpones the unbounded growth until the available native memory is eventually exhausted[span_31](start_span)[span_31](end_span). The actual fix ensures that nothing outside a classloader's intended lifetime survives past a redeployment[span_32](start_span)[span_32](end_span).
+
