@@ -21,7 +21,7 @@ jobs:
       
       - uses: actions/setup-node@v3
         with:
-          node-version: 18 
+          node-version: 20 
           cache: npm
           # Tells the caching step exactly where to find the lockfile
           cache-dependency-path: ./learning-wiki/package-lock.json 
