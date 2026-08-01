@@ -192,7 +192,7 @@ Choosing the right Garbage Collector defines your application's performance prof
 
 | Collector | Mechanism / Paradigm | Best Use Case | Drawbacks |
 | :--- | :--- | :--- | :--- |
-| **Serial GC** | Single-threaded GC. STW for all operations. | Single-core VMs, CLI tools, small heaps (<100MB). | Terrible performance on multi-core servers. |
+| **Serial GC** | Single-threaded GC. STW for all operations. | Single-core VMs, CLI tools, small heaps (under 100MB). | Terrible performance on multi-core servers. |
 | **Parallel GC** | Multi-threaded GC. High throughput, but long STW pauses during Full GCs. | Batch processing, data pipelines where total time matters more than pause times. | High tail-latency. |
 | **G1 GC (Garbage-First)** | Divides heap into 2048 regions. Concurrently marks, then incrementally compacts regions with the most garbage first. | Default in Java 9+. Balanced throughput and pause times (target ~200ms). Web applications. | High memory footprint due to metadata overhead. |
 | **ZGC / Shenandoah** | Concurrent marking and relocation using Colored Pointers/Load Barriers. Sub-millisecond pauses. | Ultra-low latency systems (trading platforms), massive heaps (up to 16 TB). | Heavy CPU overhead reduces overall application throughput. |
