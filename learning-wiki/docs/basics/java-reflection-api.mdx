@@ -1,0 +1,160 @@
+---
+id: java-reflection-api
+title: Java Reflection API Masterclass
+---
+import Flashcard from '@site/src/components/Flashcard';
+
+## Table of Contents
+1. **Introduction to Reflection**: Introspection and Intercession
+2. **Getting the `Class` Object**: The Entry Point
+3. **Core API Usage**: Inspecting and Manipulating Fields, Methods, and Constructors
+4. **Bypassing Encapsulation**: `setAccessible(true)`
+5. **Advanced Internals I: JVM Inflation Mechanics (Native vs. Generated Accessors)**
+6. **Advanced Internals II: Performance Overheads and JIT Optimization Barriers**
+7. **Modern Alternatives: `MethodHandle` and VarHandles**
+8. **Architectural Trade-offs**: Reflection vs. Direct Compilation
+9. **Section 2: Recall Drills (Flashcards)**
+
+---
+
+## Section 1: Deep Knowledge Guide
+
+### 1. Introduction to Reflection
+
+**Fundamentals**
+Reflection is an API that allows a running Java program to examine (*introspection*) and modify (*intercession*) the runtime behavior of applications running within the JVM. 
+With Reflection, a program can:
+*   Inspect the structure of unknown classes, interfaces, fields, and methods at runtime.
+*   Instantiate new objects dynamically without knowing their class names at compile time.
+*   Invoke methods and get/set field values dynamically, even if they are marked `private`.
+
+Frameworks like Spring, Hibernate, and Jackson rely heavily on reflection to map database rows to objects, parse JSON configurations, and wire dependency injection containers dynamically.
+
+---
+
+### 2. Getting the `Class` Object
+
+**Fundamentals**
+Every type in Java (classes, interfaces, arrays, primitives, and even `void`) has a corresponding, unique `java.lang.Class` instance created by the JVM class loader. To use reflection, you must first acquire this `Class` object.
+
+There are three primary ways to obtain a `Class` reference:
+1.  **`.class` syntax:** `Class<?> c = String.class;` (Safest, fastest, and compile-time checked).
+2.  **`getClass()` method:** `String s = "Hello"; Class<?> c = s.getClass();` (Called on an existing instance).
+3.  **`Class.forName()` static method:** `Class<?> c = Class.forName("java.lang.String");` (Dynamic string lookup; throws `ClassNotFoundException`).
+
+---
+
+### 3. Core API Usage: Inspecting and Manipulating Fields and Methods
+
+**Fundamentals**
+Once you have the `Class` object, you can query its members using classes from the `java.lang.reflect` package: `Field`, `Method`, and `Constructor`.
+
+```java
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+
+// Runnable Example: Basic Reflection Usage
+class TargetModel {
+    private String secret = "HiddenValue";
+    public int id;
+
+    public TargetModel() {}
+    public TargetModel(int id) { this.id = id; }
+
+    public void display(String prefix) {
+        System.out.println(prefix + " - ID: " + id + ", Secret: " + secret);
+    }
+}
+
+public class ReflectionBasicsDemo {
+    public static void main(String[] args) throws Exception {
+        // 1. Get Class reference dynamically
+        Class<?> clazz = Class.forName("TargetModel");
+
+        // 2. Inspect Constructors and Instantiate an Object
+        Constructor<?> constructor = clazz.getConstructor(int.class);
+        Object instance = constructor.newInstance(99); // Equivalent to: new TargetModel(99)
+
+        // 3. Inspect and Invoke Methods
+        Method displayMethod = clazz.getMethod("display", String.class);
+        // Invokes 'display("Result")' on our dynamic instance
+        displayMethod.invoke(instance, "Result"); 
+
+        // 4. Accessing Public Fields
+        Field idField = clazz.getField("id");
+        idField.setInt(instance, 500); // Sets instance.id = 500
+        
+        displayMethod.invoke(instance, "Updated Result");
+    }
+}
+```
+
+---
+
+### 4. Bypassing Encapsulation: `setAccessible(true)`
+
+**Fundamentals**
+By default, calling `getMethod()` or `getField()` only returns public members. To access `private`, `protected`, or package-private members, you must call `getDeclaredMethods()` or `getDeclaredFields()`.
+
+Even then, calling `invoke()` or `set()` on a private member will throw an `IllegalAccessException` *unless* you explicitly call **`setAccessible(true)`** on the reflection object (`Field`, `Method`, or `Constructor`). This disables Java's standard language-level access checks.
+
+---
+
+### 5. Advanced Internals I: JVM Inflation Mechanics
+
+**How it works under the hood**
+When you call `Method.invoke(obj, args)`, how does the HotSpot JVM execute the underlying target method? 
+
+HotSpot uses an **Inflation Mechanism** to balance startup time and execution speed:
+1.  **Phase 1: Native Accessors (`NativeMethodAccessorImpl`)**
+    When you first invoke a method via reflection, the JVM uses a JNI (Java Native Interface) call to execute the method (`sun.reflect.NativeMethodAccessorImpl`). This avoids the overhead of generating dynamic bytecode immediately, making the first few calls fast to set up but relatively slow during execution due to JNI boundary crossings.
+2.  **Phase 2: Inflation Threshold**
+    The JVM counts how many times a reflective method is invoked. If the invocation count exceeds an internal threshold (configurable via `-Dsun.reflect.inflationThreshold=15`, defaulting to 15), the JVM "inflates" the accessor.
+3.  **Phase 3: Generated Bytecode Accessors (`GeneratedMethodAccessorImpl`)**
+    Instead of using JNI, the JVM dynamically generates a brand-new Java bytecode class in memory using a class loader. This generated class directly calls the target method like standard Java code. Subsequent reflection calls execute at near-native speed, completely bypassing JNI overhead.
+
+---
+
+### 6. Advanced Internals II: Performance Overheads and JIT Optimization Barriers
+
+Despite bytecode inflation, reflection is notoriously slower than direct method calls. Why?
+
+1.  **Arguments Boxing/Unboxing:** `Method.invoke(Object obj, Object... args)` accepts a variable-length array of objects. If your method takes primitives (e.g., `int`), passing them requires wrapping them into wrapper objects (`Integer`), causing severe memory allocation overhead and GC pressure.
+2.  **Security Checks:** Every reflective invocation triggers security manager and access control checks (unless optimized away).
+3.  **JIT Inlining Failures:** The Java Just-In-Time (JIT) compiler relies heavily on **Inlining** (replacing a method call directly with the method's body to eliminate stack frame allocation). Because reflective method calls involve polymorphic dispatch through interfaces like `MethodAccessor`, the JIT compiler cannot determine the target method statically, preventing method inlining and loop unrolling optimizations.
+
+---
+
+### 7. Modern Alternatives: `MethodHandle`
+
+Introduced in Java 7 (`java.lang.invoke.MethodHandle`), `MethodHandle` provides a low-level mechanism for finding and invoking methods, serving as a high-performance alternative to traditional reflection.
+
+*   **Why are MethodHandles faster?** They are heavily optimized by the JVM's JIT compiler. Unlike `Method.invoke()`, the JIT compiler *can* inline `MethodHandle.invokeExact()` calls, reducing performance overhead to match direct code execution.
+*   **Security:** They respect access controls strictly without needing crude bypasses like `setAccessible(true)` (unless explicitly utilizing `MethodHandles.Lookup`).
+
+---
+
+### 8. Architectural Trade-offs: Reflection vs. Direct Compilation
+
+| Feature | Direct Method Call | Reflection API (`Method.invoke`) | Method Handles (`MethodHandle`) |
+| :--- | :--- | :--- | :--- |
+| **Type Safety** | Compile-time checked. | Runtime checked. Errors found at execution time. | Compile-time descriptor checked. |
+| **Performance** | Maximum speed (JIT inlined). | Slow initially, improves after inflation, but lacks inlining. | Maximum speed (fully JIT optimizable). |
+| **API Complexity** | Simple (`obj.method()`). | Verbose, requires exception handling. | Verbose, low-level syntax. |
+| **Encapsulation** | Obeys access modifiers. | Can bypass via `setAccessible(true)`. | Obeys JVM access rules. |
+| **Best Use Case** | Standard application logic. | Dynamic configuration loading, frameworks, testing mocks. | High-performance dynamic languages, lambda metafactories. |
+
+---
+
+## Section 2: Recall Drills
+
+<Flashcard answer="Introspection is the ability of a program to examine its own structure and metadata at runtime (e.g., querying class names, fields, and methods). Intercession is the ability to modify runtime behavior or state (e.g., modifying fields or invoking methods dynamically)." question="What is the difference between introspection and intercession in the context of Java Reflection?"/>
+
+<Flashcard answer="HotSpot uses an inflation mechanism. The first 15 calls use a JNI native accessor (NativeMethodAccessorImpl). Once the threshold is reached, the JVM dynamically generates a bytecode class (GeneratedMethodAccessorImpl) to execute calls at near-native speed without JNI overhead." question="How does the HotSpot JVM's inflation mechanism handle `Method.invoke()` performance under the hood?"/>
+
+<Flashcard answer="1. Boxing and unboxing overhead caused by passing arguments as `Object[]`. 2. Inability of the JIT compiler to inline polymorphic reflective calls, preventing key optimization techniques like method inlining." question="What are two primary reasons why traditional reflection is slower than direct method execution?"/>
+
+<Flashcard answer="`java.lang.invoke.MethodHandle`. It allows the JIT compiler to inline method calls and optimize them similarly to direct code execution, offering vastly superior performance compared to standard reflection." question="What modern Java API serves as a high-performance alternative to traditional Reflection for dynamic method invocation?"/>
+
+<Flashcard answer="To disable Java's language-level access checks, allowing the program to read or write to `private` fields and invoke `private` methods." question="What is the purpose of calling `setAccessible(true)` on a reflection object?"/>
