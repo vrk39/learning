@@ -1,0 +1,66 @@
+---
+id: generics-advanced
+title: Generics — Architect-Level Deep Dive
+---
+import Flashcard from '@site/src/components/Flashcard';
+
+## 1. Deep Knowledge Guide
+
+### 1.1 Type Erasure — What Actually Happens at Compile Time
+Java generics are implemented via **erasure**: `List<String>` and `List<Integer>` compile to the exact same bytecode using raw `List`, with type parameters replaced by their bound (`Object` for unbounded `<T>`, or the leftmost bound for `<T extends Comparable<T>>`). The compiler inserts **synthetic casts** at each use site where a value is retrieved (e.g., `String s = list.get(0);` compiles to `Object o = list.get(0); String s = (String) o;`) — this is entirely a compile-time safety net; at runtime, there is genuinely no way to ask a `List<String>` "what's your type parameter?" because that information doesn't exist in the running bytecode (`list.getClass()` for `List<String>` and `List<Integer>` both just return `ArrayList.class`).
+
+```java
+List<String> strings = new ArrayList<>();
+List<Integer> ints = new ArrayList<>();
+System.out.println(strings.getClass() == ints.getClass()); // true — same raw class at runtime
+```
+
+### 1.2 Why Erasure Was Chosen — Binary Compatibility
+Erasure was a deliberate design trade-off (not an implementation limitation the JVM couldn't have avoided) to preserve **binary compatibility** with pre-generics (pre-Java-5) bytecode: existing `.class` files compiled against raw `List` continue to interoperate with generics-using code without recompilation, and the JVM itself needed no bytecode format changes to support generics. The cost of this choice is everything covered below — no runtime generic type info, no generic arrays, no primitive type parameters.
+
+### 1.3 Bounded Wildcards — PECS (Producer Extends, Consumer Super)
+`? extends T` (upper-bounded) allows reading `T`-or-subtype values out, but forbids adding anything (the compiler can't verify what specific subtype is actually there beyond `T`, except `null`). `? super T` (lower-bounded) allows writing `T`-or-subtype values in, but reads only yield `Object` (the compiler only knows the list holds *at least* `T` as a supertype bound, nothing more specific).
+
+```java
+// PECS: Producer Extends
+double sum(List<? extends Number> nums) {
+    double s = 0;
+    for (Number n : nums) s += n.doubleValue(); // safe to READ as Number
+    // nums.add(1); // COMPILE ERROR — can't safely add, actual type unknown beyond "some Number subtype"
+    return s;
+}
+
+// PECS: Consumer Super
+void addIntegers(List<? super Integer> list) {
+    list.add(42); // safe to WRITE an Integer — list holds Integer or a supertype
+    // Integer i = list.get(0); // COMPILE ERROR — can only safely read as Object
+}
+```
+
+### 1.4 Generic Arrays Are Forbidden — Why `new T[]` Doesn't Compile
+`new T[10]` is disallowed because array element-type checks (`ArrayStoreException`, see Strings & Arrays doc) happen at **runtime** against the array's actual reified component type — but after erasure, `T` doesn't exist at runtime to check against, so the JVM couldn't enforce the array's supposed element type at all, silently defeating array covariance's one safety mechanism. `List.toArray(T[])`/`IntFunction<T[]>` generator patterns exist specifically to work around this restriction safely (see Method References doc).
+
+### 1.5 Generic Methods and Bounded Type Inference
+```java
+static <T extends Comparable<T>> T max(List<T> list) {
+    T result = list.get(0);
+    for (T item : list) if (item.compareTo(result) > 0) result = item;
+    return result;
+}
+```
+Type inference for generic methods (`<T>` on the method itself, independent of any class-level type parameter) resolves `T` from the call-site argument types — Java 8+ improved this to also consider the **target type** (assignment context, method return usage), not just argument types, enabling more natural chained generic calls without explicit type witnesses (`Collections.<String>emptyList()`).
+
+### 1.6 Raw Types and Unchecked Warnings — Legacy Interop
+Using a raw type (`List` instead of `List<String>`) suppresses all generic type checking for that variable, producing "unchecked" compiler warnings at every generics-related operation involving it — this exists purely for backward compatibility with pre-generics code, and mixing raw and parameterized types is a common source of runtime `ClassCastException` at a point far from the actual root cause, since the compile-time safety net is simply absent for that code path.
+
+## 2. Recall Drills (Flashcards)
+
+<Flashcard question="Why do List<String> and List<Integer> both return the exact same Class object from getClass() at runtime?" answer="Java generics are implemented via erasure — both compile to the same raw List bytecode with type parameters replaced by their bound (Object here). There is no runtime representation of the generic type argument at all; getClass() on any List<X> returns the same raw ArrayList.class regardless of X." />
+
+<Flashcard question="Why was type erasure chosen for Java generics instead of reifying generic types (like C#'s generics do)?" answer="To preserve binary compatibility with pre-Java-5 bytecode: existing .class files compiled against raw collection types needed to keep interoperating with new generics-using code without recompilation, and the JVM itself needed no bytecode format changes. This deliberate trade-off is the root cause of erasure's downstream limitations (no runtime generic type info, no generic arrays)." />
+
+<Flashcard question="What does PECS stand for, and what operation does each wildcard form (? extends T vs ? super T) forbid?" answer="Producer Extends, Consumer Super. '? extends T' lets you READ T-typed values safely but forbids adding anything (compiler can't verify the actual subtype). '? super T' lets you WRITE T-typed values safely but only lets you read as Object (compiler only knows a lower bound, not the specific actual type)." />
+
+<Flashcard question="Why does 'new T[10]' fail to compile inside a generic class, even though 'new Object[10]' works fine?" answer="Array stores are checked at runtime against the array's actual reified component type (enabling ArrayStoreException). After erasure, T doesn't exist at runtime for the JVM to check against — allowing new T[10] would silently defeat array covariance's runtime safety check entirely, so the compiler forbids it outright." />
+
+<Flashcard question="What compiler safety guarantee is lost when you use a raw type (e.g., 'List' instead of 'List<String>'), and what's the typical resulting failure mode?" answer="All generic type checking is suppressed for that variable — the compiler issues 'unchecked' warnings but allows any operation. This commonly leads to a ClassCastException at a point far removed from the actual bug, because the type mismatch is only caught when the compiler-inserted cast (from erasure) finally fails at a later retrieval, not where the wrong-typed value was originally inserted." />

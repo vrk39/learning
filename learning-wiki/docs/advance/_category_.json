@@ -1,0 +1,8 @@
+{
+  "label": "Advanced (Architect / Tech-Lead Track)",
+  "position": 4,
+  "link": {
+    "type": "generated-index",
+    "description": "8+ YOE, architect/tech-lead level deep dives: JVM/JDK internals, algorithms and data structures behind the APIs, and internal trade-offs — not just usage."
+  }
+}

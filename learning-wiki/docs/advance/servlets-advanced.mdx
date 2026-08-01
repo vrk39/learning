@@ -1,0 +1,48 @@
+---
+id: servlets-advanced
+title: Servlets — Architect-Level Deep Dive
+---
+import Flashcard from '@site/src/components/Flashcard';
+
+## 1. Deep Knowledge Guide
+
+### 1.1 Servlet Lifecycle and Container Threading Model
+A servlet container (Tomcat, Jetty) creates **one instance** of a given `HttpServlet` class by default (not one per request), calling `init()` once, then dispatching each incoming HTTP request to `service()` on a **worker thread from the container's thread pool** — meaning `service()`/`doGet()`/`doPost()` run **concurrently across requests on the same servlet instance**. This makes instance fields on a servlet inherently shared mutable state across concurrent requests unless explicitly synchronized/immutable — a very common junior mistake is storing per-request state in an instance field, which corrupts under concurrent load (`SingleThreadModel`, an old opt-out interface forcing one-instance-per-thread, was deprecated precisely because pooling threads defeats its purpose and it doesn't solve the underlying design smell).
+
+```java
+public class BadServlet extends HttpServlet {
+    private String currentUser; // SHARED across all concurrent requests — race condition
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
+        currentUser = req.getParameter("user"); // one request's value can leak into another's response
+    }
+}
+```
+
+### 1.2 Filters vs. Servlets — Chain of Responsibility
+`Filter`s implement a **chain of responsibility**: each filter's `doFilter()` receives a `FilterChain` and must explicitly call `chain.doFilter(request, response)` to pass control onward (omitting this call halts the chain — often an intentional pattern for auth filters rejecting a request early). Filters can wrap the request/response objects (`HttpServletRequestWrapper`/`HttpServletResponseWrapper`) to transparently modify behavior for everything downstream — the standard technique for cross-cutting concerns like logging, compression, auth, and CORS headers without touching servlet code.
+
+### 1.3 Session Management — `HttpSession` Internals
+`HttpSession` is server-side state, correlated to a client via a session ID transmitted as a cookie (`JSESSIONID`) or URL-rewriting fallback. Architect-level implications: sessions default to **in-memory, per-JVM-instance** storage, which breaks horizontal scaling unless you add **sticky sessions** (load balancer routes a client's requests to the same server) or **session replication/externalization** (shared store like Redis, or clustering) — a foundational reason many modern architectures move to **stateless** authentication (JWTs) specifically to avoid this scaling coupling.
+
+| Approach | Scales horizontally? | Failure mode |
+|---|---|---|
+| In-memory `HttpSession`, no stickiness | No — request may hit a server without the session | Random logouts / inconsistent state |
+| Sticky sessions | Partially — breaks if that server dies | Session loss on server failure |
+| Externalized session store (Redis) | Yes | Extra network hop per session read/write |
+| Stateless JWT | Yes, trivially | Token revocation is harder (no server-side session to invalidate) |
+
+### 1.4 Servlet 3.0+ Async Processing
+Synchronous servlets hold a container worker thread for the entire request duration, including any slow downstream I/O — under high concurrency with slow backends, this exhausts the (typically small, e.g., 200) worker thread pool, causing request queueing/rejection even though the CPU is mostly idle waiting on I/O. `AsyncContext` (Servlet 3.0+, via `request.startAsync()`) releases the container thread back to the pool immediately, letting a separate (often smaller) thread complete the response later — decoupling "concurrent requests in flight" from "threads consumed," a critical scalability lever for I/O-heavy servlet applications.
+
+### 1.5 web.xml vs. Annotation-Based Configuration
+`@WebServlet`, `@WebFilter`, `@WebListener` (Servlet 3.0+) let the container discover components via classpath scanning at startup instead of requiring `web.xml` declarations — reducing boilerplate but shifting configuration discovery to (slower) startup-time scanning; large applications sometimes explicitly disable scanning (`metadata-complete="true"` in `web.xml`) to speed up container startup once the annotation set is stable, trading flexibility for faster deploys.
+
+## 2. Recall Drills (Flashcards)
+
+<Flashcard question="How many instances of a given HttpServlet class does a container typically create, and why does that make instance fields dangerous?" answer="Typically one instance per servlet declaration for the container's lifetime. Each incoming request is dispatched to service()/doGet()/doPost() on a worker thread from the container's pool, so multiple requests execute CONCURRENTLY against that single shared instance — any mutable instance field becomes shared state across concurrent requests, causing race conditions unless synchronized or made request-scoped/immutable." />
+
+<Flashcard question="What must a Filter's doFilter() implementation explicitly do to allow the request to continue processing, and what happens if it's omitted?" answer="It must call chain.doFilter(request, response) to pass control to the next filter/servlet in the chain. Omitting this call halts the chain entirely — commonly used intentionally by auth filters to reject a request early without ever reaching the target servlet." />
+
+<Flashcard question="Why does default in-memory HttpSession storage fundamentally conflict with horizontal scaling, and what are the two main mitigations?" answer="A session lives only in the JVM memory of the server that created it; a load-balanced request routed to a different server won't find it. Mitigations: sticky sessions (route a client consistently to the same server, but lose session on that server's failure) or externalizing sessions to a shared store like Redis (adds a network hop but scales cleanly)." />
+
+<Flashcard question="Why does Servlet 3.0+ AsyncContext improve scalability for I/O-heavy applications specifically, versus a purely synchronous servlet?" answer="A synchronous servlet holds a container worker thread for the entire request duration, including slow I/O waits — exhausting the (often small) thread pool under load even though the CPU itself is idle. AsyncContext releases the container thread back to the pool immediately via request.startAsync(), decoupling the number of concurrent in-flight requests from the number of threads consumed." />

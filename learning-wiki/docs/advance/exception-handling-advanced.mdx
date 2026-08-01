@@ -1,0 +1,59 @@
+---
+id: exception-handling-advanced
+title: Exception Handling — Architect-Level Deep Dive
+---
+import Flashcard from '@site/src/components/Flashcard';
+
+## 1. Deep Knowledge Guide
+
+### 1.1 The Throwable Hierarchy and Why It Matters for API Design
+`Throwable` splits into `Error` (JVM-level failures like `OutOfMemoryError`, `StackOverflowError` — not meant to be caught/recovered from) and `Exception`, which splits into checked (must declare/catch, compiler-enforced) and `RuntimeException` (unchecked). Checked exceptions represent *recoverable* conditions the caller is expected to handle (e.g., `IOException`); unchecked exceptions represent *programming errors* (`NullPointerException`, `IllegalArgumentException`) that shouldn't normally be caught per-call-site — they indicate a bug to fix, not a condition to branch on.
+
+The architectural debate: checked exceptions force explicit handling but pollute method signatures and don't compose well with functional interfaces (a `Function<T,R>` can't declare a checked exception without a custom wrapper). Most modern Java library design (streams, `CompletableFuture`) leans toward unchecked exceptions or explicit `Optional`/result types for this reason.
+
+### 1.2 try-catch-finally and try-with-resources Internals
+`finally` blocks are compiled using the `jsr`/`ret` instructions historically (pre-Java 6) or, since Java 6, by **duplicating the finally block's bytecode** into every exit path (normal completion, each catch, and any uncaught-exception path) — this is why `finally` runs even on `return` from within `try`, and why a `return` inside `finally` silently swallows an exception in flight (an anti-pattern).
+
+`try-with-resources` (Java 7+) compiles to a `finally` block calling `close()` on each resource in reverse declaration order, and implements **suppressed exceptions**: if both the try block and the `close()` call throw, the primary exception is the one from the try block, with the close-time exception attached via `addSuppressed()` — visible via `getSuppressed()`, so no information is silently lost (unlike hand-written finally-with-close code).
+
+```java
+try (var conn = dataSource.getConnection(); var stmt = conn.prepareStatement(sql)) {
+    // ... uses conn, stmt
+} // stmt.close() then conn.close(), in reverse order, exceptions suppressed not swallowed
+```
+
+### 1.3 Stack Trace Construction Cost
+`fillInStackTrace()` (called from `Throwable`'s constructor) walks the entire call stack at **throw-construction time**, not at catch time — this is the dominant cost of exceptions, not the throw/catch control-flow transfer itself. In hot paths where exceptions are used for control flow (an anti-pattern generally, but sometimes done for performance in tight validation loops), overriding `fillInStackTrace()` to a no-op (or using a pre-allocated exception with `writableStackTrace=false` via the protected 4-arg `Throwable` constructor) avoids this cost.
+
+```java
+class FastValidationException extends RuntimeException {
+    FastValidationException(String msg) {
+        super(msg, null, false, false); // disable suppression + stack trace capture
+    }
+}
+```
+
+### 1.4 Custom Exception Hierarchies and Exception Chaining
+Wrapping a low-level exception in a higher-level, domain-specific one (`throw new OrderProcessingException("...", cause)`) preserves the original stack trace via `getCause()` while letting upper layers depend on a stable abstraction instead of a leaky low-level type (e.g., a repository layer shouldn't force callers to catch `SQLException`).
+
+| Pattern | Pros | Cons |
+|---|---|---|
+| Propagate checked exception as-is | Simple | Leaks implementation detail across layers |
+| Wrap in unchecked domain exception with cause | Clean API, preserves diagnostics | Requires discipline to always chain the cause |
+| Swallow and log | Never — loses diagnostic context, hides bugs | N/A |
+| Return `Optional`/Result type | Explicit, composable, no control-flow-via-exception cost | Doesn't compose with existing exception-based APIs |
+
+### 1.5 Multi-catch and Exception Type Design
+`catch (IOException | SQLException e)` (Java 7+) requires the caught types to have **no subtype relationship** to each other (compiler-enforced) and the resulting variable `e` is *effectively final* with a compile-time type that's the **least upper bound** of the alternatives — so you can only call methods common to both (or on `Exception`/`Throwable`).
+
+## 2. Recall Drills (Flashcards)
+
+<Flashcard question="Why do most modern Java APIs (streams, CompletableFuture) avoid checked exceptions in their functional interfaces?" answer="Checked exceptions don't compose with functional interfaces — a Function<T,R> lambda can't declare a checked exception without a custom wrapper interface, since the SAM signature doesn't include 'throws'. This pushed library design toward unchecked exceptions or explicit Optional/result types." />
+
+<Flashcard question="Why does a 'return' statement inside a finally block silently swallow an in-flight exception?" answer="finally's bytecode is duplicated into every exit path. If finally itself completes via a return, that return supersedes any exception propagating from the try/catch block — the exception is discarded with no trace, which is why returning from finally is considered an anti-pattern." />
+
+<Flashcard question="In try-with-resources, if both the try block and a resource's close() throw, which exception becomes primary and what happens to the other?" answer="The exception from the try block is primary and propagates; the close()-time exception is attached to it via addSuppressed(), retrievable through getSuppressed() — so no diagnostic information is silently lost, unlike hand-written finally blocks where a close() exception can mask the original." />
+
+<Flashcard question="What is the actual dominant performance cost of throwing an exception, and how can it be avoided for hot-path validation exceptions?" answer="The dominant cost is fillInStackTrace() walking the entire call stack at construction time, not the throw/catch control transfer. It can be avoided by using the protected Throwable(msg, cause, enableSuppression, writableStackTrace) constructor with writableStackTrace=false, skipping stack capture entirely." />
+
+<Flashcard question="What compile-time constraint applies to multi-catch (catch (A | B e)), and what is the static type of the caught variable?" answer="The alternative types must have no subtype relationship to each other (compiler-enforced — no redundant catches). The variable's compile-time type is the least upper bound of the alternatives, so only methods common to all caught types (or from Exception/Throwable) are callable on it." />

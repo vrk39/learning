@@ -1,0 +1,100 @@
+---
+id: oop-advanced
+title: Core Java OOP — Architect-Level Deep Dive
+---
+import Flashcard from '@site/src/components/Flashcard';
+
+## 1. Deep Knowledge Guide
+
+### 1.1 Objects, References, and Memory Layout
+Every object on the heap carries a header (mark word + klass pointer on HotSpot), followed by instance fields. The mark word stores identity hash, GC age, and lock state (biased/thin/fat lock bits). A reference variable is not the object — it's a pointer-sized handle into the heap. Java is **strictly pass-by-value**; for object arguments, the value copied is the reference (the pointer), not the object. Mutating the referenced object through that copied pointer is visible to the caller; reassigning the local reference is not.
+
+```java
+void reassign(StringBuilder sb) {
+    sb.append("x");                 // visible to caller — same object
+    sb = new StringBuilder("new");  // NOT visible — only local copy changes
+}
+```
+
+### 1.2 Classes and Objects — Compilation to Runtime
+`javac` compiles each top-level/inner/anonymous class into its own `.class` file: a constant pool (symbolic references), field/method tables, and bytecode. At load time the JVM does **verification** (bytecode safety), **preparation** (static field defaults), and **resolution** (lazy in most JVMs) before `<clinit>` runs once per classloader.
+
+`new Foo()` compiles to two instructions: `new` (allocate zeroed memory, push reference) then `invokespecial` (run the constructor). This split matters for concurrency — an unsynchronized `this` reference can theoretically escape and be observed mid-construction ("unsafe publication").
+
+### 1.3 Encapsulation: Beyond "make fields private"
+Encapsulation is about invariant protection, not access modifiers — making illegal states unrepresentable.
+
+| Approach | Safety | Cost | When to use |
+|---|---|---|---|
+| Return mutable field directly | None | Free | Never for shared mutable state |
+| Defensive copy on getter | Strong | O(n)/call | Small collections, infrequent reads |
+| `Collections.unmodifiableList` wrapper | Wrapper only — underlying list mutations leak through | Cheap | Field never mutated after construction |
+| Immutable value type (record / final fields, no setters) | Strongest | Build cost once | Preferred default for architecture |
+
+### 1.4 Inheritance: Memory Layout and Constructor Chaining
+A subclass's layout is conceptually superclass fields followed by subclass fields. Construction always runs top-down (`Object()` → ... → subclass), because every constructor implicitly begins with `invokespecial` to the superclass constructor, guaranteeing superclass invariants before subclass fields are touched.
+
+**Architect trap**: calling an overridable method from a constructor. Dynamic dispatch always calls the most-derived override, which can run before the subclass's own field initializers execute — reading fields still at default (zero/null).
+
+```java
+class Base {
+    Base() { init(); }        // calls the OVERRIDDEN version
+    void init() { System.out.println("Base.init"); }
+}
+class Derived extends Base {
+    private final String name = "derived";
+    @Override void init() { System.out.println(name); } // prints null, not "derived"!
+}
+```
+
+### 1.5 Polymorphism: Overload Resolution vs. Dynamic Dispatch
+Overloading is static binding, resolved by the compiler from the reference's **static type** (phase 1: no boxing/varargs; phase 2: with boxing; phase 3: with varargs). Overriding is dynamic binding, resolved at runtime via **vtable lookup** using the object's **actual runtime type**.
+
+```java
+static void print(Object o) { System.out.println("Object"); }
+static void print(String s)  { System.out.println("String"); }
+Object o = "hello";
+print(o);           // "Object" — resolved at compile time from static type
+print((String) o);  // "String"
+```
+
+`invokevirtual` uses a per-class vtable — an array of method pointers indexed at class-load time — giving O(1) dispatch regardless of hierarchy depth. `invokeinterface` historically needed a linear/itable search; modern JITs use inline caches for near-monomorphic speed after warmup.
+
+### 1.6 Abstraction: Abstract Classes vs. Interfaces
+
+| Aspect | Abstract Class | Interface (Java 8+) |
+|---|---|---|
+| State | Instance fields allowed | Only `static final` constants |
+| Constructors | Yes | No |
+| Multiple inheritance | No | Yes |
+| Default method conflict | N/A | Must resolve explicitly (`Interface.super.method()`) |
+| ABI evolution | Adding a method breaks subclasses | `default` methods add without breaking implementors |
+
+If two interfaces provide conflicting defaults and the class doesn't override, it's a **compile error** — forcing explicit disambiguation, not silent runtime ambiguity.
+
+### 1.7 Composition vs. Inheritance
+Inheritance couples a subclass to the superclass's *implementation*, not just its contract (the fragile base class problem). Effective Java's rule: favor composition unless there's a genuine is-a relationship and you fully control/trust the superclass's evolution — especially across module/library boundaries you don't own.
+
+```java
+// Fragile: HashSet.addAll() internally calls add() — overriding add() double-counts.
+class InstrumentedSet<E> extends HashSet<E> { ... }
+
+// Robust: composition + delegation — immune to superclass implementation changes.
+class InstrumentedSet<E> implements Set<E> {
+    private final Set<E> delegate;
+}
+```
+
+## 2. Recall Drills (Flashcards)
+
+<Flashcard question="Is Java pass-by-value or pass-by-reference, and what exactly gets copied when passing an object to a method?" answer="Strictly pass-by-value. For object arguments, the reference (pointer) is copied — not the object. Mutating via the copied reference is visible to the caller; reassigning the parameter to a new object is not." />
+
+<Flashcard question="Why can an overridden method called from a constructor read a subclass's final field as null/default?" answer="Construction is top-down: the superclass constructor (including any overridable method calls) runs before the subclass's own field initializers. Dynamic dispatch calls the most-derived override, which executes before its class's fields are set." />
+
+<Flashcard question="What data structure backs invokevirtual dispatch, and what's its complexity regardless of hierarchy depth?" answer="A per-class vtable — an array of method pointers built once at class-load time. Lookup is O(1) via a fixed slot index, not a runtime hierarchy walk; JIT inline caching further speeds monomorphic call sites." />
+
+<Flashcard question="Why must a class explicitly resolve a default-method conflict between two interfaces?" answer="It's a compile error if two interfaces provide default methods with the same signature and the class doesn't override — Java forces explicit disambiguation via InterfaceName.super.method() instead of silently picking one." />
+
+<Flashcard question="Why is overriding add() in a HashSet subclass for instrumentation fragile, and what's the fix?" answer="HashSet.addAll() internally calls add() repeatedly (an implementation detail), so overriding add() double-counts during addAll(). Fix: composition/delegation — implement Set<E> wrapping a private HashSet delegate." />
+
+<Flashcard question="What two bytecode instructions does 'new Foo()' compile to, and why does the split matter for concurrency?" answer="'new' (allocate zeroed memory, push reference) then 'invokespecial' (run constructor). Because they're separate, 'this' can theoretically escape and be observed by another thread mid-construction — unsafe publication." />

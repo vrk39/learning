@@ -1,0 +1,39 @@
+---
+id: spring-boot-advanced
+title: Spring Boot — Architect-Level Deep Dive
+---
+import Flashcard from '@site/src/components/Flashcard';
+
+## 1. Deep Knowledge Guide
+
+### 1.1 Auto-Configuration Internals — Conditional Beans, Not Magic
+Spring Boot's auto-configuration is a set of ordinary `@Configuration` classes, registered via `spring.factories` (or `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports` in Boot 2.7+/3.x), each guarded by `@Conditional...` annotations: `@ConditionalOnClass` (a library is on the classpath), `@ConditionalOnMissingBean` (the user hasn't already defined their own bean of that type — auto-config **backs off** if you provide your own), `@ConditionalOnProperty`, etc. This is why adding `spring-boot-starter-data-jpa` "automatically" configures a `DataSource`/`EntityManagerFactory` — the auto-config classes were always on the classpath (transitively via the starter), and their `@ConditionalOnClass(DataSource.class)` guard simply passed once the JDBC driver + JPA classes became present.
+
+Architect-level insight: `@ConditionalOnMissingBean` means auto-configuration is **override-friendly by design** — defining your own `@Bean` of the same type disables the corresponding auto-configured one automatically, no explicit "exclude" needed for that common case (exclusion via `@SpringBootApplication(exclude = ...)` is for the rarer case of wanting to fully disable an auto-config class regardless of bean presence).
+
+### 1.2 Starters — Dependency Aggregation, Not Code
+A "starter" (`spring-boot-starter-web`, etc.) is **purely a Maven/Gradle dependency descriptor** with no code of its own — it just pulls in a curated, version-aligned set of transitive dependencies (Tomcat, Jackson, Spring MVC, validation, etc.) known to work together, delegated to **Spring Boot's dependency management BOM** (`spring-boot-dependencies`) for consistent version resolution across the whole ecosystem — solving the classic "dependency hell" of manually aligning compatible library versions.
+
+### 1.3 Externalized Configuration — Property Source Precedence
+Boot resolves `application.properties`/`.yml` and other sources through a well-defined precedence order (highest wins), roughly: command-line args > `SPRING_APPLICATION_JSON` env var > OS environment variables > `application-{profile}.properties` > `application.properties` > `@PropertySource` annotations > defaults. Environment variables are automatically **relaxed-bound** to property names (`SPRING_DATASOURCE_URL` maps to `spring.datasource.url`) — critical for container/Kubernetes deployments where config is injected via env vars rather than files, and a frequent source of confusion when a value "should be overridden" but the precedence order says otherwise.
+
+### 1.4 Actuator — Production Observability Surface
+Spring Boot Actuator exposes operational endpoints (`/actuator/health`, `/metrics`, `/env`, `/beans`, etc.) backed by `HealthIndicator` beans that Boot auto-detects (a `DataSourceHealthIndicator` appears automatically once a `DataSource` bean exists, running a lightweight validation query). Architect-level concern: several actuator endpoints (`/env`, `/configprops`, `/heapdump`) leak sensitive information (credentials, internal config) if exposed without authentication — production hardening requires explicitly restricting `management.endpoints.web.exposure.include` to a minimal safe set and securing the actuator port/path separately from the main application's security config.
+
+### 1.5 Embedded Server Model vs. Traditional WAR Deployment
+Spring Boot's default packaging is an **executable "fat" JAR** with an embedded servlet container (Tomcat/Jetty/Undertow) started programmatically from `main()` — inverting the traditional model where an external container (a standalone Tomcat) loads a deployed WAR. This shift underlies most cloud-native/container deployment patterns (a Docker image just runs `java -jar app.jar`, no separate container installation/configuration needed) and is why Boot apps can be "just a process" rather than an artifact requiring a pre-provisioned application server — a meaningful operational simplification for microservices architectures specifically.
+
+### 1.6 Profiles — Environment-Specific Bean/Config Activation
+`@Profile("prod")` on a `@Configuration`/`@Bean` restricts that definition to activate only when the `prod` profile is active (`spring.profiles.active`), letting environment-specific wiring (mock vs. real payment gateway, embedded vs. external DB) coexist in the same codebase without conditional logic scattered through business code — combined with `application-{profile}.yml` for profile-specific property overrides layered on top of the base `application.yml`.
+
+## 2. Recall Drills (Flashcards)
+
+<Flashcard question="How does Spring Boot auto-configuration decide whether to configure a bean like DataSource 'automatically', and what mechanism lets your own custom bean silently override it?" answer="Each auto-configuration class is a normal @Configuration guarded by conditions like @ConditionalOnClass (required library present on classpath) and @ConditionalOnMissingBean (no user-defined bean of that type already exists). Defining your own @Bean of the same type causes @ConditionalOnMissingBean to fail its condition, so the auto-configured bean simply never gets created — no explicit exclusion required." />
+
+<Flashcard question="Does a Spring Boot 'starter' dependency (e.g., spring-boot-starter-web) contain any code of its own?" answer="No — a starter is purely a dependency-management artifact (a POM with no source code) that pulls in a curated, version-aligned set of transitive dependencies known to work together, resolved consistently via Spring Boot's dependency management BOM. It solves version-alignment 'dependency hell' rather than providing functionality itself." />
+
+<Flashcard question="Roughly where do OS environment variables sit in Spring Boot's property source precedence order relative to application.properties, and why does this matter for container deployments?" answer="OS environment variables rank ABOVE application.properties/application-{profile}.properties in precedence (though below command-line args and SPRING_APPLICATION_JSON). This is why Kubernetes/container deployments can inject config purely via environment variables (e.g., SPRING_DATASOURCE_URL, relaxed-bound to spring.datasource.url) and reliably override file-based defaults without rebuilding the image." />
+
+<Flashcard question="Why do several Actuator endpoints like /env and /heapdump pose a real production security risk if left at default exposure settings?" answer="They can leak sensitive information — /env exposes resolved configuration values including potentially unmasked credentials, and /heapdump exposes a full memory snapshot that could contain secrets or PII in memory. Production hardening requires explicitly restricting management.endpoints.web.exposure.include to a minimal safe set and securing the actuator surface separately from the main app's security rules." />
+
+<Flashcard question="How does Spring Boot's default 'fat JAR with embedded server' packaging model change the deployment unit compared to traditional WAR-on-external-Tomcat deployment?" answer="Instead of a pre-provisioned, separately-installed application server loading a deployed WAR artifact, Boot bundles an embedded servlet container and starts it programmatically from main() — the deployment unit becomes 'just a Java process' (java -jar app.jar). This underlies container/cloud-native deployment patterns where a Docker image needs no separate application-server installation or configuration." />

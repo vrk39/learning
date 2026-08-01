@@ -1,0 +1,49 @@
+---
+id: method-references-advanced
+title: Method References — Architect-Level Deep Dive
+---
+import Flashcard from '@site/src/components/Flashcard';
+
+## 1. Deep Knowledge Guide
+
+### 1.1 The Four Forms and How the Compiler Resolves Them
+| Form | Syntax | Equivalent Lambda |
+|---|---|---|
+| Static method | `ClassName::staticMethod` | `x -> ClassName.staticMethod(x)` |
+| Bound instance method | `instance::method` | `x -> instance.method(x)` |
+| Unbound instance method | `ClassName::instanceMethod` | `(obj, x) -> obj.instanceMethod(x)` — the receiver becomes the first lambda parameter |
+| Constructor reference | `ClassName::new` | `(args) -> new ClassName(args)` |
+
+The compiler resolves which form applies purely from the **target functional interface's SAM signature** at the call site — the same `String::length` textual reference resolves differently depending on whether it's being assigned to `Function<String,Integer>` (unbound: `s -> s.length()`) vs. some hypothetical interface expecting zero args on a captured instance. This means a method reference has **no meaning in isolation** — it's only interpretable against a target type, exactly like a lambda expression.
+
+### 1.2 Same `invokedynamic`/`LambdaMetafactory` Machinery as Lambdas
+Method references are **not** syntactic sugar that desugars into a lambda first — both lambdas and method references compile through the identical `invokedynamic` + `LambdaMetafactory` bootstrap mechanism described in the Lambda Expressions doc. The difference is purely at the `javac` front-end: a method reference doesn't need a synthetic forwarding method generated in the enclosing class the way a lambda body does, because it can directly target the existing method via a `MethodHandle` — a (usually negligible) micro-optimization avoiding one extra indirection layer.
+
+### 1.3 Unbound Instance Method References — the Subtle Receiver-as-Parameter Rule
+This is the form most likely to trip up an interview candidate:
+
+```java
+List<String> names = List.of("charlie", "alice", "bob");
+names.sort(String::compareTo);        // WRONG target type — compareTo needs 2 args from Comparator<String>
+names.sort(Comparator.naturalOrder()); // or:
+Comparator<String> cmp = String::compareTo; // (a, b) -> a.compareTo(b) — receiver `a` becomes first param
+```
+
+`String::compareTo` as a `BiFunction<String,String,Integer>` or `Comparator<String>` means: the **first** argument supplied at call time becomes the receiver (`a.compareTo(b)`), not a pre-bound instance — this is the "unbound" form, and it's a common source of off-by-one-argument confusion versus the bound form (`someString::compareTo`, which pre-binds the receiver and only takes one further argument).
+
+### 1.4 Constructor References and Generic Array Constructors
+`ClassName::new` works for any accessible constructor whose parameter list matches the target SAM. A special case: `int[]::new` targets `IntFunction<int[]>`, letting `Stream.toArray()` produce a correctly-typed array without reflection-based generic array creation (`(T[]) new Object[n]`, which is unsound and produces `ClassCastException` risk) — `IntFunction<A[]> generator` is exactly why `toArray(IntFunction)` exists as an overload alongside plain `toArray()` (which returns `Object[]`).
+
+```java
+String[] arr = stream.toArray(String[]::new); // avoids unchecked Object[]-to-String[] cast
+```
+
+## 2. Recall Drills (Flashcards)
+
+<Flashcard question="Why does the exact same method reference text (e.g., String::length) potentially resolve to different lambda-equivalent behavior in different contexts?" answer="A method reference has no standalone meaning — the compiler resolves which of the four forms (static, bound, unbound, constructor) applies purely from the target functional interface's SAM signature at the call site, exactly like an untyped lambda expression requires a target type to be interpretable." />
+
+<Flashcard question="Do method references desugar into lambda expressions first, or do they use separate compiler/runtime machinery?" answer="They use the SAME invokedynamic + LambdaMetafactory bootstrap machinery as lambdas — not desugared through a lambda intermediate. The only front-end difference is that a method reference can bind directly to the target method via a MethodHandle without generating a synthetic forwarding method, unlike a lambda body." />
+
+<Flashcard question="In an UNBOUND instance method reference like String::compareTo used as a Comparator<String>, which value becomes the receiver of compareTo at call time?" answer="The FIRST argument supplied to the functional interface's abstract method becomes the receiver — i.e., (a, b) -> a.compareTo(b). This differs from a BOUND reference (someString::compareTo), where the receiver is pre-fixed to a specific instance and only one further argument is taken." />
+
+<Flashcard question="Why does Stream.toArray() have both a no-arg overload (returning Object[]) and an IntFunction<A[]> overload, and how does a constructor reference like String[]::new fit in?" answer="Generic type erasure means a stream can't know its element's runtime type to construct a correctly-typed array internally. Passing String[]::new (an IntFunction<String[]>) lets the caller supply the correct array-constructing factory, avoiding the unsound (T[]) cast pattern that risks ClassCastException." />

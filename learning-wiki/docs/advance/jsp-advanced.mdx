@@ -1,0 +1,50 @@
+---
+id: jsp-advanced
+title: JSP — Architect-Level Deep Dive
+---
+import Flashcard from '@site/src/components/Flashcard';
+
+## 1. Deep Knowledge Guide
+
+### 1.1 JSP Compilation Lifecycle — It's Just a Servlet
+A `.jsp` file is **translated into a `.java` servlet source file** by the container (or precompiled ahead-of-time in production setups), then compiled to a `.class` and executed exactly like a hand-written servlet. Every JSP construct maps to generated Java: template text becomes `out.write("...")` calls, scriptlets (`<% ... %>`) become inlined Java statements, and expressions (`<%= ... %>`) become `out.print(...)` calls — inside the generated servlet's `_jspService()` method (the JSP analog of `service()`). This is why JSP shares all of Servlets' threading model implications: one compiled servlet instance handles concurrent requests, so any state stored outside method-local variables (e.g., in a scriptlet-declared instance-level `<%! %>` declaration) is shared, concurrently-mutable state across requests — the exact same hazard as a raw servlet instance field.
+
+### 1.2 The Four JSP Scopes and Their Backing Storage
+| Scope | Backing object | Lifetime |
+|---|---|---|
+| `page` | Local to the generated servlet method | Single request-response cycle, this JSP page only (not forwarded/included pages) |
+| `request` | `HttpServletRequest` attribute | Single request, survives forward()/include() to other resources |
+| `session` | `HttpSession` attribute | Across multiple requests from the same client, until timeout/invalidate |
+| `application` | `ServletContext` attribute | Entire application lifetime, shared across ALL clients/sessions — same concurrency hazard as servlet instance fields |
+
+`application` scope is architecturally the most dangerous for mutable state — it's genuinely global, shared JVM-wide state across every concurrent user, requiring the same synchronization discipline as any other shared-mutable-state design.
+
+### 1.3 Why Scriptlets Are Considered an Anti-Pattern (Architect Reasoning, Not Just Style)
+Mixing Java logic (`<% %>`) directly into presentation markup violates separation of concerns and, critically, makes JSP pages **untestable** without a running servlet container and **unreviewable** for business logic correctness by anyone thinking in terms of "this is a template." The MVC-oriented fix — **JSTL** (JSP Standard Tag Library, `<c:forEach>`, `<c:if>`, etc.) plus **EL** (Expression Language, `${bean.property}`) — pushes all business logic to Java classes (controllers/beans) reachable only through simple attribute-access expressions in the view, restoring a real separation between "compute the data" (testable Java) and "render the data" (JSP as pure template).
+
+```jsp
+<%-- Anti-pattern: business logic in the view --%>
+<% List<User> users = userDao.findActive(); %>
+<% for (User u : users) { %> <%= u.getName() %> <% } %>
+
+<%-- Preferred: controller populates request attribute; JSP only renders --%>
+<c:forEach var="user" items="${activeUsers}">
+    ${user.name}
+</c:forEach>
+```
+
+### 1.4 Expression Language (EL) — Null-Safe Attribute Graph Navigation
+`${bean.address.city}` silently resolves to an empty string (not a `NullPointerException`) if any link in the chain (`bean`, `address`) is null — EL is deliberately fail-soft for template rendering robustness, unlike direct Java property access. This is a double-edged design: it prevents a null in optional display data from crashing page rendering, but can also silently mask a genuine upstream bug (a missing attribute renders as blank with no error surfaced) — an architect-level trade-off between resilience and observability that teams need explicit logging/monitoring elsewhere to compensate for.
+
+### 1.5 JSP vs. Modern Templating/View Layers
+JSP's tight coupling to the servlet container (compiled per-container, container-specific JSP engine versions) and lack of natural fit for REST/JSON-first architectures has largely pushed new development toward Thymeleaf (natural-templating, testable outside a container), or away from server-rendered views entirely toward SPA frontends consuming REST/JSON APIs. Legacy JSP-based systems remain common in enterprise codebases, making understanding its execution model (rather than just tag syntax) genuinely relevant for architect-level maintenance/migration decisions.
+
+## 2. Recall Drills (Flashcards)
+
+<Flashcard question="What does a .jsp file actually become at runtime, and why does that mean JSP shares all of Servlets' concurrency hazards?" answer="The container translates the .jsp into a Java servlet source file, compiles it, and executes it like any hand-written servlet — template text becomes out.write() calls inside a generated _jspService() method. Since one compiled servlet instance serves concurrent requests, any state outside method-local scope (e.g., scriptlet-declared instance-level <%! %> fields) is shared mutable state across concurrent requests, identical to a raw servlet's instance-field hazard." />
+
+<Flashcard question="Which JSP scope is backed by ServletContext, and why is it the most dangerous for holding mutable state?" answer="Application scope. It's genuinely global — a single shared object across the ENTIRE application's lifetime and ALL concurrent users/sessions, not just one request or one client's session. Any mutable state stored there requires the same explicit synchronization discipline as shared state in servlet instance fields, application-wide." />
+
+<Flashcard question="What is the core architectural argument against JSP scriptlets, beyond general 'code style'?" answer="Business logic embedded in scriptlets can't be unit tested without a running servlet container, and it collapses the separation between 'compute the data' and 'render the data' that lets non-developers/reviewers reason about the view as a pure template. JSTL + EL push all logic into testable Java classes, leaving the JSP as a genuine template referencing only pre-computed attributes." />
+
+<Flashcard question="Why does ${bean.address.city} in EL not throw a NullPointerException if 'address' is null, and what's the trade-off of that design?" answer="EL is deliberately fail-soft — a null anywhere in the property-access chain resolves the whole expression to an empty string instead of throwing. This prevents missing optional data from crashing page rendering, but the trade-off is that a genuine upstream bug (e.g., a controller forgetting to populate an attribute) can silently render as blank with no error surfaced, requiring separate logging/monitoring to catch." />

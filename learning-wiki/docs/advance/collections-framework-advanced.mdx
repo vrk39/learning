@@ -1,0 +1,61 @@
+---
+id: collections-framework-advanced
+title: Collections Framework — Architect-Level Deep Dive
+---
+import Flashcard from '@site/src/components/Flashcard';
+
+## 1. Deep Knowledge Guide
+
+### 1.1 HashMap Internals: Buckets, Treeification, and Resize
+`HashMap` is a `Node<K,V>[] table` (array of bucket linked lists). Key placement uses `(n - 1) & hash`, where `hash` is `h ^ (h >>> 16)` (a spreading function XOR-ing the high 16 bits into the low 16 bits) to reduce collisions when the table size is a small power of two and low-order bits alone would cluster.
+
+Since Java 8, if a bucket's chain length exceeds `TREEIFY_THRESHOLD` (8) **and** the table has at least `MIN_TREEIFY_CAPACITY` (64) buckets, that bucket converts from a linked list to a **red-black tree**, turning worst-case lookup within a bucket from O(n) to O(log n) — a defense against hash-flooding DoS attacks on poorly-distributed or adversarial keys. Below 64 total buckets, the table resizes instead of treeifying (resizing is cheaper at small scale).
+
+Resize doubles capacity when `size > threshold` (`capacity * loadFactor`, default load factor 0.75) and rehashes every entry — an O(n) operation, amortized O(1) per insert. Because capacity is always a power of two, resize can split each old bucket into exactly two new buckets using a single extra bit check, avoiding full rehash-from-scratch per entry.
+
+### 1.2 HashMap vs. TreeMap vs. LinkedHashMap vs. ConcurrentHashMap
+
+| Map | Ordering | Null keys/values | Thread-safe | Lookup | Notes |
+|---|---|---|---|---|---|
+| `HashMap` | None | 1 null key, many null values | No | O(1) avg | Fastest general-purpose |
+| `LinkedHashMap` | Insertion (or access, via constructor flag) | Same as HashMap | No | O(1) avg | Backed by HashMap + doubly-linked list; great for LRU caches (`removeEldestEntry`) |
+| `TreeMap` | Sorted (natural or `Comparator`) | No null keys (NPE) | No | O(log n) | Red-black tree; supports `NavigableMap` (`floorKey`, `ceilingKey`, range views) |
+| `ConcurrentHashMap` | None | No null keys/values (design choice — ambiguity between "absent" and "mapped to null") | Yes, lock-striped | O(1) avg | Java 8+: CAS on empty bin, synchronized per-bin (not per-segment) for collisions |
+
+### 1.3 `ConcurrentHashMap` Java 8 Redesign
+Pre-Java 8 used **segment-based locking** (16 segments by default, each independently lockable — a form of lock striping). Java 8 redesigned it to lock at the **individual bin (bucket) level**: an insert into an empty bin uses a lock-free CAS; only when a bin already has a chain does the thread `synchronized` on that bin's first node. This dramatically increases concurrency (effectively per-bucket rather than per-1/16th-of-the-map) while removing the fixed concurrency-level ceiling segments imposed.
+
+`size()` is computed via a striped `LongAdder`-like counter (`baseCount` + `CounterCell[]`) rather than a single contended `AtomicLong`, to avoid cache-line contention under high write concurrency.
+
+### 1.4 List Implementations
+
+| Aspect | `ArrayList` | `LinkedList` | `CopyOnWriteArrayList` |
+|---|---|---|---|
+| Backing | Resizable `Object[]` | Doubly-linked `Node` list | Immutable array, replaced on every write |
+| Get | O(1) | O(n) | O(1) |
+| Add at end | Amortized O(1) | O(1) | O(n) — full array copy |
+| Insert/remove middle | O(n) shift | O(1) once positioned | O(n) copy |
+| Iteration under concurrent modification | `ConcurrentModificationException` (fail-fast, via `modCount`) | Same | Safe — iterator snapshots the array at creation, never throws CME |
+| Best for | General-purpose, read-heavy | Rarely — queue/deque use `ArrayDeque` instead | Read-mostly, rarely-written, concurrent read paths (e.g., listener lists) |
+
+`ConcurrentModificationException` is detected via a `modCount` field incremented on every structural mutation; the iterator captures `expectedModCount` at creation and checks equality on each `next()` — this is a *best-effort* fail-fast check, not a guarantee (the JavaDoc explicitly warns against relying on it for correctness).
+
+### 1.5 Fail-Fast vs. Fail-Safe Iteration
+Fail-fast (`ArrayList`, `HashMap`) throws `ConcurrentModificationException` on detected concurrent structural modification during iteration — a debugging aid, not a concurrency guarantee. Fail-safe (`CopyOnWriteArrayList`, `ConcurrentHashMap`'s iterators) never throws CME because they iterate a stable snapshot (COW) or tolerate concurrent structural changes by design (CHM's weakly consistent iterators, which may or may not reflect updates made during iteration, but never throw or corrupt).
+
+### 1.6 Choosing a Set: `HashSet` / `LinkedHashSet` / `TreeSet` / `EnumSet`
+`HashSet` is literally backed by a `HashMap<E, Object>` with a shared dummy value (`PRESENT`). `EnumSet` uses a `long` (or `long[]` for >64 constants) as a bitset keyed by the enum's ordinal — giving extremely fast, memory-dense set operations (union = bitwise OR, etc.) for enum-typed sets specifically.
+
+## 2. Recall Drills (Flashcards)
+
+<Flashcard question="Why does HashMap XOR a key's hashCode with its own upper 16 bits (h ^ (h >>> 16)) before using it for bucket placement?" answer="Bucket index is computed as (capacity - 1) & hash, which only uses the low-order bits when capacity is a small power of two. Spreading the high bits into the low bits via XOR reduces collisions for hash functions whose entropy is concentrated in the upper bits, at negligible extra cost." />
+
+<Flashcard question="Under what two conditions does a HashMap bucket convert from a linked list to a red-black tree, and why the second condition?" answer="Chain length exceeds TREEIFY_THRESHOLD (8) AND total table capacity is at least MIN_TREEIFY_CAPACITY (64). Below 64 buckets, the table resizes instead of treeifying, because resizing is cheaper and more effective at reducing collisions when the table itself is still small." />
+
+<Flashcard question="How did ConcurrentHashMap's locking granularity change from Java 7 to Java 8, and what's the concurrency benefit?" answer="Java 7 used 16 fixed segments (lock striping) — a hardcoded concurrency ceiling. Java 8 locks at the individual bin level: CAS for inserts into empty bins, synchronized only on a bin's first node when a collision chain exists — giving effectively per-bucket concurrency instead of per-1/16th-of-the-map." />
+
+<Flashcard question="Why does ConcurrentHashMap disallow null keys and null values, unlike HashMap?" answer="In a concurrent map, get(key) returning null is ambiguous — it could mean 'no mapping' or 'mapped to null', and resolving that ambiguity would require an extra containsKey() check that isn't atomic with the get() in a concurrent context. Disallowing null entirely removes the ambiguity by design." />
+
+<Flashcard question="Why does CopyOnWriteArrayList's iterator never throw ConcurrentModificationException, and what's the cost of that guarantee?" answer="Every write (add/remove/set) replaces the entire backing array with a new copy; iterators created before the write hold a reference to the OLD array, which is never mutated. This gives safe, CME-free iteration at the cost of O(n) time and memory on every single write, making it suitable only for read-heavy, rarely-written collections." />
+
+<Flashcard question="Why is EnumSet dramatically faster and more memory-dense than a general-purpose HashSet<SomeEnum>?" answer="EnumSet is backed by a bitset (a long, or long[] for enums with more than 64 constants) indexed by each enum constant's ordinal. Membership, union, and intersection become O(1) bitwise operations on machine words instead of hash computation and bucket traversal." />
