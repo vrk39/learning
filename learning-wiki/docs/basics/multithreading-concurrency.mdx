@@ -1,0 +1,308 @@
+---
+id: java-multithreading-concurrency
+title: Java Multithreading & Concurrency Masterclass
+---
+import Flashcard from '@site/src/components/Flashcard';
+
+## Table of Contents
+1. **Thread Fundamentals**: Creation, Lifecycles, and OS Mapping
+2. **The Java Memory Model (JMM)**: Visibility, `volatile`, and Happens-Before
+3. **Intrinsic Synchronization**: `synchronized`, Monitors, and Lock Escalation
+4. **Advanced Locks (java.util.concurrent)**: `ReentrantLock` and AQS Internals
+5. **Thread Pools & Executors**: `ThreadPoolExecutor` Architecture
+6. **Non-Blocking Algorithms**: Atomics and Compare-And-Swap (CAS)
+7. **Modern Concurrency**: Virtual Threads (Project Loom / Java 21)
+8. **Section 2: Recall Drills (Flashcards)**
+
+---
+
+## Section 1: Deep Knowledge Guide
+
+### 1. Thread Fundamentals: Creation, Lifecycles, and OS Mapping
+
+**Fundamentals**
+A thread is the smallest unit of execution within a process. In Java, threads can be created primarily in two ways: implementing the `Runnable` interface or extending the `Thread` class. Implementing `Runnable` is strictly preferred as it separates the task logic from the execution mechanism and allows your class to extend other classes.
+
+**Advanced Internals: Platform Threads & The OS**
+Before Java 21, all Java threads were **Platform Threads**. A platform thread is a thin wrapper around a native Operating System (OS) thread. 
+*   **Cost:** Creating a platform thread is expensive. It requires a system call to the OS and allocates a dedicated block of memory (typically 1MB) for the thread stack to store local variables and method calls.
+*   **Context Switching:** When the CPU switches from one thread to another, it must save the current thread's state (registers, program counter) and load the new thread's state. Heavy context switching degrades application throughput.
+
+**Thread Lifecycle States**
+1.  **NEW**: Created but `start()` not called.
+2.  **RUNNABLE**: Ready to run or actively running on the CPU.
+3.  **BLOCKED**: Waiting to acquire a monitor lock (e.g., entering a `synchronized` block).
+4.  **WAITING**: Waiting indefinitely for another thread to perform a specific action (e.g., `Object.wait()`).
+5.  **TIMED_WAITING**: Waiting for a specified time (e.g., `Thread.sleep(1000)`).
+6.  **TERMINATED**: Completed execution.
+
+```java
+// Runnable Example: Thread Creation and Lifecycle
+public class ThreadLifecycleDemo {
+    public static void main(String[] args) throws InterruptedException {
+        Thread worker = new Thread(() -> {
+            try {
+                System.out.println("Worker: Running...");
+                Thread.sleep(1000); // Enters TIMED_WAITING
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        });
+
+        System.out.println("State after creation: " + worker.getState()); // NEW
+        worker.start();
+        System.out.println("State after start: " + worker.getState()); // RUNNABLE
+        
+        Thread.sleep(100); // Give worker time to reach its sleep block
+        System.out.println("State during sleep: " + worker.getState()); // TIMED_WAITING
+        
+        worker.join(); // Main thread WAITS for worker to finish
+        System.out.println("State after completion: " + worker.getState()); // TERMINATED
+    }
+}
+```
+
+---
+
+### 2. The Java Memory Model (JMM): Visibility and `volatile`
+
+**Fundamentals**
+In a multi-core CPU, each core has its own high-speed cache (L1/L2). Threads running on different cores may cache a shared variable's value independently. If Thread A modifies a variable, Thread B might not see the updated value immediately. This is the **Visibility Problem**.
+
+The `volatile` keyword guarantees visibility. It forces the JVM to read the variable directly from Main Memory and write changes directly to Main Memory, bypassing local CPU caches.
+
+**Advanced Internals: Memory Barriers and Reordering**
+The JVM and CPU are allowed to aggressively optimize and reorder bytecode instructions to improve performance, as long as the *single-threaded* semantics remain correct. However, in multithreaded contexts, reordering causes chaotic bugs.
+
+*   **Memory Barriers (Fences):** When a variable is declared `volatile`, the JVM inserts hardware-level "Memory Barriers" (e.g., `StoreLoad`, `StoreStore`) around the variable instructions. These barriers prevent the CPU from reordering instructions across the barrier.
+*   **Happens-Before Relationship:** The JMM defines rules for data visibility. If action A "happens-before" action B, then the memory effects of A are strictly visible to B. A write to a `volatile` variable *happens-before* every subsequent read of that same variable.
+
+```java
+// Runnable Example: The Visibility Problem & Volatile
+public class VolatileDemo {
+    // If 'stopFlag' was NOT volatile, the background thread might cache it
+    // as 'false' in its CPU register and loop infinitely.
+    private static volatile boolean stopFlag = false;
+
+    public static void main(String[] args) throws InterruptedException {
+        Thread backgroundThread = new Thread(() -> {
+            int i = 0;
+            while (!stopFlag) {
+                i++; // Busy wait
+            }
+            System.out.println("Background thread stopped at: " + i);
+        });
+
+        backgroundThread.start();
+        Thread.sleep(100); // Main thread sleeps for 100ms
+        
+        System.out.println("Main thread signaling to stop...");
+        stopFlag = true; // Volatile write flushes to main memory immediately
+    }
+}
+```
+
+---
+
+### 3. Intrinsic Synchronization: Monitors and Lock Escalation
+
+**Fundamentals**
+The `synchronized` keyword guarantees **Atomicity** (only one thread can execute a block of code at a time) and **Visibility**. It can be applied to methods (locking the `this` instance) or specific blocks (locking a specified object).
+
+**Advanced Internals: `monitorenter` and `monitorexit`**
+At the bytecode level, a `synchronized` block is compiled into two instructions: `monitorenter` and `monitorexit`. 
+Every Java object has a hidden data structure called a **Monitor** associated with it. The lock state is tracked inside the **Object Header** (specifically, the "Mark Word").
+
+**Lock Escalation (JVM Optimization)**
+Historically, intrinsic locks were slow because they required an OS-level mutex (Heavyweight Lock). Modern JVMs optimize this via Lock Escalation:
+1.  **Biased Locking:** If only one thread ever accesses the synchronized block, the JVM "biases" the lock to that thread. No synchronization instructions are executed at all. (Note: Deprecated/removed in newer Java versions as modern hardware CAS is fast enough).
+2.  **Lightweight Locking:** If a second thread tries to acquire the lock, the biased lock is revoked, and the JVM uses a fast Compare-And-Swap (CAS) operation to acquire the lock. 
+3.  **Heavyweight Locking:** If there is actual *contention* (Thread A holds the lock, Thread B wants it), the JVM escalates to a Heavyweight Lock, putting Thread B to sleep via the OS (requiring a context switch).
+
+---
+
+### 4. Advanced Locks: `ReentrantLock` and AQS
+
+**Fundamentals**
+`java.util.concurrent.locks.ReentrantLock` offers advanced features over `synchronized`, such as fair locking (longest-waiting thread gets the lock next), non-blocking lock attempts (`tryLock()`), and interruptible lock waiting.
+
+**Comparison Table: `synchronized` vs `ReentrantLock`**
+
+| Feature | `synchronized` | `ReentrantLock` |
+| :--- | :--- | :--- |
+| **Acquisition** | Implicit (Language level) | Explicit (`lock.lock()`) |
+| **Release** | Automatic (even on Exception) | Manual (`lock.unlock()` in `finally` block) |
+| **Fairness** | Non-fair | Can be configured as Fair or Non-fair |
+| **Interruptibility** | Threads blocked cannot be interrupted | Supports `lockInterruptibly()` |
+| **Try Lock** | Not possible (blocks indefinitely) | Supports `tryLock()` with timeout |
+
+**Advanced Internals: AbstractQueuedSynchronizer (AQS)**
+`ReentrantLock` is powered by a genius internal framework called **AQS**.
+AQS relies on:
+1.  A `volatile int state` variable to represent the lock's state (0 = unlocked, >0 = locked).
+2.  A highly optimized, thread-safe FIFO **CLH Wait Queue**.
+If Thread B wants a lock held by Thread A, AQS parks Thread B and enqueues it in the CLH queue. When Thread A calls `unlock()`, AQS unparks the node at the head of the queue.
+
+```java
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
+// Runnable Example: TryLock to prevent deadlocks
+public class ReentrantLockDemo {
+    private static final Lock lock1 = new ReentrantLock();
+    private static final Lock lock2 = new ReentrantLock();
+
+    public static void main(String[] args) {
+        Thread t1 = new Thread(() -> acquireLocks(lock1, lock2, "Thread-1"));
+        Thread t2 = new Thread(() -> acquireLocks(lock2, lock1, "Thread-2")); // Reverse order
+
+        t1.start();
+        t2.start();
+    }
+
+    private static void acquireLocks(Lock first, Lock second, String name) {
+        while (true) {
+            boolean gotFirst = false;
+            boolean gotSecond = false;
+            try {
+                gotFirst = first.tryLock();
+                gotSecond = second.tryLock();
+                
+                if (gotFirst && gotSecond) {
+                    System.out.println(name + " acquired both locks safely!");
+                    return;
+                }
+            } finally {
+                if (gotSecond) second.unlock();
+                if (gotFirst) first.unlock();
+            }
+            // Backoff to avoid livelock
+            try { Thread.sleep(50); } catch (InterruptedException e) {}
+        }
+    }
+}
+```
+
+---
+
+### 5. Thread Pools & Executors: `ThreadPoolExecutor` Architecture
+
+**Fundamentals**
+Spawning a `new Thread()` for every task crashes applications under load (OutOfMemory). The **Executor Framework** decouples task submission from execution by using a pool of reusable worker threads. 
+
+**Advanced Internals: `ThreadPoolExecutor` parameters**
+The core engine is `ThreadPoolExecutor`, which relies on 4 main parameters:
+1.  `corePoolSize`: The number of threads to keep alive normally.
+2.  `maximumPoolSize`: The absolute maximum number of threads allowed.
+3.  `workQueue`: A `BlockingQueue` holding tasks waiting to run.
+4.  `KeepAliveTime`: How long excess threads (> corePoolSize) sit idle before terminating.
+
+**The Routing Algorithm (Crucial for Interviews):**
+When a new task is submitted:
+1.  If active threads < `corePoolSize`, create a **new thread**.
+2.  If active threads == `corePoolSize`, put the task in the **`workQueue`**.
+3.  If the `workQueue` is **FULL**, and active threads < `maximumPoolSize`, create a **new thread** (this surprises many developers!).
+4.  If active threads == `maximumPoolSize` AND the queue is full, execute the `RejectedExecutionHandler` (e.g., throw `RejectedExecutionException`).
+
+```java
+import java.util.concurrent.*;
+
+// Runnable Example: ThreadPoolExecutor mechanics
+public class ThreadPoolDemo {
+    public static void main(String[] args) {
+        // Pool with 2 core threads, max 4 threads, and a queue of size 2.
+        ThreadPoolExecutor executor = new ThreadPoolExecutor(
+                2, 4, 10, TimeUnit.SECONDS,
+                new ArrayBlockingQueue<>(2)
+        );
+
+        // Submit 6 tasks:
+        // Tasks 1,2 go to Core Threads.
+        // Tasks 3,4 go to the Queue.
+        // Queue is full! Tasks 5,6 force creation of Max Threads.
+        for (int i = 1; i <= 6; i++) {
+            final int taskId = i;
+            executor.submit(() -> {
+                System.out.println("Executing task " + taskId + " on " + Thread.currentThread().getName());
+                try { Thread.sleep(2000); } catch (InterruptedException e) {}
+            });
+        }
+        
+        executor.shutdown();
+    }
+}
+```
+
+---
+
+### 6. Non-Blocking Algorithms: Atomics and Compare-And-Swap (CAS)
+
+**Fundamentals**
+Locks (`synchronized`, `ReentrantLock`) are **Pessimistic**: they assume threads will clash, so they block everything just in case. 
+The `java.util.concurrent.atomic` package provides variables (like `AtomicInteger`) that are lock-free and thread-safe. They are **Optimistic**: they attempt the update, and if a clash occurs, they retry.
+
+**Advanced Internals: CAS (Compare-And-Swap)**
+Atomics rely on a low-level hardware instruction called CAS (often exposed in Java via `Unsafe` or `VarHandle`).
+A CAS operation asks the CPU: *"Look at memory address X. If the current value is exactly Y, change it to Z. Otherwise, do nothing and tell me you failed."*
+Because this happens in a single, uninterruptible hardware instruction, it is inherently thread-safe without OS-level blocking.
+
+If two threads try to `incrementAndGet()` an `AtomicInteger` simultaneously, one thread's CAS succeeds. The other thread's CAS fails, detects the value changed, recalculates the new sum, and attempts the CAS again (a `while` loop called a "spin-lock").
+
+---
+
+### 7. Modern Concurrency: Virtual Threads (Java 21)
+
+**Fundamentals**
+Project Loom introduced **Virtual Threads** in Java 21, revolutionizing concurrency. Virtual threads are lightweight threads managed entirely by the JVM, not the OS. You can easily spawn millions of them.
+
+**Advanced Internals: M:N Mapping and Continuations**
+*   **Carrier Threads:** The JVM creates a small pool of OS Platform threads (equal to the number of CPU cores). These are called "Carrier Threads."
+*   **Mounting/Unmounting:** When a Virtual Thread executes blocking I/O (e.g., waiting for a database response), the JVM does *not* block the underlying OS Carrier Thread. Instead, it captures the Virtual Thread's stack (its local variables) and moves it to the heap (an object called a **Continuation**). The Carrier Thread is immediately freed up to execute a different Virtual Thread.
+*   **Result:** You write standard, synchronous, blocking code, but the JVM executes it asynchronously and efficiently under the hood.
+
+```java
+import java.util.concurrent.Executors;
+import java.util.stream.IntStream;
+
+// Runnable Example: Virtual Threads (Requires Java 21+)
+public class VirtualThreadDemo {
+    public static void main(String[] args) {
+        long start = System.currentTimeMillis();
+        
+        // Spawning 100,000 threads. 
+        // Using OS Platform threads, this would crash the JVM with OutOfMemoryError.
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            IntStream.range(0, 100_000).forEach(i -> {
+                executor.submit(() -> {
+                    try {
+                        Thread.sleep(1000); // Blocks the virtual thread, but NOT the OS thread
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+                });
+            });
+        } // Executor auto-closes and waits for all tasks to finish
+        
+        long end = System.currentTimeMillis();
+        System.out.println("Completed 100k virtual threads in " + (end - start) + " ms");
+    }
+}
+```
+
+---
+
+## Section 2: Recall Drills
+
+<Flashcard answer="It guarantees Visibility (reads/writes go straight to main memory, bypassing CPU caches) and prevents the JVM/CPU from reordering memory instructions around the variable." question="What two major guarantees does the 'volatile' keyword provide in the Java Memory Model?"/>
+
+<Flashcard answer="A happens-before relationship guarantees that memory written by one specific action is strictly visible to another specific action. For example, unlocking a monitor happens-before every subsequent locking of that same monitor." question="What is the 'Happens-Before' relationship in the Java Memory Model?"/>
+
+<Flashcard answer="monitorenter and monitorexit. The JVM manages the lock using the Monitor associated with the object's header (Mark Word)." question="What bytecode instructions does the JVM use to implement a synchronized block?"/>
+
+<Flashcard answer="AbstractQueuedSynchronizer (AQS). It uses a volatile integer 'state' and a FIFO thread wait queue (CLH queue) to manage blocking and unblocking threads." question="What internal framework does ReentrantLock use to manage thread queuing and state?"/>
+
+<Flashcard answer="Compare-And-Swap. It is an atomic, hardware-level CPU instruction that updates a memory location ONLY if its current value matches the expected value, forming the basis of lock-free Atomics (e.g., AtomicInteger)." question="What is CAS, and how do Java Atomic classes use it?"/>
+
+<Flashcard answer="It creates a new thread up to the maximumPoolSize. Tasks are ONLY queued if the number of active threads equals the corePoolSize and the queue is not full." question="In a ThreadPoolExecutor, if the core threads are full but the work queue is NOT full, what happens when a new task is submitted?"/>
+
+<Flashcard answer="Virtual threads are JVM-managed, lightweight threads that map many-to-one (M:N) to OS threads. When they block on I/O, their stack is moved to the heap (unmounted), freeing the underlying OS Carrier Thread to do other work." question="How do Virtual Threads (Java 21) prevent blocking the underlying OS thread during an I/O operation?"/>
