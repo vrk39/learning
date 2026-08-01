@@ -1,0 +1,342 @@
+---
+id: java-jdbc
+title: Java JDBC Masterclass
+---
+import Flashcard from '@site/src/components/Flashcard';
+
+## Table of Contents
+1. **Introduction to JDBC**: The SPI Architecture and Driver Types
+2. **Core Fundamentals**: Connections, Statements, and ResultSets
+3. **Security and Optimization**: `PreparedStatement` vs. `Statement`
+4. **Advanced Internals I: Connection Pooling & `DataSource`**
+5. **Advanced Internals II: ResultSet Memory Management & Fetch Size**
+6. **Transaction Management**: ACID Properties and Isolation Levels
+7. **Batch Processing**: Mitigating Network Latency
+8. **Architectural Trade-offs**: JDBC vs. ORM (Hibernate)
+9. **Recall Drills (Flashcards)**
+
+---
+
+## Section 1: Deep Knowledge Guide
+
+### 1. Introduction to JDBC: The SPI Architecture
+
+**Fundamentals**
+Java Database Connectivity (JDBC) is a standard Java API (living in the `java.sql` and `javax.sql` packages) used to connect to relational databases. JDBC is heavily interface-driven. The JDK provides the interfaces (e.g., `Connection`, `Statement`, `ResultSet`), but the actual implementation is provided by the database vendor (e.g., MySQL, PostgreSQL, Oracle) in the form of a **JDBC Driver**.
+
+This architecture is a classic example of the **Service Provider Interface (SPI)** pattern.
+
+**Advanced Internals: Driver Types and `ServiceLoader`**
+Historically, there were four types of JDBC drivers. Today, virtually all modern applications use **Type 4 Drivers (Thin Drivers)**. 
+*   **Type 4 Driver**: A pure Java driver that converts JDBC calls directly into the vendor-specific database network protocol (e.g., MySQL's wire protocol). It requires no native OS libraries, making it highly portable.
+
+*Before JDBC 4.0 (Java 6)*, developers had to explicitly load the driver class using `Class.forName("com.mysql.cj.jdbc.Driver")`. 
+*Since JDBC 4.0*, this is no longer necessary. The JVM uses the `java.util.ServiceLoader` mechanism. When `DriverManager.getConnection()` is called, the JVM scans the classpath for the `META-INF/services/java.sql.Driver` file in all JARs, automatically instantiating the appropriate driver.
+
+---
+
+### 2. Core Fundamentals: Connections, Statements, and ResultSets
+
+**Fundamentals**
+The standard workflow for any JDBC operation is:
+1. Establish a `Connection`.
+2. Create a `Statement`.
+3. Execute a SQL query.
+4. Process the `ResultSet` (for SELECT queries).
+5. Close the resources.
+
+Because these resources hold open network sockets and database cursors, failing to close them causes severe memory leaks and database connection exhaustion. Always use **try-with-resources** (introduced in Java 7) to guarantee closure.
+
+```java
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+
+// Runnable Example: Basic JDBC Workflow
+public class JdbcFundamentalsDemo {
+    public static void main(String[] args) {
+        // Using an in-memory H2 database URL for demonstration
+        String url = "jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1";
+        String user = "sa";
+        String password = "";
+
+        // 1. Try-with-resources ensures Connection, Statement, and ResultSet are closed
+        try (Connection conn = DriverManager.getConnection(url, user, password);
+             Statement stmt = conn.createStatement()) {
+
+            // Setup table
+            stmt.execute("CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50))");
+            stmt.execute("INSERT INTO users VALUES (1, 'Alice'), (2, 'Bob')");
+
+            // 2. Execute Query
+            String sql = "SELECT id, name FROM users";
+            try (ResultSet rs = stmt.executeQuery(sql)) {
+                
+                // 3. Process ResultSet
+                System.out.println("Users in Database:");
+                while (rs.next()) {
+                    int id = rs.getInt("id");
+                    String name = rs.getString("name");
+                    System.out.println("ID: " + id + ", Name: " + name);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+}
+```
+
+---
+
+### 3. Security and Optimization: `PreparedStatement` vs. `Statement`
+
+**Fundamentals**
+Never use `Statement` for queries that include user input. Concatenating strings into a SQL query makes your application vulnerable to **SQL Injection**, where a malicious user inputs SQL commands instead of standard data.
+Always use `PreparedStatement`, which uses parameterized queries (`?`).
+
+**Comparison: Statement vs PreparedStatement**
+
+| Feature | `Statement` | `PreparedStatement` |
+| :--- | :--- | :--- |
+| **SQL Injection** | Highly Vulnerable | Immune (treats parameters as raw data, not executable code) |
+| **Compilation** | Compiled every time it is executed | Pre-compiled on the database server |
+| **Performance** | Slower for repeated executions | Faster for repeated executions (caches execution plan) |
+| **Readability** | Messy string concatenation | Clean parameterized binding |
+
+**Advanced Internals: Server-Side Prepared Statements**
+When you use a `PreparedStatement`, two things happen under the hood:
+1.  **Execution Plan Caching**: The database receives the SQL string with placeholders. It parses, optimizes, and compiles an execution plan *once*. Subsequent executions simply send the new parameter values, skipping the expensive parsing/compilation phase.
+2.  **Binary Wire Protocol**: Many drivers (like MySQL and PostgreSQL) switch from sending text data to sending binary data over the TCP socket when using `PreparedStatement`, drastically reducing network payload size.
+*Expert Note:* For MySQL, you must explicitly append `?useServerPrepStmts=true` to your JDBC URL; otherwise, the driver just emulates prepared statements locally and sends standard text SQL to the database!
+
+```java
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+
+// Runnable Example: PreparedStatement
+public class PreparedStatementDemo {
+    public static void main(String[] args) {
+        String url = "jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1";
+        
+        try (Connection conn = DriverManager.getConnection(url, "sa", "");
+             Statement setup = conn.createStatement()) {
+            
+            setup.execute("CREATE TABLE inventory (id INT, product VARCHAR(50))");
+
+            // PreparedStatement with placeholders
+            String insertSql = "INSERT INTO inventory (id, product) VALUES (?, ?)";
+            
+            try (PreparedStatement pstmt = conn.prepareStatement(insertSql)) {
+                // First Execution
+                pstmt.setInt(1, 101);
+                pstmt.setString(2, "Laptop");
+                pstmt.executeUpdate();
+                
+                // Second Execution (Reuses the cached execution plan in the DB)
+                pstmt.setInt(1, 102);
+                pstmt.setString(2, "Smartphone");
+                pstmt.executeUpdate();
+                
+                System.out.println("Inventory inserted securely and efficiently.");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+}
+```
+
+---
+
+### 4. Advanced Internals I: Connection Pooling & `DataSource`
+
+**The Problem with `DriverManager`**
+Calling `DriverManager.getConnection()` is incredibly expensive. It requires:
+1.  A DNS lookup for the database host.
+2.  A 3-way TCP handshake.
+3.  Database-level authentication (username/password hashing).
+4.  Allocation of session memory structures on the database server.
+In a high-traffic web application, doing this for every HTTP request will instantly crash the database.
+
+**The Solution: `DataSource` and Connection Pooling**
+In modern enterprise applications, you never use `DriverManager`. Instead, you use a `javax.sql.DataSource` backed by a Connection Pool (like HikariCP or Tomcat JDBC).
+1.  On startup, the pool creates a fixed number of connections (e.g., 10) and holds them open.
+2.  When your code calls `dataSource.getConnection()`, it doesn't open a new network socket. It simply borrows an existing connection from the pool.
+3.  When your code calls `connection.close()`, **it does not close the TCP socket**. The pool's proxy connection intercepts the `close()` call and returns the connection to the pool for the next thread to use.
+
+---
+
+### 5. Advanced Internals II: ResultSet Memory Management & Fetch Size
+
+**The `OutOfMemoryError` Trap**
+By default, some JDBC drivers (most notably MySQL) fetch the **entire** result set from the database and store it in the JVM's heap memory before `executeQuery()` even returns. If you execute `SELECT * FROM massive_table` containing 5 million rows, your JVM will crash with an `OutOfMemoryError`.
+
+**The Solution: Cursors and `setFetchSize`**
+You must instruct the driver to stream the results incrementally. 
+*   In PostgreSQL: Set `conn.setAutoCommit(false)` and `stmt.setFetchSize(1000)`. The driver will fetch rows in batches of 1000.
+*   In MySQL: MySQL has a quirk where standard fetch sizes are ignored. You must use a magic number: `stmt.setFetchSize(Integer.MIN_VALUE)`. This forces the MySQL driver to read the rows one-by-one directly from the TCP socket buffer, preventing memory exhaustion.
+
+---
+
+### 6. Transaction Management: ACID Properties and Isolation Levels
+
+**Fundamentals**
+A transaction is a sequence of SQL operations treated as a single logical unit of work. It must adhere to the ACID properties (Atomicity, Consistency, Isolation, Durability).
+By default, JDBC operates in **Auto-Commit Mode** (`conn.setAutoCommit(true)`). Every single SQL statement is treated as its own transaction and committed immediately.
+
+To group multiple statements (e.g., transferring money from Account A to Account B), you must disable auto-commit, execute the statements, and then manually call `conn.commit()`. If an error occurs, you call `conn.rollback()`.
+
+**Isolation Levels**
+Transactions can interfere with each other (Dirty Reads, Non-Repeatable Reads, Phantom Reads). You can configure isolation levels via `conn.setTransactionIsolation()`:
+1.  **READ_UNCOMMITTED**: Fastest, but allows reading uncommitted data (Dirty reads).
+2.  **READ_COMMITTED**: Prevents dirty reads. (Default for PostgreSQL/Oracle).
+3.  **REPEATABLE_READ**: Prevents dirty and non-repeatable reads. (Default for MySQL/InnoDB).
+4.  **SERIALIZABLE**: Highest isolation. Locks tables completely. Prevents phantom reads but severely impacts performance.
+
+```java
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.sql.Statement;
+
+// Runnable Example: Transaction Management
+public class TransactionDemo {
+    public static void main(String[] args) {
+        String url = "jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1";
+        
+        try (Connection conn = DriverManager.getConnection(url, "sa", "")) {
+            // Setup accounts
+            try (Statement stmt = conn.createStatement()) {
+                stmt.execute("CREATE TABLE accounts (id INT, balance DECIMAL)");
+                stmt.execute("INSERT INTO accounts VALUES (1, 1000.0), (2, 500.0)");
+            }
+
+            // 1. Disable Auto-Commit
+            conn.setAutoCommit(false);
+            
+            String withdrawSql = "UPDATE accounts SET balance = balance - ? WHERE id = ?";
+            String depositSql = "UPDATE accounts SET balance = balance + ? WHERE id = ?";
+            
+            try (PreparedStatement withdraw = conn.prepareStatement(withdrawSql);
+                 PreparedStatement deposit = conn.prepareStatement(depositSql)) {
+                
+                // Deduct $200 from Account 1
+                withdraw.setDouble(1, 200.0);
+                withdraw.setInt(2, 1);
+                withdraw.executeUpdate();
+                
+                // Simulate an unexpected error (e.g., database constraint failure or JVM crash)
+                // if (true) throw new SQLException("Simulated Failure!");
+                
+                // Add $200 to Account 2
+                deposit.setDouble(1, 200.0);
+                deposit.setInt(2, 2);
+                deposit.executeUpdate();
+                
+                // 2. Commit the transaction if everything succeeded
+                conn.commit();
+                System.out.println("Transaction committed successfully.");
+                
+            } catch (SQLException e) {
+                // 3. Rollback the transaction if ANY step failed
+                System.err.println("Transaction failed. Rolling back changes.");
+                conn.rollback();
+            } finally {
+                // Restore default behavior
+                conn.setAutoCommit(true); 
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+}
+```
+
+---
+
+### 7. Batch Processing: Mitigating Network Latency
+
+**Fundamentals**
+If you need to insert 10,000 rows into a table, executing `pstmt.executeUpdate()` 10,000 times will result in 10,000 network round-trips to the database. This is a massive performance bottleneck.
+
+JDBC offers **Batch Processing** via `addBatch()` and `executeBatch()`. This bundles multiple SQL commands into a single TCP network packet, drastically reducing latency.
+
+```java
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.sql.Statement;
+
+// Runnable Example: Batch Processing
+public class BatchProcessingDemo {
+    public static void main(String[] args) {
+        String url = "jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1";
+        
+        try (Connection conn = DriverManager.getConnection(url, "sa", "");
+             Statement setup = conn.createStatement()) {
+            
+            setup.execute("CREATE TABLE logs (id INT, message VARCHAR(50))");
+
+            String sql = "INSERT INTO logs (id, message) VALUES (?, ?)";
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                
+                conn.setAutoCommit(false); // Best practice: execute batches in a transaction
+                
+                for (int i = 1; i <= 1000; i++) {
+                    pstmt.setInt(1, i);
+                    pstmt.setString(2, "Log Entry " + i);
+                    
+                    // Adds the parameterized statement to the local batch
+                    pstmt.addBatch(); 
+                    
+                    // To prevent OutOfMemory on the client side, execute the batch in chunks
+                    if (i % 250 == 0) {
+                        pstmt.executeBatch(); // Sends 250 rows in one network trip
+                    }
+                }
+                conn.commit();
+                System.out.println("Batch execution completed efficiently.");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+}
+```
+
+---
+
+### 8. Architectural Trade-offs: JDBC vs. ORM (Hibernate)
+
+Modern developers often debate whether to use raw JDBC or an Object-Relational Mapper (ORM) like Hibernate / JPA.
+
+| Feature | Raw JDBC | ORM (Hibernate / Spring Data JPA) |
+| :--- | :--- | :--- |
+| **Performance** | Highest. Zero abstraction overhead. Exact control over SQL execution. | Slight overhead due to proxy generation, dirty checking, and cache management. |
+| **Productivity** | Low. Requires massive amounts of boilerplate code (mapping ResultSets to Objects). | High. Maps tables to Java classes automatically. Generates CRUD queries. |
+| **Type Safety** | Low. SQL is embedded as plain Strings. Errors found only at runtime. | High. Uses Criteria API or JPQL, allowing compile-time checking. |
+| **Vendor Lock-in** | High. SQL queries often utilize vendor-specific functions (e.g., PostgreSQL `LIMIT` vs Oracle `ROWNUM`). | Low. Hibernate Dialects translate queries to the specific DB vendor automatically. |
+| **Best Used For** | Batch processing, highly complex reporting queries, performance-critical microservices. | Standard CRUD applications, domain-driven design, enterprise applications. |
+
+---
+
+## Section 2: Recall Drills
+
+<Flashcard answer="A Type 4 Driver is a 'Thin Driver'. It is a pure Java implementation that converts JDBC calls directly into the vendor-specific database network protocol, requiring no native OS libraries." question="What is a JDBC Type 4 Driver?"/>
+
+<Flashcard answer="1. It prevents SQL Injection by treating user inputs as raw parameters rather than executable code. 2. It improves performance by caching the SQL execution plan on the database server." question="What are the two primary reasons for using a PreparedStatement over a standard Statement?"/>
+
+<Flashcard answer="Creating a new connection requires a DNS lookup, a TCP 3-way handshake, and database authentication. A Connection Pool keeps a set of connections open permanently, allowing threads to borrow them instantly, avoiding these heavy network penalties." question="Why is using a Connection Pool (via DataSource) critical for high-performance applications instead of DriverManager?"/>
+
+<Flashcard answer="By default, drivers like MySQL load the entire result set into the JVM heap memory, causing an OutOfMemoryError for massive tables. Setting the fetch size forces the driver to stream rows incrementally." question="What problem does Statement.setFetchSize() solve when querying millions of rows?"/>
+
+<Flashcard answer="By default, JDBC uses 'Auto-Commit' mode, meaning every single SQL statement is an independent transaction. To group them, you must disable auto-commit, execute all statements, and manually call commit() or rollback()." question="Why must you call 'connection.setAutoCommit(false)' when managing multi-step database transactions?"/>
+
+<Flashcard answer="Instead of executing a query and suffering a network round-trip for every single insert, batch processing bundles multiple queries into a single network packet, drastically reducing latency." question="What is the primary performance benefit of using addBatch() and executeBatch()?"/>
