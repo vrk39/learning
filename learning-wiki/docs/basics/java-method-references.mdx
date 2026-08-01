@@ -1,0 +1,208 @@
+---
+id: java-method-references
+title: Java Method References Masterclass
+---
+import Flashcard from '@site/src/components/Flashcard';
+
+## Table of Contents
+1. **Introduction**: Syntactic Sugar for Lambdas
+2. **The Four Types of Method References**: From Static to Constructor
+3. **Deep Dive: Unbound Instance Methods (Type 3)**
+4. **Advanced Internals**: `invokedynamic` and `LambdaMetafactory`
+5. **Memory and Performance**: Capturing vs. Non-Capturing References
+6. **Architectural Trade-offs**: Method References vs. Lambda Expressions
+7. **Recall Drills (Flashcards)**
+
+---
+
+## Section 1: Deep Knowledge Guide
+
+### 1. Introduction: Syntactic Sugar for Lambdas
+
+**Fundamentals**
+Introduced in Java 8, a **Method Reference** is a shorthand syntax for a lambda expression that executes exactly one method. When your lambda expression does nothing but call an existing method, you can use a method reference to make your code cleaner and more readable. 
+
+The syntax uses a double colon (`::`) separating the class or object on the left from the method name on the right.
+
+*   **Lambda Expression:** `str -> System.out.println(str)`
+*   **Method Reference:** `System.out::println`
+
+Under the hood, method references are still mapped to **Functional Interfaces** (interfaces with a Single Abstract Method, or SAM), just like lambdas.
+
+---
+
+### 2. The Four Types of Method References
+
+Java categorizes method references into four distinct types. Memorizing these is crucial for reading modern Java code fluently.
+
+| Type | Syntax | Lambda Equivalent | Example Functional Interface |
+| :--- | :--- | :--- | :--- |
+| **1. Static Method** | `Class::staticMethod` | `(args) -> Class.staticMethod(args)` | `Function<Integer, String> f = String::valueOf;` |
+| **2. Bound Instance Method** (Specific Object) | `instance::method` | `(args) -> instance.method(args)` | `Consumer<String> c = System.out::println;` |
+| **3. Unbound Instance Method** (Arbitrary Object) | `Class::instanceMethod` | `(arg0, rest) -> arg0.method(rest)` | `Function<String, String> f = String::toLowerCase;` |
+| **4. Constructor** | `Class::new` | `(args) -> new Class(args)` | `Supplier<List<String>> s = ArrayList::new;` |
+
+```java
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
+
+// Runnable Example: The Four Types in Action
+public class MethodReferenceBasics {
+    public static void main(String[] args) {
+        
+        // 1. Static Method Reference
+        // Mapping a list of strings to integers using Integer.parseInt
+        List<String> numbers = Arrays.asList("1", "2", "3");
+        numbers.stream()
+               .map(Integer::parseInt) // Equivalent: s -> Integer.parseInt(s)
+               .forEach(System.out::println);
+
+        // 2. Bound Instance Method Reference
+        // The method belongs to a specific, existing object ('prefixer')
+        Prefixer prefixer = new Prefixer("ID-");
+        Consumer<String> printWithPrefix = prefixer::print; // Equivalent: s -> prefixer.print(s)
+        printWithPrefix.accept("456"); // Output: ID-456
+
+        // 3. Unbound Instance Method Reference
+        // Method belongs to the type (String), but will be invoked on the elements at runtime
+        List<String> names = Arrays.asList("Alice", "Bob");
+        names.stream()
+             .map(String::toUpperCase) // Equivalent: s -> s.toUpperCase()
+             .forEach(System.out::println);
+
+        // 4. Constructor Reference
+        // Creates a new ArrayList when 'get()' is called
+        Supplier<List<String>> listSupplier = ArrayList::new; // Equivalent: () -> new ArrayList<>()
+        List<String> newList = listSupplier.get();
+        System.out.println("New list created: " + (newList != null));
+    }
+}
+
+class Prefixer {
+    private final String prefix;
+    public Prefixer(String prefix) { this.prefix = prefix; }
+    public void print(String val) { System.out.println(prefix + val); }
+}
+```
+
+---
+
+### 3. Deep Dive: Unbound Instance Methods (Type 3)
+
+**The Complexity of Type 3**
+The third type—reference to an instance method of an arbitrary object of a particular type (`ClassName::instanceMethodName`)—is notoriously confusing for developers.
+
+Why does `String::toUpperCase` work as a `Function<String, String>` when `toUpperCase()` takes *zero* arguments?
+
+**The Secret:** 
+When using an unbound instance method reference, the **first argument provided by the functional interface becomes the receiver/target of the method**. Any subsequent arguments are passed as parameters to the method.
+
+*   `String::toLowerCase` matches `Function<String, String>` because: `(String s) -> s.toLowerCase()`. The input `s` is the target.
+*   `String::concat` matches `BiFunction<String, String, String>` because: `(String s1, String s2) -> s1.concat(s2)`. `s1` is the target, `s2` is the parameter.
+
+```java
+import java.util.function.BiFunction;
+
+// Runnable Example: Demystifying Unbound Instance Methods
+public class UnboundInstanceDemo {
+    public static void main(String[] args) {
+        
+        // Example: public int String.compareTo(String anotherString)
+        // This is an instance method taking 1 argument.
+        // As a method reference, it requires 2 arguments: (target, parameter)
+        
+        BiFunction<String, Integer String,> compareToRef = String::compareTo;
+        
+        // Equivalent Lambda:
+        BiFunction<String, Integer String,> compareToLambda = (s1, s2) -> s1.compareTo(s2);
+        
+        System.out.println("Method Ref Result: " + compareToRef.apply("Apple", "Banana")); // < 0
+        System.out.println("Lambda Result: " + compareToLambda.apply("Apple", "Banana")); // < 0
+    }
+}
+```
+
+---
+
+### 4. Advanced Internals: `invokedynamic` and `LambdaMetafactory`
+
+**How it works under the hood**
+Method references do not generate anonymous inner classes at compile time. Just like lambda expressions, they are implemented using the JVM's `invokedynamic` instruction introduced in Java 7 and weaponized in Java 8.
+
+1.  **Compile Time:** The Java compiler (`javac`) emits an `invokedynamic` instruction. It does *not* create a `.class` file for the method reference.
+2.  **Runtime Linkage:** The first time the JVM hits this instruction, it triggers a Bootstrap Method (BSM), specifically `java.lang.invoke.LambdaMetafactory.metafactory()`.
+3.  **Dynamic Class Spin:** `LambdaMetafactory` generates a proxy class in-memory (using ASM bytecode manipulation) that implements the target functional interface.
+4.  **Method Handles:** For method references, `LambdaMetafactory` simply uses a `MethodHandle` pointing directly to the referenced method.
+
+**Bytecode Difference: Lambda vs. Method Reference**
+When you write `s -> System.out.println(s)`, the compiler often has to generate a hidden synthetic static method in your class (e.g., `lambda$main$0(String s)`) which wraps the call to `System.out.println(s)`. `LambdaMetafactory` links to this synthetic method.
+
+When you write `System.out::println`, the compiler creates *no synthetic method*. It tells `LambdaMetafactory` to link directly to `PrintStream.println(String)`. Thus, method references can result in slightly smaller bytecode and less class-file bloat than their lambda equivalents.
+
+---
+
+### 5. Memory and Performance: Capturing vs. Non-Capturing References
+
+Just like lambdas, method references have crucial memory implications based on whether they are "capturing" or "non-capturing".
+
+*   **Non-Capturing Method References:** These do not depend on external object state. `LambdaMetafactory` spins up the implementation class once and caches a **Singleton** instance of it. Reusing the reference requires zero memory allocation.
+    *   *Type 1 (Static):* `Integer::parseInt` (Singleton)
+    *   *Type 3 (Unbound Instance):* `String::toLowerCase` (Singleton)
+    *   *Type 4 (Constructor):* `ArrayList::new` (Singleton)
+*   **Capturing Method References:** These depend on an external object instance. The JVM must allocate a **new object on the heap** every time the reference is evaluated to store the reference to the captured object.
+    *   *Type 2 (Bound Instance):* `myObject::doSomething` (Allocates memory on every evaluation)
+
+```java
+import java.util.function.Supplier;
+
+// Runnable Example: Memory Profiling Concept
+public class CapturingDemo {
+    public static void main(String[] args) {
+        String dynamicStr = "Hello";
+
+        // NON-CAPTURING (Type 4)
+        // If this were inside a tight loop, it uses the SAME singleton instance of Supplier.
+        // Zero GC pressure.
+        Supplier<String> nonCapturing = String::new; 
+
+        // CAPTURING (Type 2)
+        // If this were inside a tight loop, it creates a NEW Supplier instance 
+        // every single time to hold the reference to 'dynamicStr'.
+        // High GC pressure in tight loops.
+        Supplier<String> capturing = dynamicStr::toUpperCase; 
+    }
+}
+```
+
+---
+
+### 6. Architectural Trade-offs: Method References vs. Lambda Expressions
+
+When should you use which?
+
+| Scenario | Recommendation | Reason |
+| :--- | :--- | :--- |
+| **Existing Method perfectly matches the signature** | **Method Reference** | Cleaner syntax, slightly smaller bytecode (no synthetic wrapper method). |
+| **Needs argument manipulation (e.g., flipping order)** | **Lambda Expression** | Method references map arguments strictly sequentially. If you need `(a, b) -> method(b, a)`, you *must* use a lambda. |
+| **Needs to handle checked exceptions** | **Lambda Expression** | You can wrap the call in a `try/catch` block inside a lambda body. A method reference cannot handle this natively without custom wrapper interfaces. |
+| **Passing constants or extra arguments** | **Lambda Expression** | E.g., `s -> myMethod(s, 42)` requires a lambda because `42` is a hardcoded additional argument. |
+
+---
+
+## Section 2: Recall Drills
+
+<Flashcard answer="A reference to an unbound instance method (Type 3). The functional interface must supply an instance of 'String' as its first argument, which becomes the receiver of the 'toLowerCase' method call." question="What type of method reference is `String::toLowerCase`, and how does it map its arguments?"/>
+
+<Flashcard answer="In a static method reference, the class itself owns the method (e.g., Math::max). In an unbound instance method reference (e.g., String::length), the method belongs to an instance of the class, and the first parameter passed into the functional interface acts as the target object." question="What is the functional difference between a Static Method Reference (Type 1) and an Unbound Instance Method Reference (Type 3)?"/>
+
+<Flashcard answer="No. Both use the 'invokedynamic' instruction and 'LambdaMetafactory' to dynamically link to the target method at runtime without generating an anonymous inner class file." question="Do Method References generate anonymous inner classes at compile time?"/>
+
+<Flashcard answer="A bound instance method reference (Type 2, e.g., myObject::print) is 'capturing'. It requires allocating a new object on the heap to store the reference to 'myObject'. The other types are typically non-capturing singletons." question="Which of the four types of method references is ALWAYS a 'capturing' reference, potentially increasing Garbage Collection pressure if evaluated inside a tight loop?"/>
+
+<Flashcard answer="Method references strictly map the functional interface's arguments to the target method's parameters sequentially. You cannot change the order, manipulate the arguments, or supply additional hardcoded constants." question="When are you forced to use a Lambda Expression instead of a Method Reference?"/>
+
+<Flashcard answer="The Java compiler creates a synthetic wrapper method for the lambda (e.g., lambda$0) and points invokedynamic to it. For a method reference, it skips the synthetic method and points invokedynamic directly to the target method, yielding slightly leaner bytecode." question="At the bytecode level, what is the slight advantage of using a Method Reference over a Lambda Expression that just calls a method?"/>
