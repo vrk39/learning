@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunklearning_wiki=self.webpackChunklearning_wiki||[]).push([["3220"],{1912(e){e.exports=JSON.parse('{"blogBasePath":"/learning/blog","blogTitle":"Blog","authorsListPath":"/learning/blog/authors"}')}}]);

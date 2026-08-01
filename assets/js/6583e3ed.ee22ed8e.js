@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunklearning_wiki=self.webpackChunklearning_wiki||[]).push([["4617"],{7190(e){e.exports=JSON.parse('{"metadata":{"permalink":"/learning/blog","page":1,"postsPerPage":10,"totalPages":1,"totalCount":4,"blogDescription":"Blog","blogTitle":"Blog"}}')}}]);
