@@ -1,0 +1,255 @@
+---
+id: java-servlets
+title: Java Servlets Masterclass
+---
+import Flashcard from '@site/src/components/Flashcard';
+
+## Table of Contents
+1. **Introduction to Servlets**: The Gateway to Java Web Development
+2. **The Servlet Lifecycle**: `init()`, `service()`, and `destroy()`
+3. **Core API Usage**: Handling HTTP Requests and Responses
+4. **Advanced Internals I: The Threading & Memory Model**
+5. **Advanced Internals II: Servlet Filters & The Chain of Responsibility**
+6. **Modern High-Performance Servlets**: Asynchronous Processing (Servlet 3.0+)
+7. **Architectural Trade-offs**: Raw Servlets vs. Spring MVC (Front Controller)
+8. **Section 2: Recall Drills (Flashcards)**
+
+---
+
+## Section 1: Deep Knowledge Guide
+
+### 1. Introduction to Servlets
+
+**Fundamentals**
+A Java Servlet is a Java class that extends the capabilities of a server that hosts applications accessed by means of a request-response programming model. While Servlets can respond to any type of request, they are almost exclusively used to handle HTTP requests.
+
+Servlets do not run independently; they execute inside a **Servlet Container** (like Apache Tomcat, Jetty, or Undertow). The container is responsible for managing the network sockets, parsing the raw HTTP text into Java objects, and routing the request to the correct Servlet.
+
+---
+
+### 2. The Servlet Lifecycle
+
+**Fundamentals**
+The Servlet container rigorously manages the lifecycle of a Servlet instance. There are three main phases:
+1.  **`init(ServletConfig config)`**: Called **exactly once** by the container when the Servlet is instantiated. Used for one-time setup (e.g., opening database connections).
+2.  **`service(ServletRequest req, ServletResponse res)`**: Called for **every single request** routed to this Servlet. In `HttpServlet`, this method inspects the HTTP method (GET, POST) and delegates to `doGet()`, `doPost()`, etc.
+3.  **`destroy()`**: Called **exactly once** when the container is shutting down or removing the Servlet. Used for cleanup.
+
+---
+
+### 3. Core API Usage: Handling HTTP Requests and Responses
+
+Since Servlet 3.0, defining a Servlet requires zero XML configuration (no `web.xml` needed); you simply use the `@WebServlet` annotation.
+
+```java
+import java.io.IOException;
+import java.io.PrintWriter;
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+// Runnable Example: A Modern HTTP Servlet
+// Note: Requires a Servlet Container (like Tomcat) and javax.servlet-api to run
+@WebServlet(name = "HelloServlet", urlPatterns = {"/hello"})
+public class HelloServlet extends HttpServlet {
+
+    @Override
+    public void init() throws ServletException {
+        System.out.println("1. Servlet is initializing...");
+    }
+
+    @Override
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) 
+            throws ServletException, IOException {
+        
+        // Read input (e.g., /hello?name=Alice)
+        String name = request.getParameter("name");
+        if (name == null) name = "World";
+
+        // Set response headers
+        response.setContentType("text/html");
+        response.setStatus(HttpServletResponse.SC_OK);
+
+        // Write response body
+        try (PrintWriter out = response.getWriter()) {
+            out.println("<h1>Hello, " + name + "!</h1>");
+        }
+    }
+
+    @Override
+    public void destroy() {
+        System.out.println("3. Servlet is being destroyed...");
+    }
+}
+```
+
+---
+
+### 4. Advanced Internals I: The Threading & Memory Model
+
+This is the most critical concept for interviews. 
+
+**The Default Singleton Model**
+By default, the Servlet container creates **only one instance** of your Servlet class. 
+When 1,000 concurrent users request `/hello`, the container uses a Thread Pool to assign a dedicated thread to each request. All 1,000 threads simultaneously execute the `service()` method of that **single Servlet instance**.
+
+**The Danger: Instance Variables**
+Because multiple threads share the same Servlet instance, **declaring mutable instance variables in a Servlet is catastrophic**. It leads to race conditions where User A might receive User B's data.
+
+```java
+import java.io.IOException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+@WebServlet("/thread-danger")
+public class UnsafeServlet extends HttpServlet {
+    
+    // DANGER: Instance variable shared by ALL threads!
+    private String sharedUserName; 
+
+    @Override
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        // Thread 1 sets the name for User A
+        sharedUserName = req.getParameter("name"); 
+        
+        try {
+            // Simulate processing time. Meanwhile, Thread 2 sets the name for User B!
+            Thread.sleep(1000); 
+        } catch (InterruptedException e) {}
+
+        // Thread 1 wakes up and reads the variable. 
+        // It now prints User B's name to User A's screen!
+        resp.getWriter().println("Hello, " + sharedUserName);
+    }
+}
+```
+*Rule of Thumb:* Never use instance variables for request-specific data. Always use local variables (which live safely on the thread stack) or the `HttpServletRequest` attributes.
+
+---
+
+### 5. Advanced Internals II: Servlet Filters 
+
+**Fundamentals**
+A `Filter` intercepts requests *before* they reach the Servlet and responses *after* they leave the Servlet. They are perfect for cross-cutting concerns: Authentication, Logging, CORS, and Data Compression.
+
+**Architecture: The Chain of Responsibility**
+Filters use the "Chain of Responsibility" design pattern. The container passes a `FilterChain` object to the filter. Calling `chain.doFilter(req, res)` passes control to the next filter in the chain, or finally to the Servlet itself.
+
+```java
+import java.io.IOException;
+import javax.servlet.Filter;
+import javax.servlet.FilterChain;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+import javax.servlet.annotation.WebFilter;
+import javax.servlet.http.HttpServletRequest;
+
+@WebFilter("/*") // Intercepts ALL requests
+public class LoggingFilter implements Filter {
+
+    @Override
+    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) 
+            throws IOException, ServletException {
+        
+        HttpServletRequest req = (HttpServletRequest) request;
+        long startTime = System.currentTimeMillis();
+        
+        System.out.println("Incoming request: " + req.getMethod() + " " + req.getRequestURI());
+        
+        // 🚨 CRITICAL: Must call doFilter to continue the chain, else the request halts here.
+        chain.doFilter(request, response);
+        
+        long duration = System.currentTimeMillis() - startTime;
+        System.out.println("Request processing time: " + duration + "ms");
+    }
+}
+```
+
+---
+
+### 6. Modern High-Performance Servlets: Asynchronous Processing
+
+**The C10k Problem (Thread-per-Request Bottleneck)**
+Historically, Tomcat allocated one thread per incoming request. If you had 200 HTTP worker threads, you could handle 200 concurrent requests. 
+If a Servlet performs a slow Database or API call taking 5 seconds, the HTTP thread is **blocked (parked)** doing nothing. If 200 users hit this slow endpoint, the entire server locks up, rejecting new connections.
+
+**The Fix: Servlet 3.0 `AsyncContext`**
+Servlet 3.0 (Java EE 6) introduced Asynchronous Servlets.
+Instead of blocking the Tomcat HTTP worker thread, the Servlet offloads the slow work to a secondary background thread pool. The container immediately reclaims the HTTP worker thread to accept new incoming connections. 
+
+```java
+import java.io.IOException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import javax.servlet.AsyncContext;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+// asyncSupported MUST be true
+@WebServlet(value = "/async", asyncSupported = true)
+public class AsyncServlet extends HttpServlet {
+    
+    // Background pool for heavy lifting
+    private static final ExecutorService WORKER_POOL = Executors.newFixedThreadPool(10);
+
+    @Override
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
+        // 1. Put the request in asynchronous mode. The HTTP thread is NOT blocked.
+        final AsyncContext asyncContext = req.startAsync();
+        
+        // 2. Offload the slow work to a separate thread pool
+        WORKER_POOL.submit(() -> {
+            try {
+                // Simulate slow DB call
+                Thread.sleep(3000); 
+                
+                asyncContext.getResponse().getWriter().println("Async work completed!");
+                
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                // 3. MUST explicitly call complete() to finish the HTTP response
+                asyncContext.complete();
+            }
+        });
+        
+        // 4. doGet returns immediately, freeing up the Tomcat worker thread!
+    }
+}
+```
+
+---
+
+### 7. Architectural Trade-offs: Raw Servlets vs. Frameworks
+
+Almost nobody writes raw Servlets for business logic today. Frameworks like Spring Web MVC sit on top of the Servlet API. 
+
+| Feature | Raw Servlets | Spring MVC (`DispatcherServlet`) |
+| :--- | :--- | :--- |
+| **Routing** | 1 Servlet Class per endpoint (`@WebServlet("/users")`). Leads to hundreds of classes. | **Front Controller Pattern:** One massive Servlet (`DispatcherServlet`) intercepts all requests and routes them to POJO `@Controller` methods. |
+| **Data Binding** | Manual extraction: `request.getParameter("id")` and parsing to `int`. | Automatic parameter mapping: `@RequestParam int id` maps instantly. |
+| **Coupling** | High. Code is tightly coupled to `HttpServletRequest` and `HttpServletResponse`. | Low. Controllers can be pure Java objects, making them highly unit-testable without mocking HTTP objects. |
+| **Performance** | Micro-optimized, minimal memory overhead. | Slight overhead due to reflection and framework lifecycle, but negligible in 99% of use cases. |
+
+---
+
+## Section 2: Recall Drills
+
+<Flashcard answer="The container instantiates a SINGLE instance of the Servlet. Multiple threads concurrently invoke the service() method on this same singleton instance." question="What is the default threading model for a Servlet instance handling concurrent requests?"/>
+
+<Flashcard answer="Because the Servlet is a singleton shared across all concurrent request threads. Using instance variables causes race conditions where threads overwrite each other's data." question="Why is it incredibly dangerous to use instance variables (class-level fields) to store request-specific data in a Servlet?"/>
+
+<Flashcard answer="init() (called once on startup), service() (called on every request to route to doGet/doPost), and destroy() (called once during shutdown)." question="What are the three primary lifecycle methods of a Servlet?"/>
+
+<Flashcard answer="By calling chain.doFilter(request, response). If this is omitted, the request is permanently halted at that filter and the response is sent back empty." question="In a Servlet Filter, how do you pass execution to the next filter or the target Servlet, and what happens if you forget to do it?"/>
+
+<Flashcard answer="It allows the Servlet to offload long-running tasks to a separate background thread pool, immediately releasing the container's HTTP worker thread so it can accept new incoming connections without blocking." question="What specific performance bottleneck does Servlet 3.0's `AsyncContext` solve?"/>
+
+<Flashcard answer="Spring uses the Front Controller Pattern. It registers a single Servlet (DispatcherServlet) that intercepts all incoming traffic and mathematically routes the request to specific methods on Spring @Controller classes." question="How does Spring MVC utilize the Servlet API under the hood?"/>
