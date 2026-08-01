@@ -1,0 +1,230 @@
+---
+id: java-collections-framework
+title: Java Collections Framework Masterclass
+---
+import Flashcard from '@site/src/components/Flashcard';
+
+## Table of Contents
+1. **The Collections Hierarchy**: Interfaces and Design
+2. **Lists**: `ArrayList` vs `LinkedList` (Dynamic Arrays vs Pointers)
+3. **Sets**: `HashSet` vs `TreeSet` (Hashing vs Trees)
+4. **Maps**: `HashMap` Internals (Hashing, Collisions, and Treeification)
+5. **Queues & Deques**: `PriorityQueue` and `ArrayDeque`
+6. **Concurrent Collections**: `ConcurrentHashMap` and Fail-Fast vs Fail-Safe
+7. **Architectural Trade-offs**: Time Complexity Cheat Sheet
+8. **Recall Drills (Flashcards)**
+
+---
+
+## Section 1: Deep Knowledge Guide
+
+### 1. The Collections Hierarchy
+
+**Fundamentals**
+The Java Collections Framework (JCF) provides a unified architecture for storing and manipulating groups of objects. It is heavily interface-driven, allowing for high polymorphism.
+The core root interfaces are:
+*   **`Collection<E>`**: The root of the hierarchy (technically extending `Iterable<E>`).
+    *   **`List<E>`**: Ordered, indexed collections that allow duplicates.
+    *   **`Set<E>`**: Unordered collections that prohibit duplicates.
+    *   **`Queue<E>`**: Collections designed for holding elements prior to processing (usually FIFO).
+    *   **`Deque<E>`**: Double-ended queues, allowing insertion/removal at both ends.
+*   **`Map<K, V>`**: (Not a `Collection`) Represents key-value mappings. Keys are unique; values can be duplicated.
+
+---
+
+### 2. Lists: `ArrayList` vs `LinkedList`
+
+**Fundamentals**
+*   **`ArrayList`**: Backed by a resizable array. Best for random access (reads).
+*   **`LinkedList`**: Backed by a doubly-linked list. Best for frequent insertions/deletions at the ends, but terrible for random access.
+
+**Advanced Internals: Dynamic Array Resizing**
+An `ArrayList` starts with a default capacity (usually 10). When it gets full, it must grow. Under the hood, Java creates a new, larger array and uses the native `System.arraycopy()` to copy elements over.
+*   **Growth Formula**: `newCapacity = oldCapacity + (oldCapacity >> 1)`
+*   This bitwise right shift (`>> 1`) divides the capacity by 2, meaning the array grows by **50%**.
+
+**Advanced Internals: Cache Locality**
+While Big-O theory says `LinkedList` is O(1) for mid-list insertions (once the node is found), `ArrayList` often outperforms `LinkedList` in real-world benchmarks even for insertions. Why? **CPU Cache Locality**. Arrays store references in contiguous memory, minimizing CPU cache misses. `LinkedList` nodes are scattered randomly across the heap.
+
+```java
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+
+// Runnable Example: List Basics and Capacity
+public class ListDemo {
+    public static void main(String[] args) {
+        // ArrayList: Fast reads, slower inserts (due to shifting/resizing)
+        List<String> arrayList = new ArrayList<>(10); // Pre-sizing avoids resize overhead
+        arrayList.add("Java");
+        arrayList.add("Python");
+        System.out.println("ArrayList element: " + arrayList.get(0));
+
+        // LinkedList: Slower reads (O(N)), fast end-insertions
+        List<String> linkedList = new LinkedList<>();
+        linkedList.add("C++");
+        linkedList.add("Rust");
+        // Must traverse the list from the start to find index 1
+        System.out.println("LinkedList element: " + linkedList.get(1)); 
+    }
+}
+```
+
+---
+
+### 3. Sets: `HashSet` vs `TreeSet`
+
+**Fundamentals**
+*   **`HashSet`**: Unordered. Offers O(1) time complexity for add/remove/contains.
+*   **`TreeSet`**: Sorted based on natural ordering or a custom `Comparator`. Offers O(log N) time complexity.
+
+**Advanced Internals: Backed by Maps**
+Under the hood, a `HashSet` is nothing but a `HashMap`! When you add an element to a `HashSet`, Java inserts it as the **key** into a `HashMap`, with a dummy static object (`private static final Object PRESENT = new Object();`) as the value. 
+Similarly, `TreeSet` is backed by a `TreeMap` (which is a Red-Black Tree).
+
+---
+
+### 4. Maps: `HashMap` Internals
+
+This is arguably the most critical internal architecture in Java to understand.
+
+**Fundamentals**
+A `HashMap` stores key-value pairs. It uses the `hashCode()` method of the key to determine where to store the entry, and the `equals()` method to resolve duplicates.
+
+**Advanced Internals: The Array of Nodes (Buckets)**
+A `HashMap` is backed by an array of `Node<K,V>` (called buckets or bins). Default initial capacity is 16, and the default Load Factor is 0.75. When the map is 75% full, it doubles in size (rehashing).
+
+**Calculating the Index**
+When you call `map.put(key, value)`:
+1.  **Hash**: Java gets `key.hashCode()`. It runs it through a secondary hash function to spread higher bits to lower bits: `hash = (h = key.hashCode()) ^ (h >>> 16)`.
+2.  **Index**: It calculates the bucket index using bitwise AND: `index = (n - 1) & hash` (where `n` is the array length). This is why HashMap capacity *must* be a power of 2—it turns a slow modulo operation (`%`) into a blazing fast bitwise AND.
+
+**Handling Collisions & Treeification (Java 8+)**
+If two keys map to the same index (a collision), they are stored in a Linked List at that bucket.
+*   **The Vulnerability**: If a malicious user feeds your app keys that all hash to the same bucket (Hash DoS attack), operations degrade from O(1) to O(N).
+*   **The Fix**: In Java 8, if a bucket's linked list exceeds 8 elements (and total map capacity >= 64), the linked list transforms into a **Red-Black Tree** (`TreeNode`). This caps worst-case search time at O(log N). If the bin size shrinks below 6 during resizing, it turns back into a linked list.
+
+```java
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+
+// Runnable Example: HashMap and Custom Keys
+class Student {
+    int id;
+    String name;
+
+    Student(int id, String name) {
+        this.id = id;
+        this.name = name;
+    }
+
+    // A correct implementation of hashCode and equals is mandatory for Map keys
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Student student = (Student) o;
+        return id == student.id && Objects.equals(name, student.name);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, name);
+    }
+}
+
+public class HashMapDemo {
+    public static void main(String[] args) {
+        Map<Student, String> grades = new HashMap<>();
+        
+        Student s1 = new Student(1, "Alice");
+        Student s2 = new Student(1, "Alice"); // Logically equal to s1
+        
+        grades.put(s1, "A");
+        
+        // Because hashCode and equals are overridden, s2 correctly retrieves s1's value
+        System.out.println("Alice's grade: " + grades.get(s2)); 
+    }
+}
+```
+
+---
+
+### 5. Queues & Deques
+
+**Fundamentals**
+*   **`PriorityQueue`**: A queue that orders elements based on priority (natural ordering or `Comparator`), not FIFO.
+*   **`ArrayDeque`**: A resizable-array implementation of the `Deque` interface. It can be used as a Stack (LIFO) or a Queue (FIFO).
+
+**Advanced Internals**
+*   **`PriorityQueue` Memory**: Backed by a flat array, but logically structured as a **Binary Min-Heap**. The root element (index 0) is always the smallest. Insertions and deletions take O(log N) time because the heap must re-balance (sift-up/sift-down).
+*   **`ArrayDeque` vs `Stack`**: The legacy `java.util.Stack` class extends `Vector`, meaning every method is heavily synchronized and slow. `ArrayDeque` uses a circular array with `head` and `tail` pointers. It is the modern, non-thread-safe replacement for `Stack`.
+
+---
+
+### 6. Concurrent Collections: `ConcurrentHashMap` & Fail-Fast vs Fail-Safe
+
+**The `modCount` and Fail-Fast Iterators**
+Standard collections (`ArrayList`, `HashMap`) maintain a structural modification counter called `modCount`. If you iterate over an `ArrayList` and simultaneously modify it (without using the Iterator's `remove()` method), the iterator notices `modCount` has changed and immediately throws a `ConcurrentModificationException`. This is a **Fail-Fast** mechanism.
+
+**ConcurrentHashMap (Java 8 Internals)**
+Legacy `Hashtable` synchronized the entire object, causing massive thread contention.
+*   **Java 7 `ConcurrentHashMap`** used "Segmented Locking" (array of locks).
+*   **Java 8 `ConcurrentHashMap`** abandoned segments. It uses a node array and relies heavily on **CAS (Compare-And-Swap)** instructions for lock-free reads and inserts into empty bins. It only uses `synchronized` blocks on the *first node of a specific bucket* when updating an existing linked list or tree. This allows incredibly high throughput.
+*   Iterators in `ConcurrentHashMap` are **Fail-Safe** (weakly consistent). They do not throw `ConcurrentModificationException`.
+
+```java
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+// Runnable Example: ConcurrentHashMap Thread Safety
+public class ConcurrentMapDemo {
+    public static void main(String[] args) {
+        Map<String, Integer> map = new ConcurrentHashMap<>();
+        map.put("visitors", 0);
+
+        // Atomic operation - thread safe without explicit locks
+        // Multiple threads can call this simultaneously without overwriting data
+        map.compute("visitors", (key, val) -> val + 1);
+
+        System.out.println("Total visitors: " + map.get("visitors"));
+    }
+}
+```
+
+---
+
+### 7. Architectural Trade-offs: Time Complexity Cheat Sheet
+
+Use this table to select the correct collection based on Big-O performance requirements.
+
+| Collection | Read (Get) | Add | Remove | Contains | Notes |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **`ArrayList`** | **O(1)** | O(1) amortized | O(N) | O(N) | Resize causes occasional O(N) spike. High cache locality. |
+| **`LinkedList`** | O(N) | O(1) | O(1)* | O(N) | *O(1) if node is already known via iterator. Poor cache locality. |
+| **`ArrayDeque`** | O(1) (ends) | O(1) (ends) | O(1) (ends) | O(N) | Best for Stacks and Queues. |
+| **`HashSet`** | N/A | **O(1)** | **O(1)** | **O(1)** | Degrades to O(log N) if severe hash collisions occur. |
+| **`TreeSet`** | N/A | O(log N) | O(log N) | O(log N) | Elements remain sorted at all times. |
+| **`HashMap`** | **O(1)** | **O(1)** | **O(1)** | **O(1)** | Best general-purpose map. Memory intensive. |
+| **`TreeMap`** | O(log N) | O(log N) | O(log N) | O(log N) | Good for range queries (e.g., "get all keys between X and Y"). |
+
+---
+
+## Section 2: Recall Drills
+
+<Flashcard answer="It grows by 50% using a right bitwise shift: newCapacity = oldCapacity + (oldCapacity >> 1)." question="By how much does an ArrayList grow when it reaches its capacity limit in Java?"/>
+
+<Flashcard answer="Because ArrayList elements are contiguous in memory, leveraging CPU cache locality (Spatial Locality). LinkedList nodes are scattered across the heap, causing frequent cache misses." question="Why is ArrayList iteration usually faster than LinkedList iteration despite both being O(N) theoretically?"/>
+
+<Flashcard answer="A HashSet is internally backed by a HashMap. The HashSet elements are stored as keys in the HashMap, and a static dummy Object is used as the value for all entries." question="How is a HashSet implemented under the hood?"/>
+
+<Flashcard answer="It uses bitwise AND: `(n - 1) & hash`. This requires the capacity `n` to always be a power of 2, making the calculation much faster than using modulo (`%`)." question="How does a HashMap calculate the exact array index (bucket) for a given key's hash?"/>
+
+<Flashcard answer="To prevent Hash DoS attacks. If many keys collide in the same bucket, it transforms the O(N) linked list into an O(log N) Red-Black tree when the bucket size exceeds 8 (Treeification threshold)." question="Why did Java 8 introduce Red-Black trees inside HashMap buckets?"/>
+
+<Flashcard answer="Collections track a variable called `modCount`. If the collection is structurally modified outside the iterator's own methods, the iterator detects the mismatch and throws ConcurrentModificationException." question="What triggers a ConcurrentModificationException during iteration (Fail-Fast mechanism)?"/>
+
+<Flashcard answer="Java 8 abandoned Segmented Locking. It uses Compare-And-Swap (CAS) for lock-free operations on empty buckets, and only synchronizes the specific head node of a bucket when resolving collisions." question="How does ConcurrentHashMap achieve thread safety with high throughput in Java 8+?"/>
+
+<Flashcard answer="ArrayDeque. The legacy java.util.Stack extends Vector, meaning all its methods are heavily synchronized, causing unnecessary performance bottlenecks." question="What is the recommended replacement for the legacy `Stack` class, and why?"/>
