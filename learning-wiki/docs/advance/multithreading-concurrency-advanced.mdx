@@ -1,0 +1,71 @@
+---
+id: multithreading-concurrency-advanced
+title: Multithreading & Concurrency — Architect-Level Deep Dive
+---
+import Flashcard from '@site/src/components/Flashcard';
+
+## 1. Deep Knowledge Guide
+
+### 1.1 The Java Memory Model (JMM) — happens-before, not "instructions in order"
+The JMM (JLS Chapter 17, formalized in JSR-133) does not guarantee global instruction ordering across threads — it guarantees a set of **happens-before** relationships (program order within a thread, monitor lock/unlock, volatile write/read, thread start/join, and a few others). Without a happens-before edge between a write in thread A and a read in thread B, B is not guaranteed to ever observe A's write, and the compiler/JIT/CPU are free to reorder, cache in registers, or eliminate the write from B's perspective — this is *not* a bug, it's the specification, and it's why "it worked in my testing" is meaningless for concurrency correctness.
+
+```java
+class Flag {
+    boolean ready = false;          // no volatile — NOT guaranteed visible cross-thread
+    int value = 0;
+}
+// Thread A: f.value = 42; f.ready = true;
+// Thread B: while (!f.ready) {}  System.out.println(f.value); // may loop forever OR print 0
+```
+
+### 1.2 `volatile`: Visibility + Ordering, NOT Atomicity
+`volatile` establishes a happens-before edge on every write-then-read pair of that field: a write to a volatile field happens-before every subsequent read of it by any thread (enforced via memory barriers — on x86, a `StoreLoad` barrier after volatile writes). It does **not** make compound operations atomic — `volatile int counter; counter++;` is still a data race (read-modify-write is three separate steps).
+
+| Mechanism | Visibility | Atomicity | Mutual exclusion |
+|---|---|---|---|
+| `volatile` | Yes | No (for compound ops) | No |
+| `synchronized` | Yes (on lock release/acquire) | Yes (for the guarded block) | Yes |
+| `AtomicInteger`/CAS | Yes | Yes (single operation) | No (lock-free) |
+| Plain field | No guarantee | No | No |
+
+### 1.3 `synchronized`: Monitors, Lock Escalation, and Reentrancy
+Every object has an associated monitor. `synchronized` acquires it on entry, releases on exit (including via exception — compiler emits both normal and exceptional-exit `monitorexit`). HotSpot escalates lock representation for performance: **biased locking** (assumes a single thread repeatedly re-acquires the same lock — deprecated/removed as of Java 15 due to diminishing returns from other JIT improvements) → **thin lock** (CAS-based, uncontended) → **fat/inflated lock** (OS-level mutex, used only under real contention) — most locks in practice never inflate.
+
+`synchronized` is **reentrant**: a thread already holding a monitor can re-acquire it (nested calls to synchronized methods on the same object don't deadlock the thread against itself) — tracked via a per-monitor recursion count.
+
+### 1.4 `ExecutorService`, Thread Pools, and Queueing Strategy
+`ThreadPoolExecutor`'s core parameters (`corePoolSize`, `maxPoolSize`, `keepAliveTime`, `workQueue`) interact non-obviously: new threads are created up to `corePoolSize` first; **only once the queue is full** does the pool grow toward `maxPoolSize`; if `maxPoolSize` is also reached, the `RejectedExecutionHandler` fires. A common architect-level mistake: using an *unbounded* `LinkedBlockingQueue` (as `Executors.newFixedThreadPool` does) means `maxPoolSize` is effectively never reached — the queue absorbs unlimited backlog instead, risking OOM under sustained overload instead of backpressure.
+
+| Factory | Queue | Risk |
+|---|---|---|
+| `newFixedThreadPool(n)` | Unbounded `LinkedBlockingQueue` | Unbounded memory growth under overload; `maxPoolSize` never engages |
+| `newCachedThreadPool()` | `SynchronousQueue` (no buffering) | Unbounded *thread* growth under load — can exhaust OS threads |
+| `newSingleThreadExecutor()` | Unbounded queue | Same as fixed(1) — single point of serialization |
+| Custom `ThreadPoolExecutor` with bounded `ArrayBlockingQueue` + `CallerRunsPolicy` | Bounded | Recommended for production — explicit backpressure |
+
+### 1.5 `CompletableFuture` — Composable Async Pipelines
+`CompletableFuture` distinguishes methods with an `Async` suffix (run on a supplied/common `ForkJoinPool`) from non-suffixed ones (which may run on the *completing thread* — potentially the caller's thread if already complete, or an arbitrary worker thread otherwise). This distinction is a common production bug source: `thenApply` without `Async` can silently run expensive work on a shared I/O or event-loop thread if the future was already completed synchronously by that thread.
+
+```java
+CompletableFuture.supplyAsync(this::fetchUser, ioExecutor)
+    .thenApplyAsync(this::enrich, cpuBoundExecutor)   // explicit executor — predictable thread
+    .exceptionally(ex -> fallbackUser())
+    .thenAccept(this::publish);
+```
+
+### 1.6 Deadlock, Livelock, and Starvation
+Deadlock requires all four Coffman conditions simultaneously: mutual exclusion, hold-and-wait, no preemption, circular wait. The standard architectural mitigation is **consistent lock ordering** (always acquire locks in a globally agreed order, e.g., by object identity hash or a defined resource hierarchy) — breaking the circular-wait condition is usually the cheapest fix versus trying to eliminate the other three.
+
+## 2. Recall Drills (Flashcards)
+
+<Flashcard question="What does the Java Memory Model actually guarantee across threads, and what does it NOT guarantee?" answer="It guarantees a specific set of happens-before relationships (program order, monitor lock/unlock, volatile write/read, thread start/join). It does NOT guarantee global cross-thread instruction ordering — without a happens-before edge, a write in one thread may never become visible to another thread, and this is spec-compliant, not a bug." />
+
+<Flashcard question="Why is 'volatile int counter; counter++;' still not thread-safe despite volatile guaranteeing visibility?" answer="volatile only guarantees visibility and ordering of individual reads/writes, not atomicity of compound operations. counter++ is read-modify-write across three separate steps; two threads can both read the same value before either writes back, losing an increment — a classic data race despite volatile." />
+
+<Flashcard question="What are the three lock representations HotSpot escalates through for synchronized, from cheapest to most expensive?" answer="Biased locking (assumes single-thread repeated reacquisition — removed in Java 15+) → thin lock (CAS-based, for uncontended access) → fat/inflated lock (OS-level mutex, only under real contention). Most locks in practice never inflate past thin-lock level." />
+
+<Flashcard question="Why does Executors.newFixedThreadPool(n) risk unbounded memory growth under sustained overload instead of applying backpressure?" answer="It uses an unbounded LinkedBlockingQueue internally. ThreadPoolExecutor only grows toward maxPoolSize once the queue is full — with an unbounded queue, that condition never triggers, so excess work queues up indefinitely instead of engaging rejection/backpressure, risking OOM." />
+
+<Flashcard question="Why can CompletableFuture.thenApply (without the Async suffix) be a production bug source in latency-sensitive systems?" answer="Non-Async variants may execute on the COMPLETING thread — which could be the caller's own thread (if the future was already done) or a shared I/O/event-loop thread. This can silently run expensive CPU-bound work on a thread that should stay free, causing unexpected latency or thread starvation elsewhere." />
+
+<Flashcard question="What is the standard architectural fix for deadlock, and which Coffman condition does it break?" answer="Enforce a consistent, globally agreed lock acquisition order (e.g., by object identity hash or a defined resource hierarchy) across all code paths. This breaks the 'circular wait' Coffman condition, which is typically the cheapest of the four necessary conditions to eliminate." />

@@ -1,0 +1,49 @@
+---
+id: annotations-advanced
+title: Annotations — Architect-Level Deep Dive
+---
+import Flashcard from '@site/src/components/Flashcard';
+
+## 1. Deep Knowledge Guide
+
+### 1.1 Retention Policies — Where an Annotation Actually Lives
+`@Retention` controls how far an annotation survives past source code, and this choice has real architectural consequences:
+
+| `RetentionPolicy` | Present in `.class` file? | Available via reflection at runtime? | Typical use |
+|---|---|---|---|
+| `SOURCE` | No — discarded by the compiler | No | `@Override`, `@SuppressWarnings` — purely compile-time checks/documentation |
+| `CLASS` (default if unspecified) | Yes | No — JVM doesn't load it into memory for reflection by default | Bytecode-processing tools (older annotation processors, some bytecode-weaving frameworks) |
+| `RUNTIME` | Yes | Yes, via `getAnnotation()`/`isAnnotationPresent()` | Framework annotations Spring/Hibernate/JUnit need to inspect dynamically (`@Autowired`, `@Entity`, `@Test`) |
+
+Choosing `SOURCE` when a framework actually needs runtime inspection is a real, easy-to-make bug — the annotation compiles fine and looks correct in the IDE, but `getAnnotation()` silently returns `null` at runtime because the annotation was stripped from the class file entirely.
+
+### 1.2 Annotation Processing — Two Fundamentally Different Mechanisms
+**Compile-time annotation processing** (`javax.annotation.processing.Processor`, run by `javac` itself via the Pluggable Annotation Processing API) generates new source files *during* compilation — this is how Lombok, Dagger, and MapStruct generate boilerplate code with zero runtime reflection cost, because by the time the application actually runs, the generated code is just ordinary compiled Java with no annotation-processing machinery involved at all.
+
+**Runtime annotation processing** (reflection-based, `RUNTIME` retention + `Class.getAnnotations()`) is what Spring/Hibernate/JUnit do — inspecting annotations on live `Class`/`Method`/`Field` objects during application startup or test execution. This is architecturally more flexible (works against classes it didn't compile, supports dynamic bean wiring decided by configuration) but pays a real reflection cost and defers all validation to runtime rather than compile time.
+
+The architect-level trade-off: compile-time processing catches errors earlier and has zero runtime cost, but requires build-tool integration and can't adapt to information only known at runtime (e.g., which beans are actually on the classpath in a given deployment); runtime processing is flexible but slower and pushes error discovery later into the development/deployment cycle.
+
+### 1.3 `@Target` — Restricting Where an Annotation Can Be Applied
+`@Target(ElementType.METHOD)` (or `TYPE`, `FIELD`, `PARAMETER`, `CONSTRUCTOR`, `ANNOTATION_TYPE` for meta-annotations, `TYPE_USE` since Java 8 for annotating type usages like generic type arguments or casts) is compiler-enforced — misapplying an annotation to a disallowed element type is a **compile error**, not a runtime surprise, which is why well-designed custom annotations should always specify `@Target` explicitly rather than leaving it unrestricted (the default, if omitted, permits the annotation almost anywhere, weakening the API contract the annotation is meant to express).
+
+### 1.4 Meta-Annotations and Composed Annotations (Spring's Pattern)
+An annotation can itself be annotated (`@Retention`, `@Target`, and framework-specific meta-annotations). Spring extensively uses this for **composed annotations**: `@RestController` is itself annotated with `@Controller` and `@ResponseBody`, and Spring's annotation-processing machinery walks the meta-annotation graph to discover the "effective" set of annotations — meaning custom composed annotations (`@MyCustomEndpoint` combining several Spring stereotypes) work identically to using the underlying annotations directly, a pattern architects use heavily to reduce boilerplate across many similarly-configured classes/methods.
+
+### 1.5 Reading Annotation Values at Runtime — the Actual Mechanism
+Annotation instances retrieved via reflection (`Method.getAnnotation(MyAnnotation.class)`) are **JDK-generated dynamic proxy objects** implementing the annotation interface — there is no hand-written class backing `@interface MyAnnotation`; the JVM synthesizes a proxy at first request whose method implementations read values out of the constant-pool-encoded annotation data in the class file. This is why annotation "instances" support `equals()`/`hashCode()` based on their element values (per the `Annotation` interface's documented contract) despite having no conventional implementing class you ever wrote.
+
+### 1.6 Repeatable Annotations (Java 8+)
+`@Repeatable(Schedules.class)` lets the same annotation type be applied multiple times to one element; the compiler transparently wraps repeated occurrences into the specified container annotation (`@Schedules({@Schedule(...), @Schedule(...)})`) — `getAnnotationsByType()` transparently unwraps the container for callers, while `getAnnotation()` (singular) only sees the container itself (or null if no container is present and the annotation wasn't repeated) — a subtle API distinction that catches developers who only check the singular form.
+
+## 2. Recall Drills (Flashcards)
+
+<Flashcard question="Why would a framework annotation like Spring's @Autowired silently 'stop working' (getAnnotation() returns null) if someone changed its @Retention from RUNTIME to SOURCE?" answer="SOURCE-retained annotations are discarded entirely by the compiler and never written into the .class file — the code compiles fine and looks correct, but there's nothing left for reflection to find at runtime. RUNTIME retention is required for the annotation bytes to be written into the class file AND made available via getAnnotation()/isAnnotationPresent() at runtime." />
+
+<Flashcard question="What is the fundamental architectural difference between compile-time annotation processing (like Lombok) and runtime annotation processing (like Spring's component scanning)?" answer="Compile-time processing (via the Pluggable Annotation Processing API) generates actual source/bytecode DURING compilation, so the running application has zero reflection overhead and no annotation-processing machinery at runtime — errors are caught at build time. Runtime processing inspects RUNTIME-retained annotations via reflection during application startup/execution — more flexible (can react to what's actually on the classpath) but pays a real reflection cost and defers validation to runtime." />
+
+<Flashcard question="Why does misapplying a custom annotation with @Target(ElementType.METHOD) to a field produce a compile error rather than a runtime failure?" answer="@Target is enforced by the compiler itself as part of type checking — it's not metadata merely consulted at runtime. The compiler rejects the invalid placement during compilation, giving fail-fast feedback rather than allowing an incorrectly-placed annotation to compile and only fail (or silently do nothing) when reflectively inspected later." />
+
+<Flashcard question="How does Spring's @RestController work as a 'composed annotation', and what does Spring's processing machinery actually do to recognize it?" answer="@RestController is itself annotated with @Controller and @ResponseBody (meta-annotations). Spring's component-scanning machinery walks the meta-annotation graph on any discovered class, treating a class annotated with @RestController as if it carried BOTH @Controller and @ResponseBody directly — letting architects create custom composed annotations that bundle several stereotypes without any special-casing beyond normal meta-annotation traversal." />
+
+<Flashcard question="What actually IS the object returned by Method.getAnnotation(MyAnnotation.class) at runtime, given that '@interface MyAnnotation' has no hand-written implementing class?" answer="It's a JDK-generated dynamic proxy implementing the MyAnnotation interface, synthesized on first request. Its method implementations read the annotation's element values out of the constant-pool-encoded annotation data stored in the class file — there is no conventional compiled class backing it, yet it correctly implements equals()/hashCode() per the Annotation interface's contract." />

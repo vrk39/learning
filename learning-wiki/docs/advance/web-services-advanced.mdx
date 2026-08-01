@@ -1,0 +1,59 @@
+---
+id: web-services-advanced
+title: Web Services (REST & SOAP) — Architect-Level Deep Dive
+---
+import Flashcard from '@site/src/components/Flashcard';
+
+## 1. Deep Knowledge Guide
+
+### 1.1 REST — What "RESTful" Actually Constrains (Richardson Maturity Model)
+Roy Fielding's REST is an architectural *style* defined by constraints (client-server, statelessness, cacheability, uniform interface, layered system, optional code-on-demand) — most "REST APIs" in practice only reach **Level 2** of the Richardson Maturity Model (proper HTTP verbs + resource URIs), not **Level 3** (HATEOAS — responses include hypermedia links describing available next actions, making the API self-describing/navigable without out-of-band documentation). Understanding this distinction matters architecturally: true HATEOAS reduces client-server coupling to URL structure (clients follow links rather than hardcoding paths) but is rarely implemented in practice due to added complexity for marginal benefit in most internal-service contexts.
+
+### 1.2 Statelessness — the Constraint With the Biggest Scaling Payoff
+REST's statelessness constraint means **each request must contain all information needed to process it** (auth token, not a server-side session lookup) — this is precisely what makes REST services trivially horizontally scalable behind a load balancer with no sticky-session requirement (contrast with the `HttpSession` scaling problem discussed in the Servlets doc). This is the single biggest architectural payoff of REST's design and the core reason JWT-based auth pairs naturally with REST API design.
+
+### 1.3 Idempotency and Safety — HTTP Method Semantics That Matter for Retries
+| Method | Safe (no side effects) | Idempotent (repeat = same result) | Typical use |
+|---|---|---|---|
+| `GET` | Yes | Yes | Read |
+| `PUT` | No | Yes | Full replace |
+| `DELETE` | No | Yes (deleting an already-deleted resource is still "deleted") | Remove |
+| `POST` | No | No | Create / non-idempotent action |
+| `PATCH` | No | Not guaranteed (depends on patch semantics) | Partial update |
+
+Idempotency is what makes **safe automatic retry** possible at the infrastructure level (load balancers, client libraries retrying on timeout) — retrying a `GET`/`PUT`/`DELETE` after an ambiguous timeout (request may or may not have reached the server) is safe; blindly retrying a `POST` can create duplicate resources (the classic "double-submit" bug), which is why idempotency keys (client-generated unique request IDs, deduplicated server-side) are a standard pattern for making `POST` operations safely retryable.
+
+### 1.4 SOAP vs. REST — Why SOAP Persists in Certain Domains
+SOAP (XML envelope, WSDL contract, WS-* extensions like WS-Security, WS-ReliableMessaging, WS-AtomicTransaction) provides a strongly-typed, machine-verifiable contract (WSDL) and built-in support for things REST leaves to convention (distributed transactions, guaranteed delivery, standardized security tokens) — which is precisely why it persists in enterprise/financial/regulated integrations (banking, insurance, government) where these guarantees are contractually or regulatorily required, despite REST's dominance for public/internal web APIs due to lower overhead and simpler tooling.
+
+| Aspect | REST | SOAP |
+|---|---|---|
+| Payload | Usually JSON, any format really | XML only (envelope-defined) |
+| Contract | Informal (OpenAPI/Swagger, optional) | Formal, machine-verifiable WSDL |
+| Transport | HTTP-centric | Transport-agnostic (HTTP, SMTP, JMS...) |
+| Built-in transaction/security standards | No — build on top (OAuth, custom) | Yes — WS-* standards |
+| Overhead | Lower | Higher (envelope, verbose XML) |
+
+### 1.5 Caching — REST's Uniform Interface Advantage
+Because REST resources map to URIs and `GET` is defined as safe/cacheable, standard HTTP caching infrastructure (browser caches, CDNs, reverse proxies) works transparently with proper `Cache-Control`/`ETag`/`Last-Modified` headers — an architectural advantage SOAP (typically `POST`-only, even for reads, due to its RPC-style envelope model) largely forfeits, since intermediary caches can't safely cache arbitrary `POST` bodies.
+
+### 1.6 Versioning Strategies and Their Trade-offs
+
+| Strategy | Example | Trade-off |
+|---|---|---|
+| URI path | `/v2/orders` | Simple, cache-friendly, but "pollutes" the resource identity concept |
+| Header-based | `Accept: application/vnd.api+json;version=2` | Cleaner URIs, harder to test/browse manually |
+| Query param | `/orders?version=2` | Simple but breaks caching semantics for some proxies |
+| No versioning, additive-only evolution | New optional fields only, never remove/rename | Requires strict discipline; avoids version proliferation entirely |
+
+## 2. Recall Drills (Flashcards)
+
+<Flashcard question="What distinguishes Richardson Maturity Model Level 2 (typical 'REST API') from Level 3 (true HATEOAS), and why is Level 3 rarely implemented?" answer="Level 2 uses proper HTTP verbs and resource-oriented URIs but requires out-of-band documentation for clients to know what actions are available. Level 3 (HATEOAS) embeds hypermedia links in responses describing valid next actions, making the API self-describing/navigable without external docs — rarely implemented because it adds real client/server complexity for marginal benefit in most internal-service contexts." />
+
+<Flashcard question="Why does REST's statelessness constraint enable trivial horizontal scaling, in contrast to server-side session-based systems?" answer="Statelessness requires every request to carry all information needed to process it (e.g., an auth token) rather than relying on server-side session lookup. This means any server instance can handle any request with no sticky-session routing or session-store synchronization required — the same scaling problem HttpSession creates for traditional servlet apps simply doesn't exist." />
+
+<Flashcard question="Why is retrying a POST after an ambiguous network timeout dangerous, while retrying a PUT or DELETE is safe, and what pattern fixes POST retries?" answer="POST is not idempotent — a second attempt (after the first may have already succeeded server-side) can create a duplicate resource. PUT/DELETE are idempotent, so repeating them produces the same end state regardless of retry count. The fix for safe POST retries is a client-generated idempotency key that the server deduplicates against on retry." />
+
+<Flashcard question="Why does SOAP persist in regulated enterprise/financial integrations despite REST dominating public APIs?" answer="SOAP's WS-* extensions provide standardized, built-in support for distributed transactions (WS-AtomicTransaction), guaranteed delivery (WS-ReliableMessaging), and formal security tokens (WS-Security), backed by a machine-verifiable WSDL contract — guarantees that regulated domains often require contractually, which REST leaves entirely to ad-hoc convention and custom tooling." />
+
+<Flashcard question="Why does standard HTTP caching infrastructure (CDNs, reverse proxies) work transparently with REST GET requests but generally not with SOAP calls?" answer="REST GET is explicitly defined as safe and cacheable against a resource URI, so intermediaries can cache responses using standard Cache-Control/ETag semantics. SOAP typically uses POST for all operations (including reads) due to its RPC-style envelope model, and intermediaries cannot safely cache arbitrary POST request/response pairs by default." />

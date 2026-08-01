@@ -1,0 +1,67 @@
+---
+id: spring-framework-advanced
+title: Spring Framework — Architect-Level Deep Dive
+---
+import Flashcard from '@site/src/components/Flashcard';
+
+## 1. Deep Knowledge Guide
+
+### 1.1 The IoC Container and Bean Lifecycle
+Spring's `ApplicationContext` builds a **bean definition graph** from configuration (annotations, XML, or Java `@Configuration`) *before* instantiating anything — this two-phase model (define, then instantiate/wire) is what allows Spring to detect certain configuration problems (like unsatisfiable dependencies) at startup rather than lazily at first use, and it's what powers `BeanFactoryPostProcessor` (operates on bean *definitions*, before instantiation) versus `BeanPostProcessor` (operates on bean *instances*, after instantiation) — a distinction that trips up many "intermediate" Spring developers who conflate the two extension points.
+
+Bean lifecycle order: constructor → dependency injection (field/setter) → `@PostConstruct` → `BeanPostProcessor.postProcessAfterInitialization` (this is where AOP proxies get created, wrapping the raw bean) → bean ready for use → `@PreDestroy` on container shutdown.
+
+### 1.2 Constructor Injection vs. Field Injection — the Architect's Default
+Field injection (`@Autowired` on a field) is discouraged at architect level for concrete reasons, not just style preference: it makes the class **instantiable in an invalid state** via plain `new` (bypassing Spring), it hides mandatory dependencies (no compiler-enforced "this class requires X"), and it makes the class **untestable without reflection or a Spring context** in unit tests. Constructor injection makes dependencies explicit, enables `final` fields (immutability), fails fast at object-construction time if a dependency is missing, and works naturally with plain JUnit tests (`new MyService(mockDep)`, no Spring/Mockito-reflection tricks needed).
+
+```java
+// Preferred — dependencies are explicit, final, and testable with plain `new`
+@Service
+public class OrderService {
+    private final PaymentClient paymentClient;
+    public OrderService(PaymentClient paymentClient) { this.paymentClient = paymentClient; }
+}
+```
+
+### 1.3 AOP — Proxy-Based, Not True Bytecode Weaving (by default)
+Spring AOP (as opposed to full AspectJ) works via **runtime proxies**: either a JDK dynamic proxy (if the bean implements at least one interface — proxies the interface) or a CGLIB subclass proxy (if not, or forced via `proxyTargetClass=true` — proxies the concrete class by subclassing it). This has a critical, frequently-missed architectural consequence: **self-invocation bypasses the proxy** — calling another `@Transactional`/`@Cacheable`-annotated method on `this` from within the same bean does **not** go through the proxy, so the aspect (transaction boundary, cache check, etc.) silently doesn't apply.
+
+```java
+@Service
+public class ReportService {
+    @Transactional
+    public void generate() {
+        this.saveInternal(); // BYPASSES the proxy — @Transactional on saveInternal() does NOT apply
+    }
+    @Transactional
+    public void saveInternal() { ... }
+}
+```
+
+The standard fixes: inject a self-reference bean (`@Lazy` self-autowiring), split the annotated method into a separate bean, or switch to full AspectJ compile-time/load-time weaving where this limitation doesn't exist (at the cost of a build-time weaving step).
+
+### 1.4 `@Transactional` Propagation and Rollback Rules
+| Propagation | Behavior when called within an existing transaction |
+|---|---|
+| `REQUIRED` (default) | Joins the existing transaction |
+| `REQUIRES_NEW` | Suspends the current transaction, starts a brand-new independent one |
+| `NESTED` | Uses a savepoint within the current transaction (rollback only to the savepoint) |
+| `MANDATORY` | Throws if no transaction exists |
+| `NOT_SUPPORTED` | Suspends any existing transaction, runs non-transactionally |
+
+By default, Spring only rolls back on **unchecked** exceptions (`RuntimeException`/`Error`) — a checked exception thrown from a `@Transactional` method **commits** the transaction unless `rollbackFor` is explicitly specified. This default (inherited from EJB conventions) is a common production surprise for teams using checked exceptions for business-error signaling.
+
+### 1.5 Bean Scopes and Their Concurrency Implications
+`singleton` (default) — one instance per container, shared across all concurrent requests, so mutable instance state has the same thread-safety hazard as a shared servlet instance. `prototype` — new instance per injection point/lookup, no sharing. `request`/`session` (web-aware contexts) — scoped to the HTTP request/session, requiring a scope-aware proxy (`proxyMode=ScopedProxyMode.TARGET_CLASS`) when injected into a singleton bean, since the singleton is constructed once but must transparently delegate to the *current* request's instance on each call.
+
+## 2. Recall Drills (Flashcards)
+
+<Flashcard question="What's the key difference between BeanFactoryPostProcessor and BeanPostProcessor in terms of WHAT they operate on and WHEN?" answer="BeanFactoryPostProcessor operates on bean DEFINITIONS (metadata) before any bean is instantiated — useful for programmatically altering configuration. BeanPostProcessor operates on actual bean INSTANCES, running after instantiation/dependency injection but around initialization callbacks — this is the extension point AOP proxy creation hooks into." />
+
+<Flashcard question="Beyond style, what three concrete architectural problems does field injection (@Autowired on a field) create that constructor injection avoids?" answer="1) The class becomes instantiable via plain 'new' in an invalid, half-wired state, bypassing Spring's guarantees. 2) Mandatory dependencies aren't compiler-enforced or visible in the constructor signature. 3) The class becomes hard to unit test without reflection or a Spring test context, since there's no constructor to pass mocks through directly." />
+
+<Flashcard question="Why does calling this.someTransactionalMethod() from within the same Spring-managed bean silently skip the @Transactional behavior?" answer="Spring AOP works via runtime proxies (JDK dynamic proxy or CGLIB) wrapping the raw bean. A self-invocation via 'this' calls the RAW object's method directly, never going through the proxy that applies the transactional interception — so the aspect (transaction start/commit/rollback) is silently bypassed entirely." />
+
+<Flashcard question="By default, does a checked exception thrown from a @Transactional method roll back the transaction? What must you do to change that?" answer="No — by default Spring only rolls back on unchecked exceptions (RuntimeException/Error), inherited from EJB convention. A checked exception COMMITS the transaction unless you explicitly specify @Transactional(rollbackFor = SomeCheckedException.class)." />
+
+<Flashcard question="Why does injecting a request-scoped bean into a singleton-scoped bean require a scoped proxy (proxyMode=TARGET_CLASS), and what would happen without it?" answer="The singleton is constructed exactly once at startup, but a request-scoped bean has a different instance per HTTP request. Without a scoped proxy, Spring would have to inject one fixed request-scoped instance into the singleton at startup — which no longer exists once that request ends. The scoped proxy defers resolution: it's a stand-in that looks up the CURRENT request's real instance on every method call." />

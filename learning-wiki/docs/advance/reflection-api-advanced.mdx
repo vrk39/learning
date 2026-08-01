@@ -1,0 +1,48 @@
+---
+id: reflection-api-advanced
+title: Reflection API — Architect-Level Deep Dive
+---
+import Flashcard from '@site/src/components/Flashcard';
+
+## 1. Deep Knowledge Guide
+
+### 1.1 What Reflection Actually Gives You — Runtime Introspection Against Erasure's Limits
+Reflection (`java.lang.reflect`, `Class<?>`) lets code inspect and manipulate classes, methods, fields, and constructors at runtime — critically, it operates against the **erased**, loaded `Class` object, which is why reflection can tell you a field's declared type (`Field.getType()`) but generally cannot recover a generic type argument that erasure discarded (`List<String>` field reflects as `List`, though `getGenericType()` can recover *declared* generic signatures preserved in the class file's `Signature` attribute for debugging/reflection purposes specifically — a partial exception carved out precisely because tooling needed it).
+
+### 1.2 Performance Cost — Why Reflection Is Slow, Precisely
+Reflective method invocation (`Method.invoke()`) is slower than a direct call for concrete, measurable reasons: (1) **access checks** on every call (unless `setAccessible(true)` bypasses them — itself a security-sensitive operation restricted/deprecated for JDK internals since the module system), (2) **argument boxing/unboxing** (primitives must be boxed into `Object[]` for the generic `invoke(Object, Object...)` signature), and (3) historically, an extra **indirection layer** — early JVM versions used a native, unoptimized dispatch path per reflective call; HotSpot mitigates this today by generating a bytecode-based accessor (`sun.reflect.GeneratedMethodAccessor`) after a call-count threshold (`-Dsun.reflect.inflationThreshold`, default 15), inlining and JIT-optimizing it like ordinary code — meaning *sustained* reflective calls in a hot loop eventually approach direct-call speed, but the first ~15 calls pay a real, measurable native-dispatch tax.
+
+### 1.3 `setAccessible(true)` and the Module System's Reflection Restrictions
+Pre-Java-9, `setAccessible(true)` could bypass `private`/`protected`/package-private access checks on essentially anything reachable. Since the Java Platform Module System (Java 9+), a module must explicitly `opens` a package (or `opens ... to specificModule`) for **deep reflection** (accessing non-public members) to be permitted across module boundaries — this is precisely why many libraries doing reflective field/method access (ORMs, DI frameworks, serialization libraries) needed `--add-opens` JVM flags or explicit `opens` directives when applications migrated to the module system, and it's a deliberate architectural tightening to prevent reflection from silently violating a module's intended encapsulation.
+
+### 1.4 Where Reflection Is Architecturally Justified vs. a Smell
+| Use case | Justified? | Why |
+|---|---|---|
+| Framework/library generic wiring (Spring DI, JUnit test discovery, Jackson serialization) | Yes | The framework genuinely cannot know concrete application types at its own compile time |
+| Plugin systems loading classes by name from config | Yes | Dynamic extensibility is the explicit design goal |
+| Application business logic bypassing encapsulation (`setAccessible` to read a private field instead of adding a getter) | No — smell | Defeats the type system and encapsulation for no architectural benefit; indicates a design gap that should be fixed at the API level instead |
+| Performance-critical hot-path dynamic dispatch | Generally no | `MethodHandle`s (see below) or a proper `Supplier`/`Function`-based strategy pattern are faster and safer alternatives |
+
+### 1.5 `MethodHandle`/`invoke dynamic` — the Modern, Faster Alternative
+`java.lang.invoke.MethodHandle` (introduced alongside `invokedynamic` in Java 7, and the mechanism underlying lambdas — see Lambda Expressions doc) offers a **type-checked**, JIT-friendlier alternative to classic reflection for cases needing dynamic dispatch: a `MethodHandle` is resolved and adapted once (via `MethodHandles.Lookup`), then invoked with argument types checked at the `invokeExact`/`invoke` call site rather than boxed through a generic `Object[]` — giving performance much closer to a direct call after JIT warmup, which is precisely why the JDK itself migrated its own internal dynamic-dispatch machinery (lambda metafactory, string concatenation) to `MethodHandle`s rather than classic reflection.
+
+### 1.6 Common Reflective Patterns and Their Failure Modes
+```java
+Class<?> clazz = Class.forName("com.example.PluginImpl"); // throws ClassNotFoundException if missing/typo'd
+Constructor<?> ctor = clazz.getDeclaredConstructor();
+ctor.setAccessible(true); // bypasses private constructor — throws InaccessibleObjectException if module doesn't 'open'
+Object instance = ctor.newInstance();
+```
+`Class.forName` triggers **class initialization** (running static initializers) by default, unlike `ClassLoader.loadClass` which only loads/links without initializing — a subtle but architecturally important distinction for plugin systems where eager static-initializer side effects (e.g., registering with a static registry) may or may not be desired at discovery time versus actual first-use time.
+
+## 2. Recall Drills (Flashcards)
+
+<Flashcard question="Why can reflection generally recover a field's declared TYPE but not the generic type ARGUMENT of a field like List<String>, and what's the partial exception?" answer="Type erasure discards generic type arguments from the runtime Class representation entirely — reflection operates against the erased Class object. The partial exception is that the compiler preserves DECLARED generic signatures in the class file's Signature attribute specifically for tooling/reflection purposes, recoverable via getGenericType()/getGenericParameterTypes() — but this is metadata about the SOURCE declaration, not something the erased runtime type system itself enforces or uses." />
+
+<Flashcard question="Name two concrete, measurable reasons Method.invoke() is slower than a direct method call, and how does HotSpot mitigate this after repeated calls?" answer="1) Access checks performed on every call (unless setAccessible bypasses them). 2) Primitive arguments must be boxed into an Object[] for the generic invoke(Object, Object...) signature. HotSpot mitigates sustained reflective calls by generating a bytecode-based accessor after a call-count threshold (~15 calls, GeneratedMethodAccessor), which the JIT can then inline and optimize like ordinary code — so hot-loop reflection eventually approaches direct-call speed, but early calls pay a real dispatch tax." />
+
+<Flashcard question="Since Java 9's module system, what must a module do to permit deep reflection (accessing non-public members) into one of its packages from another module?" answer="The module must explicitly 'opens' that package (optionally scoped to a specific requesting module via 'opens pkg to specificModule'). Without this, setAccessible(true) on a non-public member from another module throws InaccessibleObjectException — a deliberate architectural tightening versus pre-Java-9's essentially unrestricted deep reflection." />
+
+<Flashcard question="Why are MethodHandles generally a faster, safer alternative to classic reflection for dynamic dispatch in performance-sensitive code?" answer="A MethodHandle is resolved and type-adapted once via MethodHandles.Lookup, then invoked with argument types checked directly at the call site rather than boxed through a generic Object[] like Method.invoke(). This gives performance much closer to a direct call after JIT warmup — which is why the JDK itself uses MethodHandles (not classic reflection) internally for lambda metafactory dispatch and invokedynamic-based string concatenation." />
+
+<Flashcard question="What's the key behavioral difference between Class.forName(name) and ClassLoader.loadClass(name) regarding static initializers?" answer="Class.forName(name) triggers full class initialization by default (running static initializers) as part of loading. ClassLoader.loadClass(name) only loads and links the class without initializing it — static initializers run later, only at actual first active use. This matters for plugin systems where eager static-initializer side effects (e.g., self-registration) may be wanted at discovery time or deferred to first real use." />

@@ -1,0 +1,51 @@
+---
+id: time-api-advanced
+title: java.time API — Architect-Level Deep Dive
+---
+import Flashcard from '@site/src/components/Flashcard';
+
+## 1. Deep Knowledge Guide
+
+### 1.1 Why java.time (JSR-310) Replaced java.util.Date/Calendar
+`Date`/`Calendar` were mutable, not thread-safe, had a confusingly zero-indexed month field (a decades-long bug source), and conflated "instant in time" with "human-readable representation" in one poorly-designed type. `java.time` (Joda-Time's design, adopted into the JDK for Java 8) is built on **immutability** (every operation returns a new instance — thread-safe by construction, safe to share/cache freely) and a clean separation of concepts:
+
+| Type | Represents | Timezone-aware? |
+|---|---|---|
+| `Instant` | A point on the UTC timeline (epoch-seconds + nanos) | No timezone — always UTC |
+| `LocalDate`/`LocalTime`/`LocalDateTime` | Human calendar date/time, no timezone attached | No |
+| `ZonedDateTime` | A `LocalDateTime` + `ZoneId`, resolved against timezone rules | Yes |
+| `OffsetDateTime` | A `LocalDateTime` + fixed `ZoneOffset` (no DST rules) | Fixed offset only |
+| `Duration` | Machine-based time amount (seconds/nanos) — for `Instant`/`ZonedDateTime` differences | N/A |
+| `Period` | Calendar-based amount (years/months/days) — for `LocalDate` differences | N/A |
+
+### 1.2 `Instant` vs. `ZonedDateTime` — the Architect-Critical Distinction
+**Rule of thumb for backend systems**: store and compute in `Instant` (or `UTC`-normalized) internally; convert to `ZonedDateTime` only at presentation/UI boundaries. Storing `LocalDateTime` (no zone) for events tied to a real moment in time is a recurring production bug — it's ambiguous during DST transitions and meaningless without an implicit assumed zone that inevitably gets lost or misconfigured across services.
+
+```java
+Instant now = Instant.now();                        // UTC point in time — safe to store/compare
+ZonedDateTime userView = now.atZone(ZoneId.of("Asia/Kolkata")); // convert only for display
+```
+
+### 1.3 `Duration` vs. `Period` — Machine Time vs. Calendar Time
+`Duration.ofDays(1)` is *exactly* 24 hours (86400 seconds) — a fixed machine-time quantity. `Period.ofDays(1)` is *calendrically* "add one day," which can be 23, 24, or 25 real hours across a DST transition. Using `Duration` for calendar-semantic operations ("add a month") or `Period` for precise machine-time deadlines ("timeout in 30 minutes") is a subtle correctness bug — architects should pick based on whether the operation is **calendar-relative** (use `Period`, applies to `LocalDate`) or **time-relative** (use `Duration`, applies to `Instant`/`ZonedDateTime`).
+
+### 1.4 DST and Timezone Rule Resolution
+`ZoneId` doesn't store a fixed offset — it references the tz database (IANA), which encodes historical and future DST/offset-change rules. `ZonedDateTime.of(localDateTime, zoneId)` must resolve **ambiguous** (during fall-back, a local time occurs twice) and **invalid** (during spring-forward, a local time never occurs — the "gap") local date-times per a documented strategy (`ZonedDateTime` picks the earlier of two valid offsets for ambiguous times by default, and shifts forward by the gap duration for invalid ones) — this is exactly why storing only `LocalDateTime` for scheduling is dangerous near DST boundaries.
+
+### 1.5 Formatting and Parsing — Thread-Safety Win
+`SimpleDateFormat` (legacy) is **not thread-safe** — sharing one instance across threads (a common historical bug, e.g., as a `static` field) causes silent data corruption under concurrency. `DateTimeFormatter` (java.time) is immutable and thread-safe by design, safely shared/cached as a `static final` field.
+
+```java
+static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX");
+// safe to share across all threads — no synchronization needed
+```
+
+## 2. Recall Drills (Flashcards)
+
+<Flashcard question="What is the single biggest architectural rule for choosing between Instant and ZonedDateTime in a backend system?" answer="Store and compute internally using Instant (UTC point in time) — it's unambiguous and DST-safe. Convert to ZonedDateTime only at presentation/UI boundaries. Storing LocalDateTime for real-world event timestamps is a common bug since it's ambiguous around DST transitions and meaningless without an implicit, easily-lost zone assumption." />
+
+<Flashcard question="What's the difference between Duration.ofDays(1) and Period.ofDays(1) across a daylight saving transition?" answer="Duration.ofDays(1) is always exactly 86400 seconds of machine time — it may land at a different wall-clock hour after a DST shift. Period.ofDays(1) is calendar-relative — 'the same time, next calendar day' — which can correspond to 23, 24, or 25 real hours depending on DST transitions in that zone." />
+
+<Flashcard question="Why is storing only LocalDateTime (no zone) dangerous for scheduling near a DST 'spring forward' or 'fall back' boundary?" answer="During spring-forward, some local times never occur (a 'gap'); during fall-back, some local times occur twice (ambiguous). ZonedDateTime resolves these per documented rules (shift past the gap; pick the earlier offset for ambiguity), but a bare LocalDateTime carries no zone information at all, so this resolution can't even be attempted correctly downstream." />
+
+<Flashcard question="Why is DateTimeFormatter safe to store as a static shared field while SimpleDateFormat historically was not?" answer="DateTimeFormatter instances are immutable by design (java.time's core principle) — thread-safe with no internal mutable state. SimpleDateFormat holds mutable internal Calendar state, so concurrent formatting/parsing on a shared instance causes silent data corruption — a well-known legacy bug class from treating it as a static field." />

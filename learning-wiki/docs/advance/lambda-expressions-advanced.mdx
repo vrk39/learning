@@ -1,0 +1,63 @@
+---
+id: lambda-expressions-advanced
+title: Lambda Expressions — Architect-Level Deep Dive
+---
+import Flashcard from '@site/src/components/Flashcard';
+
+## 1. Deep Knowledge Guide
+
+### 1.1 Lambdas Are Not Anonymous Classes — `invokedynamic` Internals
+A common misconception is that a lambda desugars to an anonymous inner class at compile time. It does not. `javac` compiles the lambda body into a **private synthetic method** on the enclosing class, and the call site becomes an `invokedynamic` instruction bound (at first invocation, lazily) via `LambdaMetafactory.metafactory` to generate an actual implementing class **at runtime**, using `MethodHandle`s. This avoids the class-loading cost of one `.class` file per lambda at compile time and lets the JVM generate/cache the implementation lazily and even share generated classes across structurally identical lambdas in some cases.
+
+Practical consequence: lambdas don't carry the class-loading and `.class` file bloat of pre-Java-8 anonymous class idioms, and the generated class is **not** predictable/reflectable the way `new Comparator<T>() {...}` was (its class name is JVM-internal and implementation-specific).
+
+### 1.2 Functional Interfaces and the SAM Contract
+A functional interface has exactly one **abstract** method (Single Abstract Method); `default` and `static` methods don't count. `@FunctionalInterface` is optional but recommended — it's a compile-time check, not a runtime requirement, that catches accidental addition of a second abstract method that would break every lambda implementing that interface.
+
+| Interface | Method | Use |
+|---|---|---|
+| `Function<T,R>` | `R apply(T t)` | Transform |
+| `Predicate<T>` | `boolean test(T t)` | Filter condition |
+| `Supplier<T>` | `T get()` | Lazy value production |
+| `Consumer<T>` | `void accept(T t)` | Side-effecting sink |
+| `BiFunction<T,U,R>` | `R apply(T t, U u)` | Two-arg transform |
+| `UnaryOperator<T>` | extends `Function<T,T>` | Same-type transform |
+
+### 1.3 Variable Capture: "Effectively Final" and Why
+A lambda can only capture local variables that are **effectively final** (never reassigned after initialization, even if not explicitly marked `final`). This is not an arbitrary restriction: local variables live on the **stack frame**, which is destroyed when the enclosing method returns — but a lambda can outlive its enclosing method call (e.g., stored and invoked later). The compiler solves this by **copying the variable's value** into the generated lambda instance at creation time; if the source variable could be reassigned afterward, the lambda's copy and the "live" variable would silently diverge, violating the illusion of closing over the variable itself.
+
+```java
+List<Runnable> tasks = new ArrayList<>();
+for (int i = 0; i < 3; i++) {
+    int captured = i;                       // must be effectively final
+    tasks.add(() -> System.out.println(captured));
+}
+// each lambda captured a DIFFERENT copy of `captured` per iteration
+```
+
+Instance fields (unlike locals) can be freely mutated inside a lambda, because the lambda captures `this` (a reference to the enclosing object), not the field's value directly — field access always goes through that live reference.
+
+### 1.4 Lambdas vs. Anonymous Classes — Real Semantic Differences
+
+| Aspect | Anonymous Class | Lambda |
+|---|---|---|
+| `this` | Refers to the anonymous instance itself | Refers to the ENCLOSING instance (lexical scoping) |
+| New scope? | Yes — own scope, can shadow outer variables | No — shares enclosing method's scope |
+| Compiled artifact | Separate `.class` file at compile time | `invokedynamic` + runtime-generated class |
+| Multiple abstract methods | Can implement any interface/abstract class | Only functional interfaces (single abstract method) |
+| Instantiation cost | New class load per distinct anonymous class | Lazy metafactory bootstrap, then cheap instantiation |
+
+### 1.5 Checked Exceptions in Lambdas
+None of the standard `java.util.function` interfaces declare checked exceptions in their SAM signature, so a lambda body that calls a checked-exception-throwing method must handle it locally (try/catch) or wrap it in an unchecked exception — you cannot simply propagate a checked exception through `Function<T,R>.apply()`. This is a deliberate library design constraint, not a language limitation (you *can* declare custom functional interfaces that throw checked exceptions).
+
+## 2. Recall Drills (Flashcards)
+
+<Flashcard question="Do lambdas compile to anonymous inner classes? What actually happens at the bytecode/runtime level?" answer="No. The lambda body becomes a private synthetic method on the enclosing class, and the call site is an invokedynamic instruction bound lazily (on first execution) via LambdaMetafactory.metafactory, which generates the implementing class at runtime using MethodHandles — avoiding a separate .class file per lambda at compile time." />
+
+<Flashcard question="Why can a lambda only capture 'effectively final' local variables, not freely-reassigned ones?" answer="Local variables live on the stack frame, which is destroyed when the enclosing method returns, but a lambda can outlive that call. The compiler copies the variable's VALUE into the lambda at creation time; if the source variable could later change, the lambda's frozen copy and the live variable would diverge — so only effectively-final (never-reassigned) locals are allowed." />
+
+<Flashcard question="Why can a lambda freely read and even trigger mutation of an enclosing instance field, while it cannot capture a reassigned local variable?" answer="A lambda captures 'this' (a live reference to the enclosing object) rather than copying field values directly. Field access inside the lambda always goes through that live reference, so field mutations are visible normally — unlike locals, which are copied by value at lambda-creation time." />
+
+<Flashcard question="What is the key semantic difference in 'this' binding between an anonymous class and a lambda implementing the same interface?" answer="In an anonymous class, 'this' refers to the anonymous class instance itself (its own scope). In a lambda, 'this' refers to the ENCLOSING instance — lambdas don't introduce a new scope, they share the enclosing method's lexical scope entirely." />
+
+<Flashcard question="Why can't you write Function<T,R> apply(T t) that throws a checked IOException directly in a lambda body without a try/catch?" answer="None of the standard java.util.function interfaces declare checked exceptions in their abstract method signature, so a lambda implementing them cannot propagate a checked exception — it must catch and handle it or rethrow as unchecked. This is a deliberate design choice of those specific interfaces, not a language-level restriction on lambdas in general." />

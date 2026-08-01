@@ -1,0 +1,73 @@
+---
+id: strings-arrays-advanced
+title: Strings & Arrays — Architect-Level Deep Dive
+---
+import Flashcard from '@site/src/components/Flashcard';
+
+## 1. Deep Knowledge Guide
+
+### 1.1 String Immutability and Internal Representation
+Since Java 9 (JEP 254, "Compact Strings"), `String` is backed by a `byte[]` plus a `coder` byte flagging `LATIN1` or `UTF16`. Pure Latin-1 strings use 1 byte/char; anything needing UTF-16 falls back to 2 bytes/char — halving memory for the common case without an API change.
+
+Immutability (via `final` fields, never exposing the backing array) buys thread-safety without synchronization, safe use as `HashMap` keys (hashcode cached, computed once), and safe string-pool interning.
+
+```java
+String a = "hello";
+String b = "hello";
+String c = new String("hello");
+System.out.println(a == b);          // true — both from the string pool
+System.out.println(a == c);          // false — new String() forces heap allocation
+System.out.println(a == c.intern()); // true
+```
+
+### 1.2 String Concatenation — Compiler and Runtime Internals
+Naive `+=` in a loop is effectively O(n²): each `+` historically desugared to `new StringBuilder().append(...).toString()`, discarding the buffer every iteration. Since Java 9 (JEP 280), `javac` emits `invokedynamic` bound to a `StringConcatFactory` strategy, computed and optimized at first call — faster than hand-rolled chains in many cases, but still no substitute for reusing one `StringBuilder` across a loop.
+
+```java
+String result = "";
+for (String s : parts) result += s;   // BAD — no shared buffer across iterations
+
+StringBuilder sb = new StringBuilder();
+for (String s : parts) sb.append(s);  // GOOD — amortized O(n)
+```
+
+### 1.3 Interning, the String Pool, and Metaspace
+The string constant pool moved from **PermGen** to the **main heap** in Java 8 (class metadata moved to native **Metaspace**). Pre-Java 8, excessive `intern()` could trigger `OutOfMemoryError: PermGen space`; post-Java 8, interned strings are ordinary GC-managed heap objects.
+
+### 1.4 `equals()`/`hashCode()` Contract and String's Cached Hash
+`String.hashCode()` computes `s[0]*31^(n-1) + ... + s[n-1]`, cached in a private `hash` field after first computation — a benign data race since recomputation is idempotent. 31 is an odd prime where `31*i == (i<<5) - i`, letting the JIT replace multiplication with a cheap shift-subtract.
+
+### 1.5 Arrays: Covariance and Runtime Type Checks
+Java arrays are **covariant** (`String[]` is-a `Object[]`), a pre-generics design choice to allow generic array utilities. This is unsound and guarded with a runtime check (`ArrayStoreException`) — unlike generics, which use compile-time erasure with no runtime protection at all.
+
+```java
+Object[] objs = new String[3];  // legal — arrays are covariant
+objs[0] = 42;                   // compiles — throws ArrayStoreException at runtime
+
+List<Object> list = new ArrayList<String>(); // does NOT compile — generics are invariant
+```
+
+### 1.6 Arrays vs. Collections — Trade-offs
+
+| Aspect | Array | ArrayList | LinkedList |
+|---|---|---|---|
+| Memory layout | Contiguous, fixed size | Contiguous, resizable backing array | Node-per-element, scattered |
+| Random access | O(1) | O(1) | O(n) |
+| Insert/remove middle | O(n) manual shift | O(n) (`System.arraycopy`) | O(1) once positioned, O(n) to find |
+| Primitives | Native, no boxing | Boxed — overhead | Boxed |
+| Resize | N/A | Amortized O(1), 1.5x growth | N/A |
+
+### 1.7 `StringBuilder` Internals
+`StringBuilder`/`StringBuffer` wrap a resizable buffer that grows by `newCapacity = oldCapacity*2 + 2` on overflow, via `Arrays.copyOf`. Pre-sizing with `new StringBuilder(expectedSize)` avoids repeated reallocation in hot paths.
+
+## 2. Recall Drills (Flashcards)
+
+<Flashcard question="Why does Compact Strings (JEP 254) store Strings as byte[] with a coder flag instead of char[]?" answer="Most real-world strings are Latin-1 representable and need only 1 byte/char rather than 2. A coder flag (LATIN1/UTF16) tracks the encoding per string, roughly halving memory for ASCII-heavy workloads with no public API change." />
+
+<Flashcard question="Why is naive string += in a loop effectively O(n²), and what's the correct fix?" answer="Historically each += created a new StringBuilder and discarded the buffer every iteration, forcing repeated full copies. The fix is to reuse a single StringBuilder across the loop (append in place), giving amortized O(n)." />
+
+<Flashcard question="Where did the String constant pool move in Java 8, and what failure mode did that eliminate?" answer="From PermGen to the main heap (class metadata moved to native Metaspace). This eliminated OutOfMemoryError: PermGen space caused by excessive String.intern() calls, since interned strings became ordinary collectible heap objects." />
+
+<Flashcard question="Why is Java's array covariance considered unsound, and what runtime mechanism guards it?" answer="String[] being assignable to Object[] lets you insert an incompatible type through the Object[] view — undetectable at compile time. The JVM checks every array store at runtime and throws ArrayStoreException if the element type mismatches the array's actual component type." />
+
+<Flashcard question="Why doesn't String's cached hashCode() field need synchronization despite concurrent access?" answer="The computation is idempotent and deterministic, so concurrent threads computing it in parallel all arrive at the same value — a benign data race. Worst case is redundant recomputation, never a wrong or torn value." />

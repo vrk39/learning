@@ -1,0 +1,65 @@
+---
+id: jdbc-advanced
+title: JDBC — Architect-Level Deep Dive
+---
+import Flashcard from '@site/src/components/Flashcard';
+
+## 1. Deep Knowledge Guide
+
+### 1.1 `Statement` vs. `PreparedStatement` — Beyond "SQL Injection Prevention"
+The security benefit (parameterized queries, not string-concatenated SQL) is the well-known reason, but the deeper architect-level reason to prefer `PreparedStatement` is **query plan caching**. The database parses, plans, and (for many databases) caches the execution plan for a prepared statement keyed by its SQL text with placeholders — repeated executions with different bound values reuse that cached plan, avoiding re-parse/re-plan overhead. A `Statement` with inlined literal values produces a textually different SQL string on every call, defeating plan caching entirely and adding both security risk and a real performance tax under load.
+
+```java
+// Bad: new plan possibly parsed every time, and injectable
+stmt.executeQuery("SELECT * FROM users WHERE id = " + userId);
+
+// Good: plan reusable across calls, parameter-safe
+PreparedStatement ps = conn.prepareStatement("SELECT * FROM users WHERE id = ?");
+ps.setLong(1, userId);
+```
+
+### 1.2 Connection Pooling — Why Raw `DriverManager.getConnection()` Doesn't Scale
+Establishing a physical DB connection (TCP handshake, auth, session setup) is expensive (milliseconds to tens of milliseconds) relative to a typical query. Connection pools (HikariCP, the de facto modern standard) pre-establish and reuse a bounded set of physical connections, handing out **logical** connection wrappers that return to the pool on `close()` rather than actually closing the socket. Pool sizing is commonly over-provisioned in practice; the well-known formula from HikariCP's own guidance is roughly `connections = ((core_count * 2) + effective_spindle_count)` for typical OLTP workloads — the key architectural insight is that **more connections than the DB can concurrently execute efficiently just adds context-switching and lock contention**, not more throughput.
+
+### 1.3 Transaction Isolation Levels — What Each Actually Prevents
+
+| Isolation Level | Dirty Read | Non-Repeatable Read | Phantom Read |
+|---|---|---|---|
+| `READ_UNCOMMITTED` | Possible | Possible | Possible |
+| `READ_COMMITTED` (most DBs' default, e.g. PostgreSQL, Oracle) | Prevented | Possible | Possible |
+| `REPEATABLE_READ` (MySQL InnoDB default) | Prevented | Prevented | Possible (though InnoDB's gap locks mitigate most phantom cases in practice) |
+| `SERIALIZABLE` | Prevented | Prevented | Prevented |
+
+Higher isolation buys correctness at the cost of concurrency (more locking/blocking, or in MVCC databases, more serialization-failure retries). Architect-level judgment: default to the database's default isolation unless a specific anomaly is provably reachable by your access pattern — don't reflexively reach for `SERIALIZABLE`, which can cause severe throughput collapse under contention.
+
+### 1.4 Batch Updates — Reducing Round Trips
+`PreparedStatement.addBatch()`/`executeBatch()` sends multiple parameter sets in fewer network round trips (driver- and DB-dependent, but often a single round trip for the whole batch), dramatically reducing latency for bulk inserts/updates versus executing one statement per row. Combine with `setAutoCommit(false)` and a single `commit()` after the batch to also avoid a fsync-per-row.
+
+```java
+conn.setAutoCommit(false);
+PreparedStatement ps = conn.prepareStatement("INSERT INTO logs(msg) VALUES (?)");
+for (String msg : messages) {
+    ps.setString(1, msg);
+    ps.addBatch();
+}
+ps.executeBatch();
+conn.commit();
+```
+
+### 1.5 `ResultSet` Streaming vs. Fully Materializing
+By default, many JDBC drivers (notably MySQL Connector/J) **fully materialize** the entire `ResultSet` into client memory before returning control, which can OOM the client for large result sets. Streaming large results requires driver-specific configuration (e.g., MySQL: `setFetchSize(Integer.MIN_VALUE)` combined with a forward-only, read-only, non-scrollable statement; PostgreSQL: `setFetchSize(n)` with `autoCommit(false)`) — a well-known operational gotcha when a "simple SELECT" unexpectedly OOMs against a large table.
+
+### 1.6 Try-With-Resources and Resource Leak Prevention
+`Connection`, `Statement`, and `ResultSet` are all `AutoCloseable`; leaking any of these under exceptional paths is a classic (and classically underestimated) production issue — connection pool exhaustion from unclosed connections is one of the most common root causes of cascading outages in JDBC-based systems. `try-with-resources` (see Exception Handling doc for its internals) is the standard mitigation, closing in reverse-declaration order automatically.
+
+## 2. Recall Drills (Flashcards)
+
+<Flashcard question="Beyond SQL injection prevention, what's the performance-architectural reason to prefer PreparedStatement over Statement with concatenated SQL?" answer="Databases can parse, plan, and cache an execution plan for a parameterized query keyed by its SQL text with placeholders. Repeated executions with different bound values reuse that cached plan. A Statement with inlined literals produces a textually different SQL string each time, defeating plan caching and adding real parse/plan overhead under load." />
+
+<Flashcard question="Why does over-provisioning a connection pool with more connections than the database can efficiently execute concurrently often REDUCE throughput?" answer="More concurrent connections than the DB can efficiently service adds context-switching and lock contention on the database side rather than adding useful parallelism — work queues up behind contended resources regardless, so an oversized pool just adds overhead without improving actual throughput." />
+
+<Flashcard question="What specific consistency anomaly does READ_COMMITTED prevent that READ_UNCOMMITTED does not, and what anomaly can still occur under READ_COMMITTED?" answer="READ_COMMITTED prevents dirty reads (reading another transaction's uncommitted changes). It does NOT prevent non-repeatable reads (re-reading the same row within a transaction and seeing a different committed value due to a concurrent commit) or phantom reads (a repeated range query returning new rows)." />
+
+<Flashcard question="Why can a 'simple SELECT *' against a large table unexpectedly cause an OutOfMemoryError on the client, and what's the fix?" answer="Many JDBC drivers (e.g., MySQL Connector/J by default) fully materialize the entire ResultSet into client memory before returning control from executeQuery(). The fix is driver-specific streaming configuration — e.g., MySQL requires setFetchSize(Integer.MIN_VALUE) with a forward-only, read-only statement to stream rows instead of buffering them all." />
+
+<Flashcard question="Why does batching inserts with addBatch()/executeBatch() combined with setAutoCommit(false) outperform per-row execute() calls?" answer="It reduces network round trips (often to a single round trip for the whole batch instead of one per row) and, with autoCommit disabled and a single commit() at the end, avoids a per-row fsync/commit overhead on the database — both are major latency sources eliminated by batching." />

@@ -1,0 +1,68 @@
+---
+id: stream-api-advanced
+title: Stream API — Architect-Level Deep Dive
+---
+import Flashcard from '@site/src/components/Flashcard';
+
+## 1. Deep Knowledge Guide
+
+### 1.1 Laziness and the Source/Intermediate/Terminal Pipeline Model
+A stream pipeline does no work until a **terminal** operation is invoked. Intermediate operations (`map`, `filter`, `sorted`, etc.) merely build a chain of `Sink` objects describing the pipeline; execution then pulls elements from the source one at a time and pushes each through the entire sink chain (fuse-and-iterate), rather than materializing an intermediate collection after each stage. This is why an infinite stream (`Stream.iterate(0, i -> i + 1)`) works fine with `.limit(5)` — `limit` is a **short-circuiting** stateful operation that can stop the whole pipeline early.
+
+```java
+Stream.of(1, 2, 3, 4, 5)
+    .peek(x -> System.out.println("filter check: " + x))
+    .filter(x -> x % 2 == 0)
+    .peek(x -> System.out.println("map: " + x))
+    .map(x -> x * 10)
+    .findFirst(); // only ONE element flows through the whole chain before short-circuiting
+```
+
+### 1.2 Stateless vs. Stateful Intermediate Operations
+`map`/`filter` are **stateless** — each element is processed independently, enabling full pipelining and parallel-friendliness. `sorted`/`distinct`/`limit`/`skip` are **stateful** — they require buffering some or all upstream elements before producing output, which breaks the pure element-at-a-time pipelining and can force the parallel implementation to introduce a barrier/merge step.
+
+### 1.3 `Collectors` Internals — the Three-Function Reduction
+Every `Collector` is defined by a `supplier` (create mutable container), `accumulator` (fold one element in), `combiner` (merge two partial containers — used in parallel streams), and `finisher` (optional transform to final result), plus a set of `Characteristics` (`CONCURRENT`, `UNORDERED`, `IDENTITY_FINISH`) that let the stream engine choose optimized execution strategies (e.g., skip the finisher if `IDENTITY_FINISH` is set).
+
+```java
+Collector<String, StringBuilder, String> custom = Collector.of(
+    StringBuilder::new,                  // supplier
+    StringBuilder::append,               // accumulator
+    StringBuilder::append,               // combiner (for parallel merge)
+    StringBuilder::toString              // finisher
+);
+```
+
+### 1.4 Parallel Streams: When They Help and When They Hurt
+`.parallel()` uses the **common `ForkJoinPool`** (shared JVM-wide, sized to `Runtime.availableProcessors() - 1` by default) unless invoked from within another `ForkJoinPool` task. Effective parallelization requires: (1) a source that **splits efficiently** (`ArrayList`/arrays split in O(1) via index ranges; `LinkedList`/`Stream.iterate` split poorly or not at all), (2) enough elements to amortize fork/join overhead (rule of thumb: thousands+, not tens), and (3) a non-trivial per-element cost, or CPU-bound work rather than I/O-bound (parallel streams block the shared pool thread during I/O, starving other unrelated parallel-stream users application-wide — a serious production hazard).
+
+| Pitfall | Why it hurts |
+|---|---|
+| Parallel stream doing blocking I/O | Starves the shared ForkJoinPool for the whole JVM, including unrelated code | 
+| Parallelizing a `LinkedList` stream | Poor spliterator characteristics — splits are O(n), not O(1), often slower than sequential |
+| Small collections (fewer than ~1000 elements) | Fork/join overhead exceeds any parallelism gain |
+| Stateful lambdas (shared mutable counters) | Data races — parallel streams assume pure, non-interfering functions |
+
+### 1.5 `flatMap` and Stream Composition
+`flatMap` maps each element to a stream, then **flattens** those into a single stream — semantically a monadic bind. It's the correct tool for "map to a collection, then combine all results" instead of nested loops or `map().collect()` producing `List<List<T>>`.
+
+```java
+List<String> allWords = sentences.stream()
+    .flatMap(s -> Arrays.stream(s.split("\\s+")))
+    .collect(Collectors.toList());
+```
+
+### 1.6 Primitive Streams — Avoiding Boxing Overhead
+`IntStream`/`LongStream`/`DoubleStream` exist specifically to avoid autoboxing overhead in numeric pipelines (`Stream<Integer>` boxes every element). `IntStream.range(0, n).sum()` avoids millions of `Integer` allocations that `Stream.of(...).mapToInt(...)` from an already-boxed source cannot avoid retroactively — the boxing cost is paid at the source, not eliminated by later primitive operations.
+
+## 2. Recall Drills (Flashcards)
+
+<Flashcard question="Why does Stream.iterate(0, i -> i+1).limit(5) terminate instead of running forever, given that Stream.iterate produces an infinite stream?" answer="Streams are lazy — intermediate operations build a pipeline description, and execution pulls elements one at a time through the whole sink chain per element (fuse-and-iterate), not stage-by-stage materialization. limit() is a short-circuiting stateful operation that signals the pipeline to stop pulling further elements once satisfied." />
+
+<Flashcard question="What distinguishes a 'stateless' intermediate operation like map/filter from a 'stateful' one like sorted/distinct, and why does that matter for parallel streams?" answer="Stateless ops process each element independently with no dependency on other elements, enabling pure element-at-a-time pipelining. Stateful ops (sorted, distinct, limit, skip) require buffering some or all upstream elements before producing output, which breaks pipelining and forces the parallel implementation to introduce a synchronization/merge barrier." />
+
+<Flashcard question="What four components define a custom Collector, and what is the combiner used for specifically?" answer="Supplier (create a mutable container), accumulator (fold one element into it), combiner (merge two partial containers), and finisher (transform to the final result). The combiner is specifically used when a parallel stream splits work across threads — each thread builds a partial container, and the combiner merges those partial results back together." />
+
+<Flashcard question="Why can using a parallel stream for I/O-bound work degrade performance for the ENTIRE application, not just that one pipeline?" answer="Parallel streams use the shared, JVM-wide common ForkJoinPool by default. A parallel stream blocked on I/O ties up that pool's worker threads, starving every other unrelated piece of code in the same JVM that also relies on the common ForkJoinPool (including other parallel streams and CompletableFuture default-executor work)." />
+
+<Flashcard question="Why does IntStream.range(0, n).sum() avoid boxing overhead that Stream.of(1,2,3).mapToInt(x->x).sum() cannot fully avoid?" answer="IntStream.range produces primitive ints natively from the start — no Integer objects are ever created. Stream.of(1,2,3) already boxed the values into Integer objects at the source before mapToInt runs; the later primitive conversion can't retroactively undo the boxing cost already paid when the boxed Stream was created." />
