@@ -1,0 +1,230 @@
+---
+id: java-lambda-expressions
+title: Java Lambda Expressions Masterclass
+---
+import Flashcard from '@site/src/components/Flashcard';
+
+## Table of Contents
+1. **Introduction to Lambda Expressions**: Syntax and Paradigm Shift
+2. **Functional Interfaces**: The Single Abstract Method (SAM) Principle
+3. **Core Built-in Functional Interfaces**: `java.util.function`
+4. **Method References**: The Lambda Shorthand
+5. **Variable Capture**: Closures and "Effectively Final" Variables
+6. **Advanced Internals**: `invokedynamic` and `LambdaMetafactory`
+7. **Performance & Memory**: Capturing vs. Non-Capturing Lambdas
+8. **Architectural Trade-offs**: Lambdas vs. Anonymous Inner Classes
+9. **Section 2: Recall Drills (Flashcards)**
+
+---
+
+## Section 1: Deep Knowledge Guide
+
+### 1. Introduction to Lambda Expressions
+
+**Fundamentals**
+Introduced in Java 8, Lambda Expressions brought functional programming paradigms to Java's strictly object-oriented ecosystem. A lambda expression is essentially an anonymous, unnamed method that can be passed around as if it were data. It provides a clear and concise way to represent a method interface using an expression.
+
+**Syntax:**
+`(parameters) -> expression`  OR  `(parameters) -> { statements; }`
+
+```java
+import java.util.Arrays;
+import java.util.List;
+
+// Runnable Example: Basic Lambda Usage
+public class LambdaIntroDemo {
+    public static void main(String[] args) {
+        List<String> names = Arrays.asList("Alice", "Bob", "Charlie");
+        
+        // Pre-Java 8: Anonymous Inner Class
+        names.forEach(new java.util.function.Consumer<String>() {
+            @Override
+            public void accept(String name) {
+                System.out.println("Hello " + name);
+            }
+        });
+
+        // Java 8+: Lambda Expression
+        // Type inference allows us to omit the 'String' type declaration
+        names.forEach(name -> System.out.println("Hello " + name));
+    }
+}
+```
+
+---
+
+### 2. Functional Interfaces
+
+**Fundamentals**
+A lambda expression cannot exist in a vacuum; it must be assigned to a **Functional Interface**. A functional interface is an interface that contains **exactly one abstract method** (known as the Single Abstract Method or SAM).
+
+The `@FunctionalInterface` annotation is used to enforce this rule at compile-time. If you add a second abstract method to an interface marked with this annotation, the compiler will throw an error. Note that default methods, static methods, and overriding methods from `java.lang.Object` do *not* count toward the single abstract method limit.
+
+```java
+// Runnable Example: Custom Functional Interface
+@FunctionalInterface
+interface MathOperation {
+    int operate(int a, int b);
+    
+    // Default methods do not break the functional interface rule
+    default void printInfo() {
+        System.out.println("I am a math operation.");
+    }
+}
+
+public class FunctionalInterfaceDemo {
+    public static void main(String[] args) {
+        // The lambda perfectly matches the signature of operate(int, int) -> int
+        MathOperation addition = (a, b) -> a + b;
+        MathOperation multiplication = (a, b) -> a * b;
+
+        System.out.println("10 + 5 = " + addition.operate(10, 5));
+        System.out.println("10 * 5 = " + multiplication.operate(10, 5));
+    }
+}
+```
+
+---
+
+### 3. Core Built-in Functional Interfaces
+
+Instead of creating custom functional interfaces for every use case, Java 8 introduced the `java.util.function` package.
+
+| Interface | Method Signature | Description | Common Use Case |
+| :--- | :--- | :--- | :--- |
+| `Predicate<T>` | `boolean test(T t)` | Takes an argument, returns a boolean. | Filtering collections (`stream.filter()`). |
+| `Function<T, R>`| `R apply(T t)` | Takes an argument, returns a result of a different/same type. | Transforming data (`stream.map()`). |
+| `Consumer<T>` | `void accept(T t)` | Takes an argument, returns nothing (side-effects). | Printing or modifying elements (`stream.forEach()`). |
+| `Supplier<T>` | `T get()` | Takes no arguments, returns a value. | Lazy initialization, generating values. |
+| `UnaryOperator<T>`| `T apply(T t)` | Specialized `Function` where input/output types are identical. | Iteration, string manipulation. |
+
+---
+
+### 4. Method References
+
+**Fundamentals**
+Method references (`::`) are a shorthand syntax for a lambda expression that simply calls an existing method. They improve readability.
+
+There are four types of method references:
+1.  **Static method:** `ClassName::staticMethodName` (e.g., `Math::max`)
+2.  **Instance method of a particular object:** `instance::instanceMethodName` (e.g., `System.out::println`)
+3.  **Instance method of an arbitrary object of a particular type:** `ClassName::instanceMethodName` (e.g., `String::toLowerCase`)
+4.  **Constructor:** `ClassName::new` (e.g., `ArrayList::new`)
+
+---
+
+### 5. Variable Capture & "Effectively Final"
+
+**Advanced Internals: Closures and the Heap/Stack Divide**
+When a lambda uses variables defined outside its immediate scope (in the enclosing method), this is called **Variable Capture**. Java requires that these captured local variables be **final** or **effectively final** (assigned only once).
+
+*Why? The JVM Memory Model.*
+1. Local variables live on the **Thread Stack**. They are destroyed as soon as the method execution completes.
+2. Lambdas are evaluated as objects living on the **Heap**. A lambda might be passed to another thread or executed long after the enclosing method has returned.
+3. Therefore, the lambda cannot access the original stack variable. The compiler makes a **copy** of the variable's value and stores it inside the lambda object on the heap.
+4. If the language allowed you to mutate the original local variable, the copy inside the lambda would fall out of sync, leading to severe data inconsistency. To prevent this, Java enforces immutability on captured local variables.
+
+```java
+import java.util.function.Supplier;
+
+// Runnable Example: Effectively Final
+public class VariableCaptureDemo {
+    public static void main(String[] args) {
+        int multiplier = 10; // "Effectively final" - never mutated after initialization
+        
+        // Lambda captures a COPY of 'multiplier'
+        Supplier<Integer> closure = () -> 5 * multiplier;
+        
+        // If we uncommented the next line, the compiler would throw an error:
+        // "Local variable multiplier defined in an enclosing scope must be final or effectively final"
+        // multiplier = 20; 
+
+        System.out.println("Result: " + closure.get());
+    }
+}
+```
+
+---
+
+### 6. Advanced Internals: `invokedynamic` and `LambdaMetafactory`
+
+**Pre-Java 8: The Anonymous Class Bloat**
+Before Java 8, when you compiled an Anonymous Inner Class (AIC), the compiler generated a brand new `.class` file on disk (e.g., `MyClass$1.class`). If your codebase had 5,000 AICs, you had 5,000 extra `.class` files. This massively bloated the application size, increased disk I/O during class loading, and rapidly filled the JVM's Metaspace.
+
+**Java 8+: The `invokedynamic` Revolution**
+Java 8 did *not* implement lambdas as syntactic sugar for anonymous inner classes. Instead, it leveraged the `invokedynamic` bytecode instruction (originally introduced in Java 7 for dynamic languages like JRuby).
+
+*How it works under the hood:*
+1.  **Compile Time:** The Java compiler translates the lambda body into a private static (or instance) method inside the enclosing class. It *does not* generate a new `.class` file. Instead, it emits an `invokedynamic` instruction where the lambda was declared.
+2.  **Runtime (Linkage):** The first time the JVM encounters the `invokedynamic` instruction, it calls a bootstrap method: `java.lang.invoke.LambdaMetafactory.metafactory()`.
+3.  **Runtime (Class Generation):** `LambdaMetafactory` dynamically spins up an implementation class for the functional interface in memory (using ASM bytecode manipulation) and links the interface's single abstract method to the private method generated in step 1.
+4.  **Future-proofing:** Because class generation is deferred to runtime, future JVM versions can completely change how lambdas are optimized without requiring developers to recompile their `.java` files!
+
+---
+
+### 7. Performance & Memory: Capturing vs. Non-Capturing Lambdas
+
+Understanding `LambdaMetafactory` reveals a critical performance distinction:
+
+*   **Non-Capturing Lambdas:** A lambda that does not use any variables from its enclosing scope.
+    *   *Memory Profile:* `LambdaMetafactory` instantiates the dynamically generated class **exactly once** and caches it as a Singleton. Every time the lambda is executed, the exact same instance is reused. Zero garbage collection overhead.
+*   **Capturing Lambdas:** A lambda that uses variables from its enclosing scope (like `multiplier` in our previous example).
+    *   *Memory Profile:* Because the captured variables represent state, the JVM must instantiate a **new object** on the heap every single time the lambda is evaluated (to hold the specific captured values). In tight loops, this can cause significant GC pressure.
+
+```java
+import java.util.function.IntUnaryOperator;
+
+// Runnable Example: Capturing vs Non-Capturing Performance context
+public class LambdaPerformanceDemo {
+    public static void main(String[] args) {
+        
+        // NON-CAPTURING LAMBDA
+        // Evaluates to a Singleton. Allocates memory ONCE.
+        IntUnaryOperator nonCapturing = x -> x * 2;
+        
+        for (int i = 0; i < 1000; i++) {
+            nonCapturing.applyAsInt(i); 
+        }
+
+        // CAPTURING LAMBDA
+        // Inside a loop, if we capture a dynamic variable, 
+        // it creates a NEW lambda instance on every iteration!
+        for (int i = 0; i < 1000; i++) {
+            int capturedVal = i; 
+            // Allocates a new lambda object on the heap 1,000 times!
+            IntUnaryOperator capturing = x -> x * capturedVal; 
+            capturing.applyAsInt(10);
+        }
+    }
+}
+```
+
+---
+
+### 8. Architectural Trade-offs: Lambdas vs. Anonymous Inner Classes
+
+Lambdas are not a 100% direct replacement for Anonymous Inner Classes. They behave differently regarding scoping and state.
+
+| Feature | Lambda Expression | Anonymous Inner Class |
+| :--- | :--- | :--- |
+| **Interfaces allowed** | ONLY Functional Interfaces (SAM) | Any interface or abstract class |
+| **State (Fields)** | Cannot define internal instance fields | Can define instance fields/state |
+| **`this` Keyword Reference** | **Lexical Scoping:** `this` refers to the enclosing class where the lambda is written. | **Dynamic Scoping:** `this` refers to the instance of the anonymous inner class itself. |
+| **Compilation Artifact** | Uses `invokedynamic`. No extra `.class` file on disk. | Generates a new `EnclosingClass$1.class` file. |
+| **Memory Efficiency** | High (Singleton if non-capturing). | Low (Always creates a new object and loads a new class). |
+
+---
+
+## Section 2: Recall Drills
+
+<Flashcard answer="A Functional Interface is an interface that contains exactly one abstract method (Single Abstract Method). It serves as the target type for a lambda expression." question="What defines a Functional Interface in Java?"/>
+
+<Flashcard answer="Local variables live on the stack and are destroyed when the method ends, while lambdas live on the heap. The lambda operates on a copy of the variable. If mutation were allowed, the heap copy and stack variable would fall out of sync." question="Why must local variables captured by a lambda be 'final' or 'effectively final'?"/>
+
+<Flashcard answer="invokedynamic. It delegates the creation of the lambda implementation to a bootstrap method (LambdaMetafactory) at runtime rather than generating a .class file at compile time." question="What specific bytecode instruction does Java use to implement Lambda Expressions?"/>
+
+<Flashcard answer="In a lambda, 'this' refers to the enclosing object (lexical scoping). In an anonymous inner class, 'this' refers to the instance of the anonymous class itself." question="How does the 'this' keyword behave differently in a Lambda Expression compared to an Anonymous Inner Class?"/>
+
+<Flashcard answer="A non-capturing lambda accesses no outside variables, allowing the JVM to instantiate it ONCE as a singleton. A capturing lambda accesses outside variables, forcing the JVM to allocate a new object on the heap every time it is evaluated to store the captured state." question="What is the critical performance difference between a capturing lambda and a non-capturing lambda?"/>
+
+<Flashcard answer="It dynamically generates the bytecode for the lambda's implementation class in memory using ASM the first time the invokedynamic instruction is encountered, bypassing the need for compile-time .class file generation." question="What is the role of LambdaMetafactory in Java?"/>
