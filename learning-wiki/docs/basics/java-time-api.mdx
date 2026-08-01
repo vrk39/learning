@@ -1,0 +1,255 @@
+---
+id: java-time-api
+title: Java java.time API Masterclass
+---
+import Flashcard from '@site/src/components/Flashcard';
+
+## Table of Contents
+1. **The Legacy Problem**: Why `java.util.Date` Failed
+2. **Core Concepts**: Human Time vs. Machine Time
+3. **Local Date & Time (Human Time)**: `LocalDate`, `LocalTime`, `LocalDateTime`
+4. **Time Zones and Offsets**: `ZonedDateTime`, `OffsetDateTime`, `ZoneId`
+5. **Machine Time**: `Instant` and the Epoch Timeline
+6. **Measuring Time**: `Duration` vs. `Period`
+7. **Formatting and Parsing**: `DateTimeFormatter`
+8. **Advanced Internals**: Value-Based Classes, TZDB, and JSR-310 Architecture
+9. **Architectural Trade-offs**: Legacy vs. Modern APIs
+10. **Recall Drills (Flashcards)**
+
+---
+
+## Section 1: Deep Knowledge Guide
+
+### 1. The Legacy Problem: Why `java.util.Date` Failed
+
+Before Java 8, developers used `java.util.Date` and `java.util.Calendar`. These legacy classes were notoriously flawed:
+*   **Mutability**: `java.util.Date` is mutable. If you pass a `Date` object to a method, that method can change its value (e.g., `date.setTime()`), leading to catastrophic thread-safety issues in concurrent applications.
+*   **Poor API Design**: Months were zero-indexed (January = 0), but days were one-indexed. Years were offsets from 1900.
+*   **Lack of Separation**: `Date` represented a specific point in time (an instant) but printed in the JVM's default time zone, confusing developers about what data it actually held.
+
+To solve this, Java 8 introduced the `java.time` API (JSR-310), heavily inspired by the Joda-Time library. It is immutable, thread-safe, and domain-driven.
+
+---
+
+### 2. Core Concepts: Human Time vs. Machine Time
+
+The `java.time` API strictly separates how humans perceive time from how machines process it:
+*   **Human Time (Contextual)**: What we see on a wall clock or calendar. "January 1st, 2025, 10:00 AM" is human time. Without a time zone, this does not map to a specific moment in the universe.
+*   **Machine Time (Absolute)**: A continuous, monotonic timeline measured in nanoseconds since the UNIX Epoch (1970-01-01T00:00:00Z). It is absolute and independent of time zones.
+
+---
+
+### 3. Local Date & Time (Human Time)
+
+**Fundamentals**
+The "Local" classes represent human time without any timezone context. They are descriptions of local time.
+*   `LocalDate`: A date without a time (e.g., `2024-12-25`).
+*   `LocalTime`: A time without a date (e.g., `10:30:00`).
+*   `LocalDateTime`: A combination of both (e.g., `2024-12-25T10:30:00`).
+
+*Important:* A `LocalDateTime` cannot represent a precise instant on the global timeline because it lacks an offset or zone.
+
+```java
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.LocalDateTime;
+import java.time.Month;
+import java.time.temporal.ChronoUnit;
+
+// Runnable Example: Local Date/Time Basics
+public class LocalTimeDemo {
+    public static void main(String[] args) {
+        // Factory methods replace constructors
+        LocalDate date = LocalDate.of(2024, Month.DECEMBER, 25);
+        LocalTime time = LocalTime.of(10, 30);
+        
+        // Combining Date and Time
+        LocalDateTime dateTime = LocalDateTime.of(date, time);
+        System.out.println("Base DateTime: " + dateTime);
+
+        // Immutability: Modifications return a NEW object
+        LocalDateTime nextWeek = dateTime.plus(1, ChronoUnit.WEEKS);
+        System.out.println("Next Week: " + nextWeek);
+        
+        // The original remains unchanged
+        System.out.println("Original remains: " + dateTime);
+    }
+}
+```
+
+---
+
+### 4. Time Zones and Offsets
+
+**Fundamentals**
+To map a `LocalDateTime` to the absolute timeline, you must apply a time zone or an offset.
+*   `ZoneOffset`: A fixed time difference from UTC (e.g., `+05:30`, `-08:00`).
+*   `ZoneId`: A geographical region (e.g., `Europe/Paris`, `Asia/Kolkata`). A `ZoneId` encompasses rules for Daylight Saving Time (DST) and historical timezone shifts.
+*   `ZonedDateTime`: A `LocalDateTime` + `ZoneId`. It handles DST transitions automatically.
+*   `OffsetDateTime`: A `LocalDateTime` + `ZoneOffset`. Commonly used for database storage (e.g., SQL `TIMESTAMP WITH TIME ZONE`) or network transmission.
+
+```java
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.Duration;
+
+// Runnable Example: ZonedDateTime and DST handling
+public class ZonedTimeDemo {
+    public static void main(String[] args) {
+        ZoneId newYork = ZoneId.of("America/New_York");
+        
+        // Spring Forward in New York: March 10, 2024, at 2:00 AM clocks skip to 3:00 AM
+        LocalDateTime beforeDST = LocalDateTime.of(2024, 3, 10, 1, 30);
+        ZonedDateTime zdt1 = ZonedDateTime.of(beforeDST, newYork);
+        
+        // Adding 1 hour crosses the DST boundary
+        ZonedDateTime zdt2 = zdt1.plusHours(1);
+        
+        System.out.println("Before +1 hr: " + zdt1); 
+        // Output: 2024-03-10T01:30-05:00[America/New_York]
+        
+        System.out.println("After +1 hr:  " + zdt2); 
+        // Output: 2024-03-10T03:30-04:00[America/New_York] (Notice the time is 3:30, not 2:30!)
+        
+        // The absolute physical time elapsed is exactly 1 hour
+        Duration elapsed = Duration.between(zdt1, zdt2);
+        System.out.println("Physical hours elapsed: " + elapsed.toHours());
+    }
+}
+```
+
+---
+
+### 5. Machine Time: `Instant`
+
+**Fundamentals**
+An `Instant` represents a specific, instantaneous point on the time-line. It stores data as two fields internally:
+1.  A `long` representing seconds since the Epoch (1970-01-01T00:00:00Z).
+2.  An `int` representing nanosecond-of-second (0 to 999,999,999).
+
+**Advanced Internals: System Clock**
+When you call `Instant.now()`, the JVM queries the underlying OS clock (e.g., `clock_gettime` in Linux). Java 8 introduced a more precise clock (usually microsecond precision depending on the OS), upgrading the millisecond limitation of `System.currentTimeMillis()`.
+
+```java
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+
+// Runnable Example: Instant
+public class InstantDemo {
+    public static void main(String[] args) {
+        Instant now = Instant.now();
+        System.out.println("Machine Time (UTC): " + now);
+        
+        // Convert Machine Time to Human Time by applying a Time Zone
+        ZonedDateTime tokyoTime = now.atZone(ZoneId.of("Asia/Tokyo"));
+        System.out.println("Human Time in Tokyo: " + tokyoTime);
+    }
+}
+```
+
+---
+
+### 6. Measuring Time: `Duration` vs. `Period`
+
+A common pitfall is confusing `Duration` and `Period`.
+*   **`Duration`**: Measures absolute, physical time in seconds and nanoseconds. Used with machine time (`Instant`) or exact time (`LocalTime`).
+*   **`Period`**: Measures conceptual time in years, months, and days. Used with calendar time (`LocalDate`).
+
+**The DST Trap:** Adding a `Period` of 1 day to a `ZonedDateTime` preserves the local time (if it's 10:00 AM today, it will be 10:00 AM tomorrow, even if a 23-hour DST day occurs). Adding a `Duration` of 24 hours adds exactly 24 physical hours, which might result in 11:00 AM tomorrow due to DST shifts.
+
+---
+
+### 7. Formatting and Parsing: `DateTimeFormatter`
+
+The `java.time.format.DateTimeFormatter` is strictly immutable and thread-safe, entirely replacing the severely flawed `java.text.SimpleDateFormat`.
+
+```java
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
+// Runnable Example: Formatting and Parsing
+public class FormatterDemo {
+    public static void main(String[] args) {
+        LocalDateTime now = LocalDateTime.now();
+        
+        // Formatting
+        DateTimeFormatter customFormatter = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
+        String formatted = now.format(customFormatter);
+        System.out.println("Formatted: " + formatted);
+        
+        // Parsing
+        String input = "2025/12/31 23:59:59";
+        LocalDateTime parsed = LocalDateTime.parse(input, customFormatter);
+        System.out.println("Parsed: " + parsed);
+    }
+}
+```
+
+---
+
+### 8. Advanced Internals: Value-Based Classes, TZDB, and Architecture
+
+**1. Value-Based Classes**
+Classes like `LocalDate`, `Instant`, and `Duration` are designated as **Value-Based Classes**. This is a JVM concept introduced in Java 8 preparing for Project Valhalla (inline types).
+*   **Rule**: You should never use identity-sensitive operations (e.g., reference equality `==`, synchronization locks, or `System.identityHashCode()`) on them. 
+*   **Under the hood**: The JVM is free to cache, duplicate, or inline these objects to optimize memory. Using `==` might yield unpredictable results.
+
+**2. The Time-Zone Database (TZDB)**
+Time zones are political and change constantly. The JDK embeds the IANA Time Zone Database (`tzdata`). 
+*   **Updates**: When a country changes its DST rules, the JDK must be patched via a Timezone Updater Tool (`tzupdater`) or a minor JDK release. The `java.time` API dynamically loads these rules via the `ZoneRulesProvider` SPI, allowing you to plug in updated rules at runtime without waiting for a JDK update.
+
+**3. Architectural Pattern: Temporal Accessor & Adjuster**
+The API relies heavily on the Strategy Pattern. 
+*   `TemporalAccessor` (Read-only view): Defines how to read fields (e.g., `ChronoField.DAY_OF_MONTH`).
+*   `TemporalAdjuster`: An interface for complex temporal math (e.g., "Find the next Tuesday").
+
+```java
+import java.time.LocalDate;
+import java.time.DayOfWeek;
+import java.time.temporal.TemporalAdjusters;
+
+// Runnable Example: TemporalAdjusters
+public class AdjusterDemo {
+    public static void main(String[] args) {
+        LocalDate today = LocalDate.of(2024, 10, 15);
+        
+        // Advanced dynamic logic using built-in adjusters
+        LocalDate nextFriday = today.with(TemporalAdjusters.next(DayOfWeek.FRIDAY));
+        LocalDate lastDayOfMonth = today.with(TemporalAdjusters.lastDayOfMonth());
+        
+        System.out.println("Today: " + today);
+        System.out.println("Next Friday: " + nextFriday);
+        System.out.println("Last Day of Month: " + lastDayOfMonth);
+    }
+}
+```
+
+---
+
+### 9. Architectural Trade-offs: Legacy vs. Modern APIs
+
+| Feature | Legacy API (`java.util.Date`, `Calendar`) | Modern API (`java.time.*`) |
+| :--- | :--- | :--- |
+| **Immutability** | Mutable (Dangerous in MT environments) | Strictly Immutable (Thread-safe) |
+| **Domain Separation** | Merges human/machine time (Date prints in local TZ) | Strict separation (`LocalDateTime` vs `Instant`) |
+| **Object Allocation** | `new Date()` | Factory methods (`.now()`, `.of()`) allowing internal caching. |
+| **Indexing** | 0-indexed months, 1-indexed days | ISO-8601 standard (1 = January) |
+| **Thread-Safe Parsing** | No (`SimpleDateFormat` is fundamentally unsafe) | Yes (`DateTimeFormatter` is thread-safe) |
+
+---
+
+## Section 2: Recall Drills
+
+<Flashcard answer="java.util.Date is mutable and not thread-safe. java.time classes (like LocalDate, Instant) are immutable and inherently thread-safe." question="What is the primary architectural difference regarding thread safety between java.util.Date and java.time classes?"/>
+
+<Flashcard answer="LocalDateTime represents a human-readable date and time without any timezone context, meaning it cannot represent an exact absolute point in the timeline. Instant represents a specific physical moment in absolute time (nanoseconds since the UNIX epoch)." question="What is the difference between LocalDateTime and Instant?"/>
+
+<Flashcard answer="A Value-Based Class relies strictly on state equality, not object identity. The JVM heavily optimizes them (caching/inlining). Developers must never use `==`, synchronization, or identity hashing on them." question="java.time classes are labeled as 'Value-Based Classes'. What constraint does this impose on how you interact with them?"/>
+
+<Flashcard answer="Duration measures exact, physical time (seconds/nanoseconds). Period measures conceptual, calendar time (years/months/days) and respects anomalies like Daylight Saving Time transitions." question="When doing time math, why should you choose a Period over a Duration for adding 1 day to a ZonedDateTime?"/>
+
+<Flashcard answer="DateTimeFormatter is immutable and inherently thread-safe, allowing a single instance to be shared across multiple threads. SimpleDateFormat is mutable and requires synchronization or ThreadLocal wrappers to be used safely." question="Why is DateTimeFormatter vastly superior to the legacy SimpleDateFormat in enterprise applications?"/>
+
+<Flashcard answer="The IANA Time Zone Database (tzdata). The JDK accesses this via the ZoneRulesProvider SPI, handling historical timezone shifts and Daylight Saving Time." question="What internal database does the java.time API use to determine Daylight Saving Time rules, and how is it accessed?"/>
