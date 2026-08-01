@@ -1,0 +1,281 @@
+---
+id: java-stream-api
+title: Java Stream API Masterclass
+---
+import Flashcard from '@site/src/components/Flashcard';
+
+## Table of Contents
+1. **Introduction to Streams**: Data vs. Computation
+2. **Stream Pipeline Anatomy**: Source, Intermediate, and Terminal Operations
+3. **Core API Usage**: Mapping, Filtering, and Reducing
+4. **Advanced Internals I: Lazy Evaluation and Loop Fusion (`Sink` Architecture)**
+5. **Advanced Internals II: Stateful vs. Stateless Operations**
+6. **Performance & Memory**: Primitive Streams and Autoboxing
+7. **Parallel Streams**: `Spliterator`, Fork/Join Pool, and the $N \times Q$ Model
+8. **Architectural Trade-offs**: Imperative Loops vs. Declarative Streams
+9. **Section 2: Recall Drills (Flashcards)**
+
+---
+
+## Section 1: Deep Knowledge Guide
+
+### 1. Introduction to Streams: Data vs. Computation
+
+**Fundamentals**
+Introduced in Java 8, the `java.util.stream` package brought functional-style declarative programming to Java. A fundamental distinction every developer must grasp is the difference between a Collection and a Stream:
+*   **Collection**: An in-memory data structure that holds elements. It is about **Data** (storage).
+*   **Stream**: A pipeline of computational operations applied to a sequence of elements. It is about **Computation** (processing).
+
+A Stream does not store data. It pulls data from a source (like a Collection, an array, or an I/O channel), pushes it through a pipeline of operations, and produces a result. Streams are strictly "consume-once"; after a terminal operation executes, the Stream is closed and cannot be reused.
+
+**Collections vs. Streams**
+
+| Feature | Collections | Streams |
+| :--- | :--- | :--- |
+| **Data Storage** | Stores elements in memory. | Does not store elements. |
+| **Iteration** | External (e.g., `for` or `while` loop). | Internal (the library handles the loop). |
+| **Evaluation** | Eager (all elements computed before moving on). | Lazy (computes only what is necessary). |
+| **Reusability** | Can be traversed multiple times. | Single-use (throws `IllegalStateException` if reused). |
+
+---
+
+### 2. Stream Pipeline Anatomy
+
+A Stream pipeline always consists of three parts:
+1.  **Source**: Where the data comes from (e.g., `list.stream()`, `Arrays.stream()`, `Stream.of()`).
+2.  **Intermediate Operations**: Operations that transform the stream into another stream (e.g., `filter`, `map`). These are *always* lazy.
+3.  **Terminal Operation**: An operation that produces a non-stream result (e.g., `collect`, `count`, `forEach`) or a side-effect. This triggers the execution of the entire pipeline.
+
+**Intermediate vs. Terminal Operations**
+
+| Intermediate Operations (Return `Stream<T>`) | Terminal Operations (Return non-Stream or `void`) |
+| :--- | :--- |
+| `filter()`, `map()`, `flatMap()` | `forEach()`, `toArray()`, `reduce()` |
+| `distinct()`, `sorted()`, `peek()` | `collect()`, `count()`, `min()`, `max()` |
+| `limit()`, `skip()` | `anyMatch()`, `allMatch()`, `findFirst()`, `findAny()` |
+
+---
+
+### 3. Core API Usage: Mapping, Filtering, and Reducing
+
+**Fundamentals**
+Let's look at the standard syntax for building a stream pipeline. 
+
+```java
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
+// Runnable Example: Core Stream API Usage
+class Employee {
+    String name;
+    String department;
+    double salary;
+
+    public Employee(String name, String department, double salary) {
+        this.name = name;
+        this.department = department;
+        this.salary = salary;
+    }
+    public String getDepartment() { return department; }
+    public double getSalary() { return salary; }
+}
+
+public class StreamFundamentalsDemo {
+    public static void main(String[] args) {
+        List<Employee> employees = Arrays.asList(
+            new Employee("Alice", "Engineering", 90000),
+            new Employee("Bob", "Engineering", 80000),
+            new Employee("Charlie", "HR", 60000),
+            new Employee("Diana", "Sales", 75000)
+        );
+
+        // 1. Filter, Map, and Collect
+        List<String> engineeringNames = employees.stream()
+            .filter(e -> e.getDepartment().equals("Engineering")) // Intermediate
+            .map(e -> e.name)                                     // Intermediate
+            .collect(Collectors.toList());                        // Terminal
+        
+        System.out.println("Engineers: " + engineeringNames);
+
+        // 2. Reduce (Summing salaries)
+        double totalSalary = employees.stream()
+            .map(Employee::getSalary)
+            .reduce(0.0, Double::sum); // Terminal
+        
+        System.out.println("Total Salary: " + totalSalary);
+    }
+}
+```
+
+---
+
+### 4. Advanced Internals I: Lazy Evaluation and Loop Fusion
+
+**How it works under the hood**
+When you chain `.filter().map()`, the JVM does *not* iterate over the list to filter it, create a new list, and then iterate over that new list to map it. This would be incredibly inefficient.
+
+Instead, Streams utilize **Lazy Evaluation** and **Loop Fusion**.
+*   **Lazy Evaluation**: Intermediate operations merely instantiate configuration objects (specifically, a linked list of `ReferencePipeline` nodes). No data moves until the terminal operation is invoked.
+*   **Loop Fusion**: The JVM fuses all intermediate operations into a single pass (a single loop) over the data. 
+
+**The `Sink` Architecture**
+At the bytecode/JDK level, Java implements loop fusion using an interface called `Sink`. A `Sink` is an object that accepts a value, performs its specific operation (like checking a predicate for `filter`), and then passes the value to the *next* `Sink` downstream.
+When a terminal operation is called, the JDK works backward from the terminal operation, wrapping each intermediate operation into a chain of `Sink` objects. The source data is then pumped through this single `Sink` chain.
+
+```java
+import java.util.Arrays;
+import java.util.List;
+
+// Runnable Example: Demonstrating Lazy Evaluation and Loop Fusion
+public class LazyEvaluationDemo {
+    public static void main(String[] args) {
+        List<String> names = Arrays.asList("Alice", "Bob", "Charlie", "David");
+
+        System.out.println("--- Building Pipeline (Nothing happens yet) ---");
+        var stream = names.stream()
+            .filter(name -> {
+                System.out.println("Filtering: " + name);
+                return name.length() > 3;
+            })
+            .map(name -> {
+                System.out.println("Mapping: " + name);
+                return name.toUpperCase();
+            });
+            
+        System.out.println("--- Pipeline Built. Triggering Terminal Operation ---");
+        // Short-circuiting terminal operation
+        String firstMatch = stream.findFirst().orElse(""); 
+        
+        System.out.println("--- Result ---");
+        System.out.println("First Match: " + firstMatch);
+        
+        /* Expected Output Analysis:
+         * Notice that "Charlie" and "David" are NEVER processed. 
+         * The data flows vertically (Alice -> Filter -> Map -> findFirst) 
+         * rather than horizontally across the whole list.
+         */
+    }
+}
+```
+
+---
+
+### 5. Advanced Internals II: Stateful vs. Stateless Operations
+
+To master Streams, you must understand how operations affect the pipeline's memory and execution flow.
+
+*   **Stateless Operations** (e.g., `filter`, `map`): These operations do not retain state from previously processed elements. They process each element independently. They are perfectly suited for Loop Fusion.
+*   **Stateful Operations** (e.g., `sorted`, `distinct`, `limit`): These operations must incorporate state from previously seen elements. 
+    *   **The Barrier**: A stateful operation acts as a **full barrier** in the `Sink` pipeline. For example, `sorted()` cannot push a single element downstream until it has seen *every* element from the upstream source. Loop fusion breaks at this barrier; the JVM must accumulate all elements, sort them, and then push them to the next operation.
+
+---
+
+### 6. Performance & Memory: Primitive Streams and Autoboxing
+
+**The Overhead of Objects**
+A standard `Stream<Integer>` works with wrapper objects. If you process 1,000,000 integers, you allocate 1,000,000 `Integer` objects on the Heap. This causes massive memory overhead and triggers heavy Garbage Collection (GC).
+
+**Primitive Streams**
+To solve this, Java provides `IntStream`, `LongStream`, and `DoubleStream`. These streams are backed by raw primitives (`int`, `long`, `double`), completely bypassing object allocation overhead.
+
+```java
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
+
+// Runnable Example: Autoboxing Performance Impact
+public class PrimitiveStreamDemo {
+    public static void main(String[] args) {
+        long start, end;
+        int limit = 10_000_000;
+
+        // 1. Heavy Object Stream (Autoboxing)
+        start = System.currentTimeMillis();
+        int sumObject = Stream.iterate(0, i -> i + 1)
+                              .limit(limit)
+                              .reduce(0, Integer::sum);
+        end = System.currentTimeMillis();
+        System.out.println("Stream<Integer> time: " + (end - start) + " ms");
+
+        // 2. Lightweight Primitive Stream (No Autoboxing)
+        start = System.currentTimeMillis();
+        int sumPrimitive = IntStream.range(0, limit)
+                                    .sum();
+        end = System.currentTimeMillis();
+        System.out.println("IntStream time: " + (end - start) + " ms");
+        
+        // Primitive streams are typically 5x to 10x faster for numerical computations.
+    }
+}
+```
+
+---
+
+### 7. Parallel Streams: `Spliterator`, Fork/Join, and the N × Q Model
+
+**Fundamentals**
+Appending `.parallel()` or using `.parallelStream()` tells the JVM to split the data into chunks and process them concurrently on multiple CPU cores.
+
+**Advanced Internals: Spliterator and Fork/Join Pool**
+1.  **`Spliterator` (Split Iterator)**: The source collection provides a `Spliterator`. Its `trySplit()` method divides the workload into two smaller workloads until the chunks are small enough to be processed sequentially. `ArrayList` splits perfectly (O(1)). `LinkedList` splits terribly (O(N)), making it a poor source for parallel streams.
+2.  **Common Fork/Join Pool**: The split tasks are submitted to the JVM's `ForkJoinPool.commonPool()`. This pool uses a **Work-Stealing Algorithm** (idle threads steal tasks from the queues of busy threads). 
+
+**The Danger of Parallel Streams (The $N \times Q$ Model)**
+A common junior mistake is slapping `.parallel()` on everything. You should only use parallel streams if the operation passes the **$N \times Q$ test**:
+*   $N$ = Number of data items.
+*   $Q$ = Amount of computation per item.
+*   If $N \times Q$ is very large (e.g., thousands of items with heavy math, or millions of items with light math), parallelization helps.
+*   If $N \times Q$ is small, the overhead of creating threads, splitting the data, and merging the results will make the parallel stream *slower* than a sequential stream.
+
+**The Golden Rule of Parallel Streams:**
+*NEVER* use parallel streams for tasks involving I/O (database calls, network requests, file reading). The `commonPool` has a limited number of threads (equal to your CPU cores - 1). If those threads block waiting for I/O, you instantly starve the entire JVM of parallel execution capacity, freezing other parallel streams in your application.
+
+```java
+import java.util.stream.IntStream;
+
+// Runnable Example: Sequential vs Parallel Threads
+public class ParallelStreamDemo {
+    public static void main(String[] args) {
+        System.out.println("Sequential:");
+        IntStream.range(1, 5).forEach(i -> 
+            System.out.println("Task " + i + " on " + Thread.currentThread().getName())
+        );
+
+        System.out.println("\nParallel:");
+        IntStream.range(1, 5).parallel().forEach(i -> 
+            System.out.println("Task " + i + " on " + Thread.currentThread().getName())
+        );
+        // Notice the parallel version uses ForkJoinPool.commonPool-worker threads
+    }
+}
+```
+
+---
+
+### 8. Architectural Trade-offs: Imperative Loops vs. Declarative Streams
+
+| Feature | Imperative `for` Loop | Declarative `Stream` |
+| :--- | :--- | :--- |
+| **Readability** | Poor for complex transformations (deep nesting). | High for complex transformations (fluent chaining). |
+| **Performance** | Slightly faster for simple tasks (no API overhead). | Very slight overhead, but highly optimized via Loop Fusion. |
+| **Concurrency** | Hard (requires explicit thread management). | Trivial (just add `.parallel()`). |
+| **Control Flow** | Supports `break`, `continue`, `return`. | Does not support `break` or `continue` natively (must use short-circuiting ops like `anyMatch` or `takeWhile`). |
+| **Debugging** | Easy (can step through line by line). | Difficult (requires `.peek()` or specialized IDE Stream debuggers). |
+
+---
+
+## Section 2: Recall Drills
+
+<Flashcard answer="Lazy evaluation. Intermediate operations only construct a pipeline of operations (a linked list of Sinks). No actual processing occurs until a terminal operation is invoked." question="Why don't intermediate stream operations like `map()` and `filter()` execute immediately when called?"/>
+
+<Flashcard answer="Loop Fusion is an optimization where the JVM fuses multiple intermediate operations (like filter and map) into a single pass (loop) over the data using a chain of `Sink` objects." question="What is 'Loop Fusion' in the context of the Java Stream API?"/>
+
+<Flashcard answer="A stateful operation (like `sorted()` or `distinct()`) must retain state from previously processed elements. It acts as a full barrier, breaking Loop Fusion because it must buffer all upstream elements before pushing any downstream." question="What is the difference between a stateless operation and a stateful operation in Streams, and how does it affect execution?"/>
+
+<Flashcard answer="To avoid the severe memory and garbage collection overhead of Autoboxing (converting primitive `int` to wrapper `Integer` objects repeatedly)." question="Why should you prefer `IntStream` or `LongStream` over `Stream<Integer>` or `Stream<Long>` for numerical processing?"/>
+
+<Flashcard answer="It uses the `Spliterator` (Split Iterator) interface. The `trySplit()` method recursively divides the workload until chunks are small enough to be processed concurrently." question="What interface does a parallel stream use to divide the source data into smaller chunks?"/>
+
+<Flashcard answer="The ForkJoinPool.commonPool(). Blocking I/O operations will tie up these threads, starving all other parallel streams in the entire JVM and degrading application performance." question="Why is it highly discouraged to perform blocking I/O (like database calls) inside a `.parallelStream()`?"/>
+
+<Flashcard answer="ArrayList splits in O(1) time because it is backed by an array with known bounds. LinkedList splits in O(N) time because the Spliterator must traverse node references to find the midpoint, making it terrible for parallel streams." question="Why is an ArrayList a much better source for a parallel stream than a LinkedList?"/>
