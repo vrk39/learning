@@ -1,0 +1,338 @@
+---
+id: core-java-oops
+title: Core Java OOPS Masterclass
+---
+import Flashcard from '@site/src/components/Flashcard';
+
+## Table of Contents
+1. **Introduction to Java OOP**
+2. **Classes and Objects**: From Syntax to JVM Memory Models
+3. **Encapsulation**: Access Modifiers, Data Hiding, and Immutability
+4. **Inheritance**: Is-A Relationships, Memory Layout, and Constructor Chaining
+5. **Polymorphism**: Overloading, Overriding, and JVM Method Dispatch (vtables)
+6. **Abstraction**: Abstract Classes, Interfaces, and Bytecode Level Execution
+7. **Architectural Trade-offs**: Composition vs. Inheritance
+8. **Recall Drills (Flashcards)**
+
+---
+
+## Section 1: Deep Knowledge Guide
+
+### 1. Classes and Objects: The Blueprint and the Instance
+
+**Fundamentals**
+At its core, Object-Oriented Programming (OOP) in Java is about modeling real-world entities. A **Class** is a blueprint (or template) that defines the state (fields) and behavior (methods) of an entity. An **Object** is an instance of that class, created using the `new` keyword, which allocates memory for it.
+
+**Advanced Internals: JVM Memory Model & Object Layout**
+When you instantiate an object via `new MyClass()`, what happens under the hood?
+1. **Class Loading:** The JVM's ClassLoader checks if `MyClass.class` is loaded into the Metaspace (formerly PermGen). If not, it loads, links, and initializes it.
+2. **Heap Allocation:** The JVM allocates continuous memory on the **Heap** for the object.
+3. **Object Header:** Every Java object has an overhead. In a 64-bit JVM with compressed pointers (Compressed Oops), the object header is typically 12 bytes:
+   * **Mark Word (8 bytes):** Stores runtime data like hash codes, GC generational age, and synchronization locks.
+   * **Klass Pointer (4 bytes):** Points to the class metadata in the Metaspace.
+4. **Padding:** The JVM requires objects to be 8-byte aligned. If the header and fields don't add up to a multiple of 8, padding bytes are appended.
+5. **Stack Reference:** The reference variable holding the object lives on the **Thread Stack** (or inside another object on the heap) and points to the heap memory address.
+
+```java
+// Runnable Example: Class creation and basic memory visualization
+public class ObjectMemoryDemo {
+    // 12 bytes header + 4 bytes int + 4 bytes padding = 24 bytes total estimated size
+    private int id; 
+    
+    public ObjectMemoryDemo(int id) {
+        this.id = id;
+    }
+
+    public static void main(String[] args) {
+        // 'demo' is a reference on the stack. 
+        // The actual object is allocated on the heap.
+        ObjectMemoryDemo demo = new ObjectMemoryDemo(42);
+        
+        System.out.println("Object instantiated with ID: " + demo.id);
+        System.out.println("JVM Class metadata pointer links to: " + demo.getClass().getName());
+    }
+}
+```
+
+---
+
+### 2. Encapsulation: Shielding the State
+
+**Fundamentals**
+Encapsulation bundles data (fields) and methods operating on that data into a single unit (class). More importantly, it restricts direct access to the object's components, a principle known as **Data Hiding**. This is enforced using access modifiers (`private`, `protected`, `default`/package-private, `public`).
+
+**Access Modifiers Comparison Table**
+
+| Modifier | Class | Package | Subclass (Same Pkg) | Subclass (Diff Pkg) | Global (Anywhere) |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| `public` | Yes | Yes | Yes | Yes | Yes |
+| `protected` | Yes | Yes | Yes | Yes | No |
+| `default` | Yes | Yes | Yes | No | No |
+| `private` | Yes | No | No | No | No |
+
+**Advanced Internals: Immutability and Thread Safety**
+Expert encapsulation goes beyond just making fields `private`. It extends into **Immutability**. An immutable object's state cannot be modified after construction. This is crucial for building highly concurrent applications because immutable objects are inherently thread-safe (no synchronization needed).
+
+To create a strictly immutable class in Java:
+1. Declare the class as `final` so it cannot be extended (preventing subclass overrides).
+2. Make all fields `private` and `final`.
+3. Do not provide setter methods.
+4. If fields contain mutable objects (like `Date` or arrays), return deep copies in getters.
+
+```java
+import java.util.ArrayList;
+import java.util.List;
+
+// Runnable Example: Strict Immutability
+public final class ImmutableStudent {
+    private final String name;
+    private final List<String> courses; // Mutable object reference
+
+    public ImmutableStudent(String name, List<String> courses) {
+        this.name = name;
+        // Create a deep copy to prevent external modification via constructor args
+        this.courses = new ArrayList<>(courses);
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public List<String> getCourses() {
+        // Return a defensive copy to protect internal state
+        return new ArrayList<>(courses);
+    }
+
+    public static void main(String[] args) {
+        List<String> initialCourses = new ArrayList<>();
+        initialCourses.add("Math");
+        
+        ImmutableStudent student = new ImmutableStudent("Alice", initialCourses);
+        
+        // Attempting to mutate the original list won't affect the student's internal state
+        initialCourses.add("Physics"); 
+        
+        System.out.println("Student's courses: " + student.getCourses()); 
+        // Output: [Math]
+    }
+}
+```
+
+---
+
+### 3. Inheritance: Reusability and Memory Layout
+
+**Fundamentals**
+Inheritance represents an **"IS-A"** relationship, allowing a new class (subclass) to inherit fields and methods from an existing class (superclass) using the `extends` keyword. It promotes code reusability.
+
+**Advanced Internals: Object Layout & The Diamond Problem**
+When a subclass is instantiated, the JVM does not create two separate objects. Instead, it creates a single contiguous block of memory on the heap. 
+1. **Memory Layout:** The inherited fields from the superclass are placed first in the memory layout, followed by the subclass's specific fields. 
+2. **Constructor Chaining:** The subclass constructor intrinsically calls the superclass constructor first using `super()`. This ensures the parent state is initialized before the child state is built on top of it.
+3. **Multiple Inheritance of State:** Java strictly forbids a class from extending multiple classes. This prevents the **Diamond Problem**, where ambiguity arises if a class inherits from two classes that both define a field or method with the same name.
+
+```java
+// Runnable Example: Constructor Chaining and Execution Order
+class Base {
+    int x;
+    Base() {
+        System.out.println("Base constructor called.");
+        x = 10;
+    }
+}
+
+class Derived extends Base {
+    int y;
+    Derived() {
+        super(); // Implicitly inserted by compiler if omitted
+        System.out.println("Derived constructor called.");
+        y = 20;
+    }
+
+    public static void main(String[] args) {
+        Derived d = new Derived();
+        // Memory layout: [Object Header] + [Base: x=10] + [Derived: y=20] + [Padding]
+        System.out.println("x: " + d.x + ", y: " + d.y);
+    }
+}
+```
+
+---
+
+### 4. Polymorphism: Static vs. Dynamic Dispatch
+
+**Fundamentals**
+Polymorphism ("many forms") allows objects to be treated as instances of their parent class rather than their actual class. 
+* **Compile-time (Static):** Method Overloading (same method name, different parameters).
+* **Runtime (Dynamic):** Method Overriding (subclass provides a specific implementation of a parent method).
+
+**Method Overloading vs Overriding**
+
+| Feature | Method Overloading | Method Overriding |
+| :--- | :--- | :--- |
+| **Binding Time** | Compile-time (Static Binding) | Runtime (Dynamic Binding) |
+| **Signatures** | Same name, different parameters | Same name, same parameters |
+| **Return Type** | Can be different | Must be same or covariant (subtype) |
+| **Static Methods** | Can be overloaded | Cannot be overridden (method hiding instead) |
+
+**Advanced Internals: vtables and invokevirtual**
+How does the JVM know which overridden method to call at runtime? It uses a Virtual Method Table (**vtable**).
+* Every class has a `vtable` created by the JVM at class load time, mapping method signatures to actual memory addresses of the bytecode instructions.
+* If a subclass overrides a method, its `vtable` entry for that signature points to the subclass's bytecode. If not overridden, it points to the parent's bytecode.
+* In bytecode, a standard method call uses the `invokevirtual` instruction. The JVM looks at the actual object's class pointer, jumps to its `vtable`, finds the fixed offset for the method, and executes it. This pointer dereferencing has a tiny O(1) performance cost, which modern JVMs heavily optimize via Inline Caching (JIT compiler optimization).
+
+```java
+// Runnable Example: Covariant Return Types and Dynamic Dispatch
+class Animal {
+    Animal reproduce() {
+        System.out.println("Animal reproduces.");
+        return new Animal();
+    }
+}
+
+class Dog extends Animal {
+    @Override
+    Dog reproduce() { // Covariant return type: Dog is an Animal
+        System.out.println("Dog gives birth to puppies.");
+        return new Dog();
+    }
+
+    public static void main(String[] args) {
+        Animal myPet = new Dog(); // Upcasting
+        
+        // At compile time, compiler checks if 'reproduce' exists in Animal.
+        // At runtime, 'invokevirtual' looks up the vtable of the actual 'Dog' object.
+        myPet.reproduce(); // Outputs: Dog gives birth to puppies.
+    }
+}
+```
+
+---
+
+### 5. Abstraction: Interfaces and `invokeinterface`
+
+**Fundamentals**
+Abstraction hides the complex implementation details and exposes only the essential features. 
+* **Abstract Classes:** Can have state (instance variables) and constructors. Can mix concrete and abstract methods.
+* **Interfaces:** Represents a pure contract. By default, fields are `public static final` and methods are `public abstract`.
+
+**Evolution of Interfaces:**
+Java 8 introduced `default` and `static` methods in interfaces to allow backward-compatible API evolution. Java 9 added `private` interface methods to share code between default methods.
+
+**Abstract Class vs. Interface**
+
+| Feature | Abstract Class | Interface |
+| :--- | :--- | :--- |
+| **Inheritance** | Single inheritance only (`extends`) | Multiple inheritance allowed (`implements`) |
+| **State** | Can hold mutable state (instance fields) | Cannot hold instance fields (only constants) |
+| **Constructors** | Yes, invoked by subclasses | No constructors |
+
+**Advanced Internals: `invokevirtual` vs `invokeinterface`**
+When calling a method on an interface reference, the JVM uses the `invokeinterface` instruction instead of `invokevirtual`. 
+* **Why the difference?** `invokevirtual` relies on fixed offsets in the `vtable` because single inheritance guarantees a predictable class hierarchy. With multiple inheritance (interfaces), a class can implement interfaces in any order. The JVM cannot guarantee a fixed index for an interface method across different implementing classes.
+* **The Cost:** `invokeinterface` traditionally requires scanning an Interface Method Table (**itable**), which is slower than a direct `vtable` offset lookup. However, modern HotSpot JVMs mitigate this performance hit using megamorphic inline caches.
+
+```java
+// Runnable Example: Modern Interface Features (Java 8+)
+interface Vehicle {
+    void start(); // public abstract by default
+
+    // default method: provides implementation without breaking existing classes
+    default void honk() {
+        System.out.println("Beep beep!");
+        logActivity("Honked horn");
+    }
+
+    // private method (Java 9+): helper for default methods
+    private void logActivity(String action) {
+        System.out.println("Vehicle Log: " + action);
+    }
+}
+
+class ElectricCar implements Vehicle {
+    @Override
+    public void start() {
+        System.out.println("Electric car starting silently...");
+    }
+
+    public static void main(String[] args) {
+        Vehicle myCar = new ElectricCar();
+        // Dispatched via invokeinterface
+        myCar.start(); 
+        // Calls the default method inherited from the interface
+        myCar.honk(); 
+    }
+}
+```
+
+---
+
+### 6. Architectural Trade-offs: Composition vs. Inheritance
+
+A masterclass in OOP isn't just knowing *how* to use inheritance, but knowing *when not to*. 
+
+**The Flaw of Inheritance: Tight Coupling**
+Inheritance rigidly binds the subclass to the superclass (Compile-time coupling). If the superclass changes a method's behavior, it ripples down the hierarchy, potentially breaking subclass logic (the Fragile Base Class problem).
+
+**The Alternative: Composition (HAS-A)**
+Composition builds complex objects by combining simpler, independent objects. It provides behavior dynamically at runtime (Strategy Pattern) rather than statically at compile time.
+
+* **Rule of Thumb:** Favor Composition over Inheritance. Only use inheritance when a genuine behavioral "IS-A" relationship exists and you intend to utilize polymorphic substitution everywhere.
+
+```java
+// Runnable Example: Strategy Pattern via Composition
+interface Engine {
+    void run();
+}
+
+class V8Engine implements Engine {
+    public void run() { System.out.println("V8 Engine roaring!"); }
+}
+
+class ElectricMotor implements Engine {
+    public void run() { System.out.println("Electric Motor humming quietly."); }
+}
+
+// Car HAS-A Engine (Composition)
+class Car {
+    private Engine engine; // Coupled to abstraction, not implementation
+
+    public Car(Engine engine) {
+        this.engine = engine;
+    }
+
+    public void startCar() {
+        engine.run();
+    }
+    
+    // Allows changing behavior at runtime!
+    public void swapEngine(Engine newEngine) {
+        this.engine = newEngine;
+    }
+
+    public static void main(String[] args) {
+        Car myCar = new Car(new V8Engine());
+        myCar.startCar(); // V8 Engine roaring!
+
+        // Dynamic behavior change without altering class hierarchy
+        myCar.swapEngine(new ElectricMotor());
+        myCar.startCar(); // Electric Motor humming quietly.
+    }
+}
+```
+
+---
+
+## Section 2: Recall Drills
+
+<Flashcard answer="The object header is typically 12 bytes: an 8-byte Mark Word (for locks, GC age, hash codes) and a 4-byte Klass Pointer (pointing to class metadata)." question="In a 64-bit JVM with compressed pointers, what components make up the object header and what is its typical size?"/>
+
+<Flashcard answer="1. Declare class as final. 2. Make all fields private and final. 3. Provide no setters. 4. Return defensive deep copies of mutable objects in getters." question="How do you make a Java class strictly immutable?"/>
+
+<Flashcard answer="To prevent the Diamond Problem, where ambiguity arises if a subclass inherits from two superclasses that both define the same field or method." question="Why does Java forbid multiple inheritance of classes?"/>
+
+<Flashcard answer="The 'invokevirtual' instruction is used. It resolves the method address using fixed offsets within the object's Virtual Method Table (vtable)." question="At the bytecode level, what instruction is used to dispatch an overridden method from a class, and what data structure does it use?"/>
+
+<Flashcard answer="Because interfaces support multiple inheritance, method indices aren't fixed across all implementing classes. 'invokeinterface' must search an Interface Method Table (itable) instead of doing a direct index lookup like 'vtable'." question="Why is 'invokeinterface' historically slower than 'invokevirtual'?"/>
+
+<Flashcard answer="A design flaw in object-oriented programming where seemingly safe modifications to a base class unintentionally break the behavior of its inherited subclasses due to tight coupling." question="What is the 'Fragile Base Class' problem?"/>
