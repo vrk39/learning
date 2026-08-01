@@ -1,0 +1,228 @@
+---
+id: java-generics
+title: Java Generics Masterclass
+---
+import Flashcard from '@site/src/components/Flashcard';
+
+## Table of Contents
+1. **Introduction to Generics**: Type Safety and Code Reusability
+2. **Generic Classes and Methods**: Basic Syntax
+3. **Bounded Type Parameters**: Upper and Lower Bounds
+4. **Wildcards**: Covariance, Contravariance, and PECS
+5. **Advanced Internals I: Type Erasure and Bridge Methods**
+6. **Advanced Internals II: Reification and Heap Pollution**
+7. **Architectural Trade-offs**: Generics vs. Raw Types and Object Casting
+8. **Section 2: Recall Drills (Flashcards)**
+
+---
+
+## Section 1: Deep Knowledge Guide
+
+### 1. Introduction to Generics
+
+**Fundamentals**
+Before Java 5, collections stored raw `Object` instances. This required explicit, unsafe type casting every time you retrieved an item, often leading to `ClassCastException` errors at runtime. 
+
+Introduced in Java 5, **Generics** brought compile-time type safety to Java. They allow you to parameterize types (classes, interfaces, and methods), shifting type checking from runtime to compile time.
+
+---
+
+### 2. Generic Classes and Methods: Basic Syntax
+
+**Fundamentals**
+To create a generic class, you append a type parameter enclosed in angle brackets (`<T>`) to the class name. By convention, single uppercase letters are used for type parameters:
+*   `T` - Type
+*   `E` - Element (used extensively by collections)
+*   `K` - Key
+*   `V` - Value
+*   `N` - Number
+
+```java
+import java.util.ArrayList;
+import java.util.List;
+
+// Runnable Example: Generic Class and Generic Method
+class Box<T> {
+    private T item;
+
+    public void set(T item) { this.item = item; }
+    public T get() { return item; }
+
+    // Generic Method: Defines its own type parameter <U> independent of class <T>
+    public static <U> void printItem(U item) {
+        System.out.println("Printing generic item: " + item);
+    }
+}
+
+public class GenericsFundamentalsDemo {
+    public static void main(String[] args) {
+        // Type inference (Diamond operator <>) used during instantiation
+        Box<String> stringBox = new Box<>();
+        stringBox.set("Hello Generics");
+        
+        // Compile-time safety: Cannot pass an Integer into a String box
+        // stringBox.set(123); // Compile Error!
+
+        System.out.println(stringBox.get());
+        
+        // Invoking generic method
+        Box.printItem(42);
+        Box.printItem("Test");
+    }
+}
+```
+
+---
+
+### 3. Bounded Type Parameters
+
+**Fundamentals**
+Sometimes you want to restrict the types that can be passed as type arguments. For example, a calculator class should only accept numbers (`Integer`, `Double`, etc.), not `String`.
+
+**Upper Bounds (`<T extends Number>`):** Restricts `T` to be a subtype of a specified class or interface. It allows you to call methods defined in that parent class/interface.
+
+```java
+// Bounded Generic Class
+class NumberBox<T Number extends> {
+    private T number;
+
+    public NumberBox(T number) { this.number = number; }
+
+    public double doubleValue() {
+        // We can safely call .doubleValue() because <T Number extends> guarantees 
+        // that T has methods defined in the Number class.
+        return number.doubleValue();
+    }
+}
+```
+
+---
+
+### 4. Wildcards: Covariance, Contravariance, and PECS
+
+**Fundamentals**
+Wildcards (`?`) represent an unknown type. They are crucial when dealing with inheritance and generic types (which are **invariant**, meaning `List<String>` is *not* a subtype of `List<Object>`).
+
+**The PECS Principle (Producer Extends, Consumer Super):**
+*   **PECS**: **P**roducer **E**xtends, **C**onsumer **S**uper.
+*   **Upper Bounded Wildcard (`<? extends T>` - Covariant):** Use when your collection *produces* (reads) data out of it. You can read from it, but you cannot write (add) to it safely because the exact subtype is unknown.
+*   **Lower Bounded Wildcard (`<? super T>` - Contravariant):** Use when your collection *consumes* (writes) data into it. You can add items of type `T` (or its subtypes) to it safely, but reading from it only yields `Object`.
+
+**Wildcard Summary Table**
+
+| Wildcard Type | Syntax | Read (Produce) | Write (Consume) | Primary Use Case |
+| :--- | :--- | :--- | :--- | :--- |
+| **Unbounded** | `List<?>` | As `Object` | Only `null` | When processing methods independent of type parameter. |
+| **Upper Bounded** | `List<? extends Number>` | Safe (as `Number`) | Forbidden (except `null`) | Reading collections (Covariance). |
+| **Lower Bounded** | `List<? super Integer>` | As `Object` | Safe (Integer & subclasses) | Writing/Adding to collections (Contravariance). |
+
+```java
+import java.util.ArrayList;
+import java.util.List;
+
+public class PecsDemo {
+    
+    // PRODUCER: Uses <? extends Number> to READ data
+    public static double sumOfList(List<? extends Number> list) {
+        double sum = 0.0;
+        for (Number n : list) {
+            sum += n.doubleValue();
+        }
+        return sum;
+    }
+
+    // CONSUMER: Uses <? super Integer> to WRITE data
+    public static void addIntegers(List<? super Integer> list) {
+        list.add(1);
+        list.add(2);
+        list.add(3);
+    }
+
+    public static void main(String[] args) {
+        List<Integer> intList = List.of(1, 2, 3);
+        System.out.println("Sum: " + sumOfList(intList)); // Integer extends Number
+
+        List<Object> objList = new ArrayList<>();
+        addIntegers(objList); // Integer is super of Object? No, Object is super of Integer!
+        System.out.println("Object list size after add: " + objList.size());
+    }
+}
+```
+
+---
+
+### 5. Advanced Internals I: Type Erasure and Bridge Methods
+
+**The Big Secret of Java Generics: They Don't Exist at Runtime!**
+When Java introduced generics in Java 5, the architects faced a massive challenge: backward compatibility. Millions of lines of pre-Java 5 code existed. If they changed the JVM to support reified generics (like C#), old compiled code would break.
+
+**The Solution: Type Erasure**
+The Java compiler implements **Type Erasure**. 
+1.  During compilation, the compiler strips away all generic type parameters (`<T>`) and replaces them with their bound (or `Object` if unbounded).
+2.  Type casts are automatically inserted into the bytecode where necessary.
+3.  Consequently, `List<String>` and `List<Integer>` compile down to the *exact same raw class*: `List.class`. At runtime, the JVM has zero knowledge of generic type parameters.
+
+**Bridge Methods**
+Type erasure can cause tricky inheritance problems. When a class implements a generic interface with a parameterized type, erasure can break method overriding. To fix this, the compiler automatically generates a hidden synthetic method called a **Bridge Method**.
+
+```java
+// Source Code
+class Node<T> {
+    private T data;
+    public void setData(T data) { this.data = data; }
+}
+
+class MyNode extends Node<String> {
+    @Override
+    public void setData(String data) { super.setData(data); }
+}
+```
+*Behind the scenes after Type Erasure:*
+The base class becomes `Node` with `Object data`. But `MyNode` overrides `setData(String)`. To satisfy polymorphism at runtime, the compiler injects a bridge method into `MyNode`:
+```java
+// Generated Bridge Method (Synthetic)
+public void setData(Object data) {
+    setData((String) data); // Delegates to the String version
+}
+```
+
+---
+
+### 6. Advanced Internals II: Reification and Heap Pollution
+
+**Reified vs. Non-Reified Types**
+*   **Reified Types** (e.g., primitives, arrays): Their type information is fully available at runtime. You can do `new int[10]` or check `if (arr instanceof String[])`.
+*   **Non-Reified Types** (e.g., `List<String>`): Their type information is erased at compile time. Because of type erasure, you **cannot**:
+    *   Instantiate generic arrays: `new List<String>[10]` (Compile error).
+    *   Use `instanceof` with parameterized types: `if (list instanceof List<String>)` (Compile error; you can only check `if (list instanceof List<?>`).
+    *   Throw or catch generic exception classes.
+
+**Heap Pollution**
+Heap pollution occurs when a variable of a parameterized type refers to an object that is not of that parameterized type. This usually happens when mixing legacy raw types with generic types, and is flagged by the compiler with a `Heap Pollution / Unchecked Warning`.
+
+---
+
+### 7. Architectural Trade-offs: Generics vs. Raw Types
+
+| Feature | Using Generics (`List<String>`) | Using Raw Types (`List`) |
+| :--- | :--- | :--- |
+| **Type Safety** | Compile-time checking. Impossible to insert wrong types. | Runtime checking. High risk of `ClassCastException`. |
+| **Casting** | Automatic. The compiler inserts casts in bytecode. | Manual. Explicit casting required on every retrieval. |
+| **Performance** | Identical to raw types after type erasure. No runtime overhead. | Identical to generics, but sacrifices safety. |
+| **Legacy Compatibility**| Requires proper wildcards when interacting with old APIs. | Fully compatible with legacy pre-Java 5 code. |
+
+---
+
+## Section 2: Recall Drills
+
+<Flashcard answer="Type Erasure. The compiler strips away all generic type parameters at compile-time and replaces them with their bounds (or Object), meaning generic types do not exist at runtime in the JVM." question="What mechanism does Java use to implement Generics, and what is its effect on runtime?"/>
+
+<Flashcard answer="PECS stands for Producer Extends, Consumer Super. Use `<? extends T>` when the collection produces items for you to read, and `<? super T>` when the collection consumes items for you to write into." question="What is the PECS rule in Java Generics and when do you use each wildcard?"/>
+
+<Flashcard answer="Because of Type Erasure. At runtime, `List<String>` and `List<Integer>` both become raw `List` objects, making it impossible for the `instanceof` operator to distinguish between them." question="Why does the compiler throw an error when attempting `if (list instanceof List<String>)`?"/>
+
+<Flashcard answer="A hidden synthetic method automatically generated by the compiler during type erasure to preserve polymorphic method overriding when a subclass extends a generic class with specific type arguments." question="What is a 'Bridge Method' in Java Generics?"/>
+
+<Flashcard answer="Heap pollution occurs when a variable of a parameterized type references an object that is not of that type, usually caused by mixing raw types with generic code, leading to unchecked warnings." question="What is 'Heap Pollution' in Java?"/>
+
+<Flashcard answer="Because arrays are reified (they know their element type at runtime and throw ArrayStoreException if violated), whereas generic types are non-reified due to type erasure, making generic array creation unsafe." question="Why does Java forbid the creation of generic arrays, such as `new List<String>[10]`?"/>
