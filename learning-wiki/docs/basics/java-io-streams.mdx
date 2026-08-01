@@ -1,0 +1,241 @@
+---
+id: java-io-streams
+title: Java I/O Streams Masterclass
+---
+import Flashcard from '@site/src/components/Flashcard';
+
+## Table of Contents
+1. **The Core Concept**: What is a Stream?
+2. **The Great Divide**: Byte Streams vs. Character Streams
+3. **Architectural Design**: The Decorator Pattern
+4. **Performance & Internals**: The Cost of OS I/O and Buffering
+5. **Object Serialization**: `Serializable`, `transient`, and Object Graphs
+6. **Architectural Trade-offs**: Classic I/O (java.io) vs. New I/O (java.nio)
+7. **Section 2: Recall Drills (Flashcards)**
+
+---
+
+## Section 1: Deep Knowledge Guide
+
+### 1. The Core Concept: What is a Stream?
+
+**Fundamentals**
+In Java, a **Stream** is an abstraction representing a continuous, one-way flow of data. Think of it like a pipe conveying water: data enters at a source (e.g., a file, a network socket, memory) and exits at a destination. 
+*   **Input Streams**: Read data *from* a source *into* your Java application.
+*   **Output Streams**: Write data *from* your Java application *to* a destination.
+
+Streams are strictly sequential. You cannot arbitrarily skip around or read data out of order without using specialized classes (like `RandomAccessFile`).
+
+---
+
+### 2. The Great Divide: Byte Streams vs. Character Streams
+
+**Fundamentals**
+Java's I/O hierarchy is strictly divided into two families based on the type of data they handle:
+1.  **Byte Streams (`InputStream` / `OutputStream`)**: Handle raw 8-bit bytes. Used for binary data (images, audio, PDF files, serialized objects).
+2.  **Character Streams (`Reader` / `Writer`)**: Handle 16-bit Unicode characters. Used exclusively for text data. They automatically handle character encoding/decoding (e.g., translating UTF-8 bytes from a file into Java's UTF-16 `char` format).
+
+**Byte vs. Character Hierarchy Table**
+
+| Feature | Byte Streams | Character Streams |
+| :--- | :--- | :--- |
+| **Base Abstract Classes** | `InputStream`, `OutputStream` | `Reader`, `Writer` |
+| **Data Unit** | 8-bit raw bytes | 16-bit characters (Unicode) |
+| **Primary Use Case** | Binary files (Images, Executables) | Text files (.txt, .json, .csv) |
+| **File I/O Classes** | `FileInputStream`, `FileOutputStream` | `FileReader`, `FileWriter` |
+| **Bridging Classes** | N/A | `InputStreamReader`, `OutputStreamWriter` (Converts Byte to Char) |
+
+```java
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+
+// Runnable Example: Byte vs Character Stream Usage
+public class StreamFundamentalsDemo {
+    public static void main(String[] args) {
+        // 1. Byte Stream: Copying binary data (or text safely without encoding translation)
+        try (FileInputStream in = new FileInputStream("source.bin");
+             FileOutputStream out = new FileOutputStream("copy.bin")) {
+            int byteRead;
+            while ((byteRead = in.read()) != -1) {
+                out.write(byteRead); // Writes 1 raw byte at a time
+            }
+        } catch (IOException e) {
+            System.out.println("Binary IO Exception (expected if file missing): " + e.getMessage());
+        }
+
+        // 2. Character Stream: Writing and reading text
+        try (FileWriter writer = new FileWriter("text.txt");
+             FileReader reader = new FileReader("text.txt")) {
+            
+            writer.write("Hello Unicode: 🚀");
+            writer.flush(); // Ensure data is pushed to the OS
+            
+            int charRead;
+            System.out.print("Read from file: ");
+            while ((charRead = reader.read()) != -1) {
+                System.out.print((char) charRead); // Reads 16-bit char
+            }
+            System.out.println();
+        } catch (IOException e) {
+            System.out.println("Text IO Exception: " + e.getMessage());
+        }
+    }
+}
+```
+
+---
+
+### 3. Architectural Design: The Decorator Pattern
+
+**Fundamentals**
+The Java I/O API is one of the purest examples of the **Decorator Design Pattern** in the JDK. Streams are divided into two types:
+*   **Node Streams**: Directly connect to a data source (e.g., `FileInputStream` connects to a file).
+*   **Filter/Processing Streams**: Do not connect directly to a source. Instead, they wrap an existing stream to add functionality (like buffering, encryption, or object serialization).
+
+By chaining these streams together, you dynamically build complex data pipelines at runtime without creating an explosion of subclasses (e.g., instead of having `BufferedEncryptedFileInputStream`, you just chain `BufferedInputStream` -> `CipherInputStream` -> `FileInputStream`).
+
+---
+
+### 4. Performance & Internals: The Cost of OS I/O and Buffering
+
+**Advanced Internals: System Calls and Context Switching**
+Why is reading a file byte-by-byte (`new FileInputStream().read()`) incredibly slow?
+1.  **System Call:** Every single `read()` invocation on a raw `FileInputStream` triggers an OS-level system call.
+2.  **Context Switch:** The CPU must halt the JVM (User Space), perform a context switch to the OS Kernel (Kernel Space), instruct the hard drive controller to fetch the byte, and switch back to User Space. This context switch is incredibly expensive.
+3.  **Hardware Inefficiency:** Hard drives do not read 1 byte at a time. They read in fixed-size blocks (e.g., 4KB or 8KB sectors). Fetching 1 byte throws away the rest of the sector read by the disk.
+
+**The Fix: `BufferedInputStream` / `BufferedReader`**
+A `BufferedInputStream` wraps a node stream and allocates an internal memory array (default 8KB in Java).
+*   When you call `read()` the first time, the `BufferedInputStream` issues *one* system call to fetch 8,192 bytes from the disk and stores them in its internal array in the JVM heap.
+*   The next 8,191 calls to `read()` return bytes directly from RAM (User Space). Zero system calls, zero context switches. This improves performance by orders of magnitude (often 100x to 1000x faster).
+
+```java
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+
+// Runnable Example: The Decorator Pattern & Buffering
+public class BufferedIODemo {
+    public static void main(String[] args) {
+        String fileName = "large_test.dat";
+        
+        // Using Decorator Pattern: 
+        // FileOutputStream (Node) is wrapped by BufferedOutputStream (Filter)
+        try (FileOutputStream fos = new FileOutputStream(fileName);
+             BufferedOutputStream bos = new BufferedOutputStream(fos)) {
+            
+            // Writing 1 million bytes. 
+            // Because of the buffer, this results in only ~122 OS write calls 
+            // (1,000,000 / 8192) instead of 1,000,000 OS calls.
+            for (int i = 0; i < 1_000_000; i++) {
+                bos.write(1); 
+            }
+            System.out.println("Successfully wrote buffered data.");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+```
+
+---
+
+### 5. Object Serialization: `Serializable` and `transient`
+
+**Fundamentals**
+Serialization is the process of converting the state of a Java object into a byte stream, allowing it to be saved to a file or sent over a network. Deserialization is the reverse. 
+To serialize an object, its class must implement the `java.io.Serializable` interface (a marker interface with no methods). You process it using `ObjectOutputStream` and `ObjectInputStream`.
+
+**Advanced Internals: Reflection and Object Graphs**
+*   **Reflection:** Serialization bypasses standard constructors. During deserialization, the JVM uses reflection to directly allocate memory and populate fields.
+*   **The Object Graph:** If `Object A` has a reference to `Object B`, serializing `A` will automatically serialize `B` (and so on). If `B` does not implement `Serializable`, a `NotSerializableException` is thrown at runtime.
+*   **The `transient` Keyword:** If you have sensitive data (like a password) or un-serializable data (like a Thread or DB Connection), mark it as `transient`. The JVM will skip this field during serialization, leaving it as `null` (or default value) upon deserialization.
+*   **`serialVersionUID`:** The JVM assigns a unique hash to every class based on its fields/methods. If you serialize a class, add a field, and try to deserialize the old file, the JVM detects a version mismatch and throws `InvalidClassException`. Explicitly declaring `private static final long serialVersionUID = 1L;` bypasses this automatic strict checking, allowing backward compatibility.
+
+```java
+import java.io.*;
+
+// Runnable Example: Serialization, transient, and serialVersionUID
+class UserProfile implements Serializable {
+    // Explicit Version UID for backward compatibility during class evolution
+    private static final long serialVersionUID = 1L; 
+
+    private String username;
+    
+    // transient keyword prevents this field from being serialized to disk
+    private transient String password; 
+
+    public UserProfile(String username, String password) {
+        this.username = username;
+        this.password = password;
+    }
+
+    @Override
+    public String toString() {
+        return "User: " + username + " | Pass: " + password;
+    }
+}
+
+public class SerializationDemo {
+    public static void main(String[] args) {
+        UserProfile user = new UserProfile("admin", "superSecret123!");
+        System.out.println("Before Serialization: " + user);
+
+        String file = "user.ser";
+
+        // Serialize
+        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(file))) {
+            oos.writeObject(user);
+        } catch (IOException e) { e.printStackTrace(); }
+
+        // Deserialize
+        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file))) {
+            UserProfile restoredUser = (UserProfile) ois.readObject();
+            // Notice the password is null because it was marked transient
+            System.out.println("After Deserialization: " + restoredUser); 
+        } catch (IOException | ClassNotFoundException e) { e.printStackTrace(); }
+    }
+}
+```
+
+---
+
+### 6. Architectural Trade-offs: Classic I/O (java.io) vs. New I/O (java.nio)
+
+Java 1.4 introduced `java.nio` (New I/O) to solve the scalability bottlenecks of traditional streams.
+
+**Classic I/O (`java.io`)**
+*   **Stream-Oriented:** Reads one or more bytes at a time in a continuous flow.
+*   **Blocking:** When a thread calls `read()` or `write()`, it is physically blocked until data is available or fully written. If you have 10,000 network connections, you need 10,000 threads, which crashes the OS.
+
+**New I/O (`java.nio`)**
+*   **Buffer and Channel-Oriented:** Data is read from a `Channel` directly into a `Buffer` (a chunk of memory). You can move back and forth within the buffer.
+*   **Non-Blocking (Multiplexing):** A single thread can use a `Selector` to monitor thousands of channels. If a channel isn't ready for reading, the thread doesn't block; it moves on to another channel. This is the foundation of high-performance servers like Netty and Tomcat.
+
+| Feature | `java.io` (Classic) | `java.nio` (New I/O) |
+| :--- | :--- | :--- |
+| **Abstractions** | Streams (InputStream/OutputStream) | Channels, Buffers, Selectors |
+| **Data Flow** | Byte-by-byte or char-by-char | Block/Buffer based |
+| **Blocking Behavior** | Strictly Blocking | Blocking or Non-Blocking |
+| **Ideal Use Case** | Simple File I/O, small number of concurrent clients | High concurrency network servers (e.g., chat servers, web servers) |
+
+---
+
+## Section 2: Recall Drills
+
+<Flashcard answer="Byte streams (InputStream/OutputStream) process raw 8-bit bytes and are used for binary data. Character streams (Reader/Writer) process 16-bit Unicode characters and automatically handle text encoding/decoding." question="What is the primary difference between a Byte Stream and a Character Stream in Java?"/>
+
+<Flashcard answer="The Decorator Pattern. It allows you to wrap a base node stream (like FileInputStream) with multiple processing streams (like BufferedInputStream) to add functionality dynamically at runtime." question="Which GoF design pattern forms the structural foundation of the Java I/O framework?"/>
+
+<Flashcard answer="Unbuffered streams make a native OS system call (requiring an expensive context switch from user space to kernel space) for every single byte read/written. Buffered streams read large chunks into RAM at once, drastically reducing system calls." question="Why is using a BufferedInputStream significantly faster than using a raw FileInputStream?"/>
+
+<Flashcard answer="The 'transient' keyword. During serialization, the JVM ignores transient fields, leaving them as null (or default primitive values) when the object is deserialized." question="Which Java keyword prevents a specific object field from being serialized to disk?"/>
+
+<Flashcard answer="It acts as a version control hash. If you modify a class (e.g., add a field) after serializing objects to disk, the JVM checks this ID during deserialization. If it differs, it throws an InvalidClassException. Explicitly defining it prevents backward-compatibility breakage." question="What is the purpose of explicitly declaring a 'serialVersionUID' in a Serializable class?"/>
+
+<Flashcard answer="Classic I/O is Stream-oriented and inherently Blocking (one thread per connection). Java NIO is Buffer/Channel-oriented and supports Non-blocking I/O using Selectors, allowing a single thread to manage thousands of concurrent connections." question="What is the main architectural difference between java.io (Classic I/O) and java.nio (New I/O) regarding threading and scalability?"/>
