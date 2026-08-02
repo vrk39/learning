@@ -1,0 +1,172 @@
+<Flashcard
+  question="What is Hibernate and what is ORM?"
+  answer="* Object-Relational Mapping (ORM): A programming technique that maps object-oriented domain models to relational database tables.
+* Hibernate: An open-source, lightweight ORM framework for Java that simplifies database interactions by mapping Java classes to database tables and providing data query and retrieval facilities."
+/>
+
+<Flashcard
+  question="What are the core interfaces of Hibernate?"
+  answer="* SessionFactory: A heavy, thread-safe factory object that creates Session instances (typically one per application lifetime).
+* Session: A lightweight, non-thread-safe single-threaded object representing a single unit of work with the database.
+* Transaction: Represents a unit of work boundary, abstracting JDBC/JTA transactions.
+* Query / Criteria: Interfaces used to query the database using HQL or Criteria API."
+/>
+
+<Flashcard
+  question="What is the difference between Session and SessionFactory in Hibernate?"
+  answer="* SessionFactory: Heavyweight object, expensive to create, thread-safe, and shared across multiple application threads (usually initialized once per application startup).
+* Session: Lightweight object, cheap to create and destroy, non-thread-safe, representing a single transactional interaction or database connection lifecycle."
+/>
+
+<Flashcard
+  question="What are the states of a persistent entity (Entity Lifecycle) in Hibernate?"
+  answer="* Transient: Newly created object with no association to a Session or database.
+* Persistent: Associated with an active Hibernate Session and a database row (changes are tracked and automatically synced).
+* Detached: Previously persistent, but the session is now closed (changes are no longer tracked automatically).
+* Removed: Marked for deletion and will be deleted from the database upon session flush/commit."
+/>
+
+<Flashcard
+  question="What is the difference between the get() and load() methods in Hibernate?"
+  answer="* get(): Eagerly fetches the entity from the database immediately when called, returning `null` if the record does not exist.
+* load(): Returns a proxy object immediately without hitting the database (lazy loading), throwing an `ObjectNotFoundException` later when method access is attempted if the record does not exist."
+/>
+
+<Flashcard
+  question="What is lazy loading vs eager loading in Hibernate?"
+  answer="* Lazy Loading: Delays the loading of related child entities or collections until they are explicitly accessed for the first time (default for collections).
+* Eager Loading: Loads associated entities or collections immediately along with the parent entity in a single query (default for `@ManyToOne` / `@OneToOne`)."
+/>
+
+<Flashcard
+  question="What is caching in Hibernate (First-Level vs Second-Level Cache)?"
+  answer="* First-Level Cache: Enabled by default, associated with the Session lifecycle, and scoped locally to that specific session.
+* Second-Level Cache: Optional, application-wide cache shared across multiple sessions and transactions (managed by providers like EhCache or Redis) to reduce database hits."
+/>
+
+<Flashcard
+  question="What is HQL (Hibernate Query Language) and how does it differ from SQL?"
+  answer="* HQL: Object-oriented query language independent of the underlying database, operating on Java classes and properties rather than table columns.
+* SQL: Relational query language tied to specific database schemas, tables, and column names."
+/>
+
+<Flashcard
+  question="What are the different types of inheritance mapping strategies in Hibernate?"
+  answer="* Table per Class Hierarchy (Single Table): All classes in a hierarchy are mapped to a single database table using a discriminator column.
+* Table per Subclass (Joined): Each class in the hierarchy has its own table, linked via foreign keys of the parent primary key.
+* Table per Concrete Class (Table per Class): Each concrete class gets its own independent table containing all inherited and local properties."
+/>
+
+<Flashcard
+  question="What is the purpose of the cascade and orphanRemoval attributes in Hibernate relationships?"
+  answer="* Cascade: Propagates state changes (like PERSIST, MERGE, REMOVE, REFRESH) from parent entities to associated child entities automatically.
+* OrphanRemoval: Automatically deletes a child entity from the database when it is disassociated or removed from the parent's collection (e.g., set to null or removed from a list)."
+/>
+
+<Flashcard
+  question="What is the N+1 Select problem in Hibernate and how can it be resolved?"
+  answer="* Problem: Occurs when Hibernate executes 1 initial query to fetch parent entities, and then N additional queries to fetch associated lazy collections or child entities for each parent.
+* Resolution: Resolved using JOIN FETCH in JPQL queries, entity graph annotations (`@EntityGraph`), or setting batch fetching sizes (`@BatchSize`)."
+/>
+
+<Flashcard
+  question="What are the differences between JPQL and the Criteria API?"
+  answer="* JPQL (Java Persistence Query Language): String-based query language similar to SQL but operating on JPA entity objects and properties.
+* Criteria API: Programmatic, type-safe query building API using Java objects and expressions, ideal for constructing dynamic queries where conditions are determined at runtime."
+/>
+
+<Flashcard
+  question="What is the purpose of the @GeneratedValue annotation and what are its strategy types?"
+  answer="* Purpose: Specifies the primary key generation strategy for an entity.
+* AUTO: Leaves generation strategy choice up to the underlying JPA provider/database.
+* IDENTITY: Relies on an auto-increment column in the database.
+* SEQUENCE: Uses a database sequence object to generate unique primary key values.
+* TABLE: Uses a separate database table to hold primary key values."
+/>
+
+<Flashcard
+  question="What is optimistic locking and how is it implemented using @Version in Hibernate?"
+  answer="* Definition: Concurrency control mechanism that assumes multiple transactions can complete without interfering, checking for data modification conflicts before committing.
+* @Version Annotation: Placed on a numeric or timestamp field in the entity; Hibernate automatically increments the version value on update and throws an `OptimisticLockException` if concurrent modifications are detected."
+/>
+
+<Flashcard
+  question="What is the difference between Optimistic Locking and Pessimistic Locking in Hibernate?"
+  answer="* Optimistic Locking: Uses version numbers/timestamps; does not lock database rows during read, validating conflicts only at commit time (better concurrency, lower contention).
+* Pessimistic Locking: Explicitly locks database rows at the database level (`SELECT ... FOR UPDATE`) during read operations to prevent concurrent modifications by other transactions (higher safety, lower concurrency)."
+/>
+
+<Flashcard
+  question="What are Entity Listeners and callback annotations in Hibernate?"
+  answer="* Callback Annotations: Methods inside entities annotated with lifecycle hooks like `@PrePersist`, `@PostPersist`, `@PreUpdate`, `@PostUpdate`, `@PreRemove`, and `@PostLoad`.
+* Entity Listeners: Separate listener classes annotated with `@EntityListeners` to encapsulate lifecycle logic outside the core entity model."
+/>
+
+<Flashcard
+  question="What is the purpose of the @MappedSuperclass annotation?"
+  answer="* Inheritance Mapping: Used to designate a parent class whose mapping information is inherited by its concrete entity subclasses.
+* Database Table: Unlike regular entity inheritance, a `@MappedSuperclass` does not have a corresponding table in the database; its fields are mapped directly into the tables of the subclasses that extend it."
+/>
+
+<Flashcard
+  question="What is the difference between EntityManager.persist() and EntityManager.merge()?"
+  answer="* persist(): Takes a transient entity instance and makes it persistent, transitioning its state and scheduling an SQL INSERT statement.
+* merge(): Takes a detached entity instance, copies its state onto a new or existing persistent entity instance within the session, and returns the managed instance (triggering an SQL UPDATE)."
+/>
+
+<Flashcard
+  question="How do you define relationships using @OneToMany, @ManyToOne, @OneToOne, and @ManyToMany, and what is the owning side?"
+  answer="* Relationships: Map associations between entity classes matching relational database foreign keys.
+* Owning Side: The side of the relationship that contains the physical foreign key column in the database table (typically annotated with `@JoinColumn`).
+* Inverse Side: The non-owning side, which must use the `mappedBy` attribute to point back to the owning entity property."
+/>
+
+<Flashcard
+  question="How does dirty checking work in Hibernate?"
+  answer="* Definition: The mechanism by which Hibernate automatically detects changes made to persistent entity fields within an active session.
+* Snapshot Mechanism: When an entity is loaded into the session, Hibernate stores an internal snapshot of its initial state; upon session flush, it compares current field values against the snapshot and generates SQL UPDATE statements for modified entities automatically."
+/>
+
+<Flashcard
+  question="What is the difference between EntityManager.find() and EntityManager.getReference()?"
+  answer="* find(): Eagerly hits the database immediately when invoked to fetch the complete entity, returning `null` if the record does not exist.
+* getReference(): Returns a lazy proxy object without hitting the database immediately, throwing an `EntityNotFoundException` only when a property of the proxy is accessed if the record is missing."
+/>
+
+<Flashcard
+  question="What is the purpose of @Embeddable and @Embedded annotations in Hibernate?"
+  answer="* @Embeddable: Marks a class whose properties can be embedded as part of an entity (e.g., an Address class reused across multiple entities).
+* @Embedded: Used inside an entity class to specify that the target embeddable object should be mapped inline into the parent entity's database table columns."
+/>
+
+<Flashcard
+  question="How do you map a composite primary key using @EmbeddedId and @IdClass?"
+  answer="* @EmbeddedId: Used to embed a separate composite key class containing the primary key fields directly into the entity using the annotation.
+* @IdClass: Used when primary key fields are defined individually inside the main entity class itself, but a separate primary key class is declared to represent the composite key structure via `@IdClass`."
+/>
+
+<Flashcard
+  question="What are the Hibernate flush modes (FlushModeType) and their purposes?"
+  answer="* AUTO: Automatically flushes the session prior to query execution and commit (default behavior).
+* COMMIT: Flushes the session only when a transaction is committed, avoiding premature flushes during queries for performance optimization."
+/>
+
+<Flashcard
+  question="What is a StatelessSession in Hibernate and when should it be used?"
+  answer="* Definition: A command-oriented API provided by Hibernate that acts as a thinner abstraction over JDBC without implementing a first-level cache, entity lifecycle tracking, or dirty checking.
+* Use Case: Ideal for batch-processing large volumes of data (e.g., mass inserts or exports) where memory overhead from standard sessions causes performance degradation."
+/>
+
+<Flashcard
+  question="What are the second-level cache concurrency strategies supported in Hibernate?"
+  answer="* Read-Only: Suitable for data that never changes; highest performance.
+* Nonstrict-Read-Write: Suitable for data that rarely changes; updates invalidate the cache rather than locking.
+* Read-Write: Uses locks to maintain consistency for data that is frequently read and updated.
+* Transactional: Fully transactional cache concurrency strategy for JTA environments."
+/>
+
+<Flashcard
+  question="What is the difference between the Java transient keyword and the JPA @Transient annotation?"
+  answer="* Java transient: Instructs the JVM to ignore the field during standard Java serialization.
+* JPA @Transient: Instructs Hibernate/JPA to ignore the field during database mapping and persistence (the field will not be saved to or loaded from database columns)."
+/>
