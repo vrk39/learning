@@ -1,37 +1,44 @@
+---
+id: exception-interview-questions
+title: Exception Handling Interview Questions
+---
+
+import Flashcard from '@site/src/components/Flashcard';
+
 <Flashcard
   question="What is an exception in Java?"
-  answer="* Definition: An event that occurs during the execution of a program that disrupts the normal flow of instructions[cite: 1].
-* Flow Disruption: It halts standard sequential statement processing unless explicitly caught and managed[cite: 1]."
+  answer="* Definition: An event that occurs during the execution of a program that disrupts the normal flow of instructions.
+* Flow Disruption: It halts standard sequential statement processing unless explicitly caught and managed."
 />
 
 <Flashcard
   question="How are checked and unchecked exceptions handled in Java?"
-  answer="* Checked Exceptions: Must be explicitly handled using a try-catch block or declared in the method signature via a throws clause[cite: 1].
-* Unchecked Exceptions: Subclasses of RuntimeException that occur at runtime and are ignored by the compiler[cite: 1].
-* Multi-Catch & Order: Multiple catch blocks can handle different exceptions, and must always be ordered from most specific to most general[cite: 1]."
+  answer="* Checked Exceptions: Must be explicitly handled using a try-catch block or declared in the method signature via a throws clause.
+* Unchecked Exceptions: Subclasses of RuntimeException that occur at runtime and are ignored by the compiler.
+* Multi-Catch & Order: Multiple catch blocks can handle different exceptions, and must always be ordered from most specific to most general."
 />
 
 <Flashcard
   question="What is the difference between the throw and throws keywords?"
-  answer="* throw: Used inside a method body to explicitly throw an instance of an exception[cite: 1].
-* throws: Used in a method signature to declare that the method might throw one or more checked exceptions, deferring handling to the calling method[cite: 1]."
+  answer="* throw: Used inside a method body to explicitly throw an instance of an exception.
+* throws: Used in a method signature to declare that the method might throw one or more checked exceptions, deferring handling to the calling method."
 />
 
 <Flashcard
   question="What is a custom exception and how do you implement one?"
-  answer="* Definition: A user-defined exception class designed to represent specific application-level error conditions[cite: 1].
-* Implementation: Created by extending the Exception class (for checked exceptions) or RuntimeException (for unchecked exceptions) and providing custom constructors calling super(message)[cite: 1]."
+  answer="* Definition: A user-defined exception class designed to represent specific application-level error conditions.
+* Implementation: Created by extending the Exception class (for checked exceptions) or RuntimeException (for unchecked exceptions) and providing custom constructors calling super(message)."
 />
 
 <Flashcard
   question="What is the general hierarchy of exceptions and errors in Java?"
-  answer="* Throwable: The root base class of all errors and exceptions in Java[cite: 1].
-* Exception: Represents conditions that applications should catch and handle (includes checked exceptions and RuntimeException subclasses)[cite: 1].
-* Error: Serious abnormal conditions (e.g., OutOfMemoryError, StackOverflowError) that are unrecoverable and should not be caught by application code[cite: 1]."
+  answer="* Throwable: The root base class of all errors and exceptions in Java.
+* Exception: Represents conditions that applications should catch and handle (includes checked exceptions and RuntimeException subclasses).
+* Error: Serious abnormal conditions (e.g., OutOfMemoryError, StackOverflowError) that are unrecoverable and should not be caught by application code."
 />
 
 <Flashcard
   question="How does exception handling behave during method overriding in Java?"
-  answer="* No Exception in Superclass: If the superclass method does not declare an exception, the subclass overridden method cannot declare any checked exceptions[cite: 1].
-* Exception in Superclass: If the superclass method declares an exception, the overriding subclass method can declare the same exception, a narrower subclass exception, or no exception at all, but never a broader parent exception[cite: 1]."
+  answer="* No Exception in Superclass: If the superclass method does not declare an exception, the subclass overridden method cannot declare any checked exceptions.
+* Exception in Superclass: If the superclass method declares an exception, the overriding subclass method can declare the same exception, a narrower subclass exception, or no exception at all, but never a broader parent exception."
 />

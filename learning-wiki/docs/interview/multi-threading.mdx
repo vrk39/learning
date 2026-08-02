@@ -1,14 +1,21 @@
+---
+id: multi-threading-interview-questions
+title: Multithreading Interview Questions
+---
+
+import Flashcard from '@site/src/components/Flashcard';
+
 <Flashcard
   question="What are the core differences between Runnable and Callable interfaces in Java?"
-  answer="* Return Value: Runnable cannot return the result of a computation, whereas Callable can return results via a Future object[cite: 1].
-* Exception Handling: Runnable's run() method cannot throw checked exceptions, whereas Callable's call() method contains a 'throws Exception' clause to easily propagate checked exceptions[cite: 1].
-* Method Signature: Runnable requires implementing public void run(), while Callable requires implementing public V call() throws Exception[cite: 1]."
+  answer="* Return Value: Runnable cannot return the result of a computation, whereas Callable can return results via a Future object.
+* Exception Handling: Runnable's run() method cannot throw checked exceptions, whereas Callable's call() method contains a 'throws Exception' clause to easily propagate checked exceptions.
+* Method Signature: Runnable requires implementing public void run(), while Callable requires implementing public V call() throws Exception."
 />
 
 <Flashcard
   question="What are the functions of the yield() and join() methods in the Thread class?"
-  answer="* yield(): A static method that stops the currently executing thread temporarily to give a chance to other waiting threads of the same priority[cite: 1].
-* join(): Puts the current thread on wait status until the thread on which it is called has completed execution (died), with an optional timeout parameter[cite: 1]."
+  answer="* yield(): A static method that stops the currently executing thread temporarily to give a chance to other waiting threads of the same priority.
+* join(): Puts the current thread on wait status until the thread on which it is called has completed execution (died), with an optional timeout parameter."
 />
 
 <Flashcard
@@ -35,7 +42,7 @@
 
 <Flashcard
   question="What is an ExecutorService and what are the common types of thread pools?"
-  answer="* Definition: An ExecutorService provides a managed thread pool framework to execute asynchronous tasks without manually managing thread lifecycles[cite: 1].
+  answer="* Definition: An ExecutorService provides a managed thread pool framework to execute asynchronous tasks without manually managing thread lifecycles.
 * Fixed Thread Pool: Reuses a fixed number of threads operating off a shared unbounded queue.
 * Cached Thread Pool: Creates new threads as needed but reuses previously constructed threads when available.
 * Single-Thread Executor: Executes tasks sequentially using a single worker thread.
@@ -44,7 +51,7 @@
 
 <Flashcard
   question="What is a CountDownLatch and how does it function in Java concurrency?"
-  answer="* Definition: A synchronization aid that allows one or more threads to wait until a set of operations being performed in other threads completes[cite: 1].
+  answer="* Definition: A synchronization aid that allows one or more threads to wait until a set of operations being performed in other threads completes.
 * Mechanism: Initialized with a given count, decremented via countDown(), while waiting threads block at await() until the count reaches zero."
 />
 
@@ -56,14 +63,14 @@
 
 <Flashcard
   question="How does thread communication work using wait() and notify() in the Producer-Consumer problem?"
-  answer="* Thread Communication: Mechanism where threads coordinate their actions by sharing monitor locks[cite: 1].
+  answer="* Thread Communication: Mechanism where threads coordinate their actions by sharing monitor locks.
 * Producer-Consumer Flow: Producer calls wait() when the buffer is full (releasing the lock and sleeping); Consumer processes items and calls notify() to wake up the producer, and vice versa."
 />
 
 <Flashcard
   question="What are the primary ways to create a custom thread in Java?"
-  answer="* Extending Thread Class: Creating a subclass that extends java.lang.Thread and overriding its run() method[cite: 1].
-* Implementing Runnable Interface: Implementing the Runnable interface, passing the instance to a new Thread(target) object, which is preferred for better object-oriented design and flexibility[cite: 1]."
+  answer="* Extending Thread Class: Creating a subclass that extends java.lang.Thread and overriding its run() method.
+* Implementing Runnable Interface: Implementing the Runnable interface, passing the instance to a new Thread(target) object, which is preferred for better object-oriented design and flexibility."
 />
 
 <Flashcard

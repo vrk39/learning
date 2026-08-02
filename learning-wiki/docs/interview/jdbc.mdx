@@ -1,15 +1,22 @@
+---
+id: jdbc-interview-questions
+title: JDBC Interview Questions
+---
+
+import Flashcard from '@site/src/components/Flashcard';
+
 <Flashcard
   question="What are the step-by-step procedures to create a JDBC connection and execute queries?"
-  answer="* Driver Registration: Register the database driver implementation class with java.sql.DriverManager using Class.forName()[cite: 1].
-* Connection Establishment: Open a session to the database by calling DriverManager.getConnection(), which returns a Connection object[cite: 1].
-* Statement Creation: Create a Statement, PreparedStatement, or CallableStatement object from the connection to submit SQL queries[cite: 1].
-* Execution & Result Handling: Execute updates via executeUpdate() or queries via executeQuery(), then process results using the ResultSet interface[cite: 1]."
+  answer="* Driver Registration: Register the database driver implementation class with java.sql.DriverManager using Class.forName().
+* Connection Establishment: Open a session to the database by calling DriverManager.getConnection(), which returns a Connection object.
+* Statement Creation: Create a Statement, PreparedStatement, or CallableStatement object from the connection to submit SQL queries.
+* Execution & Result Handling: Execute updates via executeUpdate() or queries via executeQuery(), then process results using the ResultSet interface."
 />
 
 <Flashcard
   question="How do you run a stored procedure using JDBC?"
-  answer="* CallableStatement: Use a CallableStatement object to invoke stored procedures[cite: 1].
-* Preparation: Obtain the CallableStatement object by calling the Connection.prepareCall() method with the procedure syntax (e.g., '{call myprocedure(?,?)}')[cite: 1].
-* Parameter Binding: Bind parameters using index-based setter methods (e.g., setInt(), setDouble())[cite: 1].
-* Execution: Execute the stored procedure by invoking the execute() method[cite: 1]."
+  answer="* CallableStatement: Use a CallableStatement object to invoke stored procedures.
+* Preparation: Obtain the CallableStatement object by calling the Connection.prepareCall() method with the procedure syntax (e.g., '{call myprocedure(?,?)}').
+* Parameter Binding: Bind parameters using index-based setter methods (e.g., setInt(), setDouble()).
+* Execution: Execute the stored procedure by invoking the execute() method."
 />

@@ -1,74 +1,81 @@
+---
+id: spring-interview-questions
+title: Spring Interview Questions
+---
+
+import Flashcard from '@site/src/components/Flashcard';
+
 <Flashcard
   question="What are the key differences between Spring Framework and Spring Boot?"
-  answer="* Spring Framework: A lightweight, open-source enterprise framework providing core features like Dependency Injection, AOP, and modular layers, but requiring extensive manual configuration and boilerplate XML/annotations[cite: 1].
-* Spring Boot: Built on top of the Spring Framework, providing auto-configuration, starter dependencies, and embedded servers to enable rapid, production-ready application development with minimal configuration[cite: 1]."
+  answer="* Spring Framework: A lightweight, open-source enterprise framework providing core features like Dependency Injection, AOP, and modular layers, but requiring extensive manual configuration and boilerplate XML/annotations.
+* Spring Boot: Built on top of the Spring Framework, providing auto-configuration, starter dependencies, and embedded servers to enable rapid, production-ready application development with minimal configuration."
 />
 
 <Flashcard
   question="What is the Spring IoC (Inversion of Control) Container and how does it manage beans?"
-  answer="* Core Container: The IoC container is at the core of the Spring Framework, responsible for instantiating, configuring, assembling, and managing complete bean life cycles[cite: 1].
-* Dependency Injection: The container uses DI to inject object dependencies into components automatically[cite: 1].
-* Implementations: Provided via BeanFactory (lazy initialization) and ApplicationContext (eager initialization with advanced enterprise features)[cite: 1]."
+  answer="* Core Container: The IoC container is at the core of the Spring Framework, responsible for instantiating, configuring, assembling, and managing complete bean life cycles.
+* Dependency Injection: The container uses DI to inject object dependencies into components automatically.
+* Implementations: Provided via BeanFactory (lazy initialization) and ApplicationContext (eager initialization with advanced enterprise features)."
 />
 
 <Flashcard
   question="What are the primary types of Dependency Injection supported in Spring?"
-  answer="* Constructor Injection: Dependencies are provided through class constructor parameters, ensuring immutability and mandatory dependencies[cite: 1].
-* Setter Injection: Dependencies are assigned using public setter methods, allowing optional dependencies and flexible re-configuration[cite: 1]."
+  answer="* Constructor Injection: Dependencies are provided through class constructor parameters, ensuring immutability and mandatory dependencies.
+* Setter Injection: Dependencies are assigned using public setter methods, allowing optional dependencies and flexible re-configuration."
 />
 
 <Flashcard
   question="What are the different bean scopes available in Spring?"
-  answer="* Singleton: Only one shared instance of the bean is created per Spring container (default scope)[cite: 1].
-* Prototype: A brand new bean instance is created every time it is requested from the container[cite: 1].
-* Request: A new bean instance is created for each HTTP request (web applications only)[cite: 1].
-* Session: A new bean instance is created for each HTTP session[cite: 1]."
+  answer="* Singleton: Only one shared instance of the bean is created per Spring container (default scope).
+* Prototype: A brand new bean instance is created every time it is requested from the container.
+* Request: A new bean instance is created for each HTTP request (web applications only).
+* Session: A new bean instance is created for each HTTP session."
 />
 
 <Flashcard
   question="What are the core features and modules of the Spring Framework?"
-  answer="* Core Container: Manages bean definition and dependency injection[cite: 1].
-* Data Access / Integration: Simplifies JDBC, ORM, and transaction management[cite: 1].
-* Web & AOP: Provides support for web applications (Spring MVC) and Aspect-Oriented Programming for cross-cutting concerns[cite: 1].
-* Security & Testing: Built-in support for authentication/authorization and unit/integration testing[cite: 1]."
+  answer="* Core Container: Manages bean definition and dependency injection.
+* Data Access / Integration: Simplifies JDBC, ORM, and transaction management.
+* Web & AOP: Provides support for web applications (Spring MVC) and Aspect-Oriented Programming for cross-cutting concerns.
+* Security & Testing: Built-in support for authentication/authorization and unit/integration testing."
 />
 
 <Flashcard
   question="What is the Bean Life Cycle in Spring and how is it managed?"
-  answer="* Container Initialization: The Spring container starts up and instantiates the bean instance as requested[cite: 1].
-* Dependency Injection: The container injects all required dependencies into the bean properties[cite: 1].
-* Custom Initialization: Custom logic can be executed immediately after instantiation using custom init() methods[cite: 1].
-* Destruction: When the container closes, custom destroy methods clean up resources[cite: 1]."
+  answer="* Container Initialization: The Spring container starts up and instantiates the bean instance as requested.
+* Dependency Injection: The container injects all required dependencies into the bean properties.
+* Custom Initialization: Custom logic can be executed immediately after instantiation using custom init() methods.
+* Destruction: When the container closes, custom destroy methods clean up resources."
 />
 
 <Flashcard
   question="What is Autowiring in Spring, what are its types, and what is its primary limitation?"
-  answer="* Definition: A feature that enables the Spring framework to inject object dependencies implicitly[cite: 1].
-* Types: Supports 'no', 'byName', 'byType', 'constructor', and 'autodetect'[cite: 1].
-* Limitation: Autowiring cannot be used to inject primitive data types[cite: 1]."
+  answer="* Definition: A feature that enables the Spring framework to inject object dependencies implicitly.
+* Types: Supports 'no', 'byName', 'byType', 'constructor', and 'autodetect'.
+* Limitation: Autowiring cannot be used to inject primitive data types."
 />
 
 <Flashcard
   question="What are the differences between @Component, @Controller, @Service, and @Repository annotations?"
-  answer="* @Component: A universal stereotype annotation used to create generic Spring beans for dependency injection[cite: 1].
-* @Controller: A specialization of @Component indicating that the class handles web requests and mappings[cite: 1].
-* @Service: Used to designate classes containing business logic[cite: 1].
-* @Repository: Used for the database persistence layer; it also automatically translates database-specific exceptions into generic DataAccessException[cite: 1]."
+  answer="* @Component: A universal stereotype annotation used to create generic Spring beans for dependency injection.
+* @Controller: A specialization of @Component indicating that the class handles web requests and mappings.
+* @Service: Used to designate classes containing business logic.
+* @Repository: Used for the database persistence layer; it also automatically translates database-specific exceptions into generic DataAccessException."
 />
 
 <Flashcard
   question="What does the @SpringBootApplication annotation do internally?"
-  answer="* Component Composition: It is a convenience annotation that combines three core annotations into a single declaration[cite: 1].
-* @Configuration: Tags the class as a source of bean definitions for the application context[cite: 1].
-* @EnableAutoConfiguration: Enables Spring Boot's auto-configuration mechanism based on classpath dependencies[cite: 1].
-* @ComponentScan: Enables component scanning within the current package and its sub-packages[cite: 1]."
+  answer="* Component Composition: It is a convenience annotation that combines three core annotations into a single declaration.
+* @Configuration: Tags the class as a source of bean definitions for the application context.
+* @EnableAutoConfiguration: Enables Spring Boot's auto-configuration mechanism based on classpath dependencies.
+* @ComponentScan: Enables component scanning within the current package and its sub-packages."
 />
 
 <Flashcard
   question="How are transactions managed in Spring and what is the role of @Transactional?"
-  answer="* Management Types: Spring supports both programmatic and declarative transaction management[cite: 1].
-* @Transactional Annotation: Used declaratively on methods or classes to ensure that all database operations within execute inside a transaction boundary (all-or-nothing atomicity)[cite: 1].
-* Rollback Behavior: By default, transactions roll back automatically on runtime (unchecked) exceptions, but can be configured for checked exceptions via rollbackFor[cite: 1]."
+  answer="* Management Types: Spring supports both programmatic and declarative transaction management.
+* @Transactional Annotation: Used declaratively on methods or classes to ensure that all database operations within execute inside a transaction boundary (all-or-nothing atomicity).
+* Rollback Behavior: By default, transactions roll back automatically on runtime (unchecked) exceptions, but can be configured for checked exceptions via rollbackFor."
 />
 
 <Flashcard
@@ -112,7 +119,7 @@
   question="What are Spring Profiles and how do they work?"
   answer="* Definition: A mechanism in Spring that allows segregation of bean definitions and configuration properties based on different environments (e.g., dev, test, prod).
 * Usage: Activated using the `spring.profiles.active` property or via command-line arguments.
-* Annotation: Classes or beans can be conditionally loaded using the `@Profile(\"dev\")` annotation."
+* Annotation: Classes or beans can be conditionally loaded using the `@Profile('dev')` annotation."
 />
 
 <Flashcard

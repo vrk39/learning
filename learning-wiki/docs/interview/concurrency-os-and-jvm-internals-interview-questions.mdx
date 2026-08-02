@@ -1,0 +1,110 @@
+---
+id: concurrency-os-and-jvm-internals-interview-questions
+title: Concurrency, OS & JVM Internals Interview Questions
+---
+
+import Flashcard from '@site/src/components/Flashcard';
+
+<Flashcard
+  question="What is the difference between Process and Thread?"
+  answer="* Process: An independent program in execution with its own isolated memory space and system resources, making context-switching heavier.
+* Thread: The smallest unit of execution within a process; multiple threads share the same process memory space and resources, making context-switching lightweight."
+/>
+
+<Flashcard
+  question="What is a Deadlock in concurrent systems and what are the 4 Coffman conditions required for it to occur?"
+  answer="* Definition: A state where two or more threads/processes are permanently blocked, each waiting for a resource held by another.
+* Coffman Conditions:
+  1. Mutual Exclusion: Resources can only be held by one process at a time.
+  2. Hold and Wait: Processes hold currently acquired resources while waiting for additional ones.
+  3. No Preemption: Resources cannot be forcibly taken away from a process.
+  4. Circular Wait: A closed chain of processes exists where each process holds a resource needed by the next process in the chain."
+/>
+
+<Flashcard
+  question="What is the difference between optimistic and pessimistic concurrency control in applications?"
+  answer="* Optimistic Concurrency Control: Assumes conflicts are rare; allows multiple users to read and modify data without locking, checking for version conflicts upon commit.
+* Pessimistic Concurrency Control: Assumes conflicts are frequent; locks records immediately during read operations to prevent concurrent modifications until the transaction completes."
+/>
+
+<Flashcard
+  question="What is a memory leak in programming, and what are its common causes?"
+  answer="* Definition: Occurs when allocated memory is no longer needed by the application, but the garbage collector or reference tracker fails to release it back to the system.
+* Common Causes: Unclosed database connections/streams, static collections holding references indefinitely, unremoved event listeners, and thread-local variables not being cleared."
+/>
+
+<Flashcard
+  question="How does Generational Garbage Collection work in JVM-based languages?"
+  answer="* Weak Generational Hypothesis: Most objects die young.
+* Young Generation: Divided into Eden and Survivor spaces (S0, S1) where newly created objects reside; minor garbage collections happen frequently here.
+* Old (Tenured) Generation: Stores long-lived objects that survive multiple minor GC cycles; major garbage collections (full GC) occur less frequently here because cleaning the old space is more expensive."
+/>
+
+<Flashcard
+  question="What are the core configuration parameters of a Java ThreadPoolExecutor?"
+  answer="* corePoolSize: The minimum number of threads kept alive in the pool even if idle.
+* maximumPoolSize: The maximum number of threads allowed to run concurrently in the pool.
+* keepAliveTime: The time limit excess idle threads wait before terminating.
+* workQueue: The blocking queue used to hold pending tasks submitted before execution resources become available."
+/>
+
+<Flashcard
+  question="What is the difference between a Mutex and a Semaphore?"
+  answer="* Mutex (Mutual Exclusion): A locking mechanism used to synchronize access to a shared resource, allowing only one thread to access it at a time (features ownership, meaning only the thread that locked it can unlock it).
+* Semaphore: A signaling mechanism using an internal counter to allow a specified maximum number of concurrent threads to access a resource (has no ownership restriction)."
+/>
+
+<Flashcard
+  question="What are JVM Garbage Collection Roots (GC Roots) and how do they determine reachability?"
+  answer="* Definition: GC Roots are special objects that are always considered reachable and serve as the base starting points for tracing object memory graphs in the JVM.
+* Common GC Roots: Local variables and parameters on active thread stacks, active Java native interface (JNI) references, static variables of loaded classes, and active synchronization monitors."
+/>
+
+<Flashcard
+  question="What is CPU Cache Locality (Spatial vs Temporal) and False Sharing in multi-threaded programming?"
+  answer="* Temporal Locality: Re-accessing recently used memory locations soon after.
+* Spatial Locality: Accessing memory locations close to recently accessed data (exploited via CPU cache lines).
+* False Sharing: Occurs when two or more threads running on separate CPU cores modify independent variables that happen to reside on the same cache line, causing unnecessary cache invalidations and severe performance degradation."
+/>
+
+<Flashcard
+  question="What is a Race Condition and how can it be prevented?"
+  answer="* Definition: A concurrency flaw where the output or correctness of a program depends on the unpredictable sequence or timing of uncontrollable thread executions.
+* Prevention: Prevented by using synchronization primitives (e.g., mutexes, locks, atomic variables), thread-safe collections, or immutable data structures to protect critical sections."
+/>
+
+<Flashcard
+  question="What is Compare-And-Swap (CAS) and how does it enable lock-free programming?"
+  answer="* Definition: An atomic hardware-level instruction that compares the contents of a memory location with a given value and, only if they are the same, modifies that memory location to a new value.
+* Lock-Free Programming: Enables threads to update shared variables without using blocking mutexes or locks, relying instead on retry loops when concurrent modifications cause the CAS operation to fail."
+/>
+
+<Flashcard
+  question="What is Object Pooling and when should it be used?"
+  answer="* Definition: A software design pattern that maintains a cache of pre-initialized, reusable objects rather than allocating and destroying them repeatedly.
+* Use Case: Best utilized for expensive resources whose creation overhead is high (e.g., database connections, socket channels, or heavy graphics objects), but can waste memory if pool sizes are improperly tuned."
+/>
+
+<Flashcard
+  question="What is the purpose of the volatile keyword in Java?"
+  answer="* Memory Visibility: Ensures that changes made to a `volatile` variable by one thread are immediately visible to other threads, bypassing local CPU cache lines and forcing reads/writes directly to main memory.
+* Instruction Reordering: Prevents the compiler and processor from reordering instructions around the volatile variable, but does not provide atomicity for compound operations (like increments)."
+/>
+
+<Flashcard
+  question="What is the difference between a Process-based and Thread-based Web Server architecture?"
+  answer="* Process-based: Spawns a completely independent operating system process to handle each incoming client connection; offers strong memory isolation and crash resilience, but has high memory and context-switching overhead.
+* Thread-based: Allocates lightweight threads within a single shared process address space to handle requests concurrently; offers faster context switching, but a single rogue thread can crash the entire server process."
+/>
+
+<Flashcard
+  question="What is a CompletableFuture in Java and how does it support asynchronous programming?"
+  answer="* Definition: An extension of Java's Future interface representing the result of an asynchronous computation.
+* Features: Allows chaining non-blocking callbacks, combining multiple asynchronous tasks (`allOf`, `anyOf`), and handling exceptions declaratively using functional programming pipelines."
+/>
+
+<Flashcard
+  question="What is the ForkJoinPool framework in Java and what is work-stealing?"
+  answer="* ForkJoinPool: A specialized executor service designed for parallel recursive divide-and-conquer tasks.
+* Work-Stealing Algorithm: Idle worker threads in the pool can 'steal' tasks from the back of the double-ended queues (deques) of busier threads, maximizing CPU utilization and core load balancing."
+/>

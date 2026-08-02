@@ -1,0 +1,365 @@
+---
+id: distributed-systems-and-scalability-interview-questions
+title: Distributed Systems & Scalability Interview Questions
+---
+
+import Flashcard from '@site/src/components/Flashcard';
+
+<Flashcard
+  question="What is the CAP Theorem in distributed systems?"
+  answer="* Definition: States that a distributed data store can simultaneously provide at most two of the following three guarantees: Consistency, Availability, and Partition Tolerance.
+* Partition Tolerance (P): The system continues to operate despite network partitions; since network failures are inevitable in distributed systems, modern systems must choose between Consistency (CP) and Availability (AP) during a partition."
+/>
+
+<Flashcard
+  question="What are the common caching strategies (Cache-Aside, Write-Through, Write-Back)?"
+  answer="* Cache-Aside (Lazy Loading): Application checks cache first; on a miss, it fetches from the database, populates the cache, and returns the data.
+* Write-Through: Data is written to the cache and database simultaneously within the same transaction.
+* Write-Back (Write-Behind): Data is written directly to the cache, and the cache asynchronously writes updates to the database later for high write performance."
+/>
+
+<Flashcard
+  question="What are the common load balancing algorithms?"
+  answer="* Round Robin: Distributes requests sequentially across servers in a cyclic order.
+* Least Connections: Directs traffic to the server with the active lowest number of concurrent connections.
+* IP Hash: Uses the client's IP address to hash and route requests consistently to the same server (session persistence)."
+/>
+
+<Flashcard
+  question="What is the difference between Horizontal Scaling and Vertical Scaling?"
+  answer="* Vertical Scaling (Scale Up): Adding more resources (CPU, RAM, storage) to a single server instance; bounded by hardware limits and single points of failure.
+* Horizontal Scaling (Scale Out): Adding more server instances to a pool and distributing traffic across them; offers high availability and virtually limitless scaling potential."
+/>
+
+<Flashcard
+  question="What is the difference between a Forward Proxy and a Reverse Proxy?"
+  answer="* Forward Proxy: Sits in front of clients, acting on behalf of clients to hide their identity, bypass restrictions, or filter outbound web traffic.
+* Reverse Proxy: Sits in front of backend servers, accepting client requests and routing them to appropriate servers, handling load balancing, SSL termination, and caching."
+/>
+
+<Flashcard
+  question="What is Consistent Hashing and why is it used in distributed systems?"
+  answer="* Definition: A hashing technique where servers and data keys are mapped onto a shared circular hash ring.
+* Purpose: When a server is added or removed, only a minimal fraction (k/N keys) needs to be remapped, minimizing cache misses and data movement in distributed caches or databases."
+/>
+
+<Flashcard
+  question="What is the Strangler Fig pattern in system architecture?"
+  answer="* Definition: A design pattern used to gradually migrate a legacy monolithic system to a new microservices architecture.
+* Mechanism: New functionality is built as microservices around the edges of the monolith, and gradually parts of the legacy system are intercepted and replaced until the old monolith is completely 'strangled' and decommissioned."
+/>
+
+<Flashcard
+  question="What is the difference between Client-Side and Server-Side Service Discovery?"
+  answer="* Client-Side Discovery: The client queries a service registry directly to obtain available service instance locations and implements load balancing locally (e.g., Netflix Eureka client).
+* Server-Side Discovery: The client sends requests to an external load balancer or API gateway, which queries the service registry and routes traffic to backend instances transparently."
+/>
+
+<Flashcard
+  question="What are the key responsibilities of an API Gateway in a microservices architecture?"
+  answer="* Core Functions: Acts as a single entry point for all client requests, handling routing, protocol translation, SSL termination, rate limiting, authentication/authorization, request logging, and response caching."
+/>
+
+<Flashcard
+  question="What is a Dead Letter Queue (DLQ) in message-driven systems?"
+  answer="* Definition: A specialized holding queue where message brokers route messages that cannot be processed successfully after a maximum retry threshold (often due to poison messages or processing errors).
+* Purpose: Prevents message processing blockages and allows developers to inspect, debug, or reprocess failed messages safely."
+/>
+
+<Flashcard
+  question="What is the difference between Short Polling, Long Polling, and WebSockets?"
+  answer="* Short Polling: Client repeatedly sends HTTP requests at fixed time intervals to check for new data, resulting in high network overhead and empty responses.
+* Long Polling: Client sends a request, and the server holds the connection open until new data is available or a timeout occurs, then responds.
+* WebSockets: Establishes a persistent, full-duplex TCP connection between client and server, allowing real-time, bi-directional data exchange with minimal overhead."
+/>
+
+<Flashcard
+  question="What is a Bloom filter and what is its primary use case?"
+  answer="* Definition: A space-efficient probabilistic data structure used to test whether an element is a member of a set.
+* Characteristics: Can yield false positive matches (indicating an element is present when it is not), but never false negatives (guaranteeing if it says an element is absent, it truly is).
+* Use Case: Quick initial cache lookup checks or avoiding disk reads for non-existent keys."
+/>
+
+<Flashcard
+  question="What are the key architectural differences between REST, GraphQL, and gRPC?"
+  answer="* REST: Standard resource-based HTTP architecture using JSON/XML payloads; prone to over-fetching or under-fetching data.
+* GraphQL: Client-driven query language over HTTP, allowing clients to request exactly the specific fields and nested data they need in a single round-trip.
+* gRPC: High-performance, low-latency RPC framework using Protocol Buffers (binary serialization) over HTTP/2, optimized for internal microservices communication."
+/>
+
+<Flashcard
+  question="What is Distributed Locking and how is it typically implemented using tools like Redis or ZooKeeper?"
+  answer="* Definition: A synchronization mechanism used to ensure that only one node across a distributed cluster can access a shared resource at any given time.
+* Implementation: Redis uses algorithms like Redlock (setting a key with an expiration timeout and unique token), while ZooKeeper uses ephemeral sequential nodes to coordinate locks."
+/>
+
+<Flashcard
+  question="What are Load Shedding and Backpressure in high-load backend systems?"
+  answer="* Load Shedding: A server-side mechanism where the system deliberately drops or rejects incoming low-priority requests when overloaded to prevent complete system crashes.
+* Backpressure: A flow-control mechanism where a downstream consumer signals an upstream producer to slow down its rate of data production when it cannot keep up."
+/>
+
+<Flashcard
+  question="What are the key architectural differences between HTTP/1.1, HTTP/2, and HTTP/3?"
+  answer="* HTTP/1.1: Text-based protocol; suffers from Head-of-Line (HoL) blocking at the connection level, requiring multiple TCP connections for concurrent requests.
+* HTTP/2: Binary protocol; introduces multiplexing over a single TCP connection, header compression (HPACK), and server push, eliminating application-layer HoL blocking.
+* HTTP/3: Replaces TCP with QUIC (built on UDP); eliminates transport-layer HoL blocking entirely, enabling faster connection establishment and seamless migration across network changes."
+/>
+
+<Flashcard
+  question="What is the Raft consensus algorithm and how does it work in distributed systems?"
+  answer="* Definition: A consensus algorithm designed as an alternative to Paxos, making distributed consensus easier to understand and implement.
+* Core Mechanism: Relies on a strong leader election model where a designated Leader node handles all log replication across follower nodes, using heartbeats and randomized timeouts to handle network partitions and failovers."
+/>
+
+<Flashcard
+  question="What is the difference between Rate Limiting and Throttling?"
+  answer="* Rate Limiting: Restricts the maximum number of requests a client can make within a specified time window (e.g., max 100 requests per minute), returning an HTTP 429 Too Many Requests status code when exceeded.
+* Throttling: Dynamically slows down or delays the processing of incoming requests when system load is high to protect server resources, rather than immediately rejecting them."
+/>
+
+<Flashcard
+  question="What is Distributed Tracing and how do Trace IDs and Span IDs work?"
+  answer="* Definition: A method used to profile and monitor applications across distributed microservices by tracking the end-to-end lifecycle of a single request.
+* Trace ID: A unique identifier assigned to the original incoming request that persists across all downstream microservice calls.
+* Span ID: A unique identifier assigned to each individual unit of work or network hop within that trace, allowing systems to construct a hierarchical execution tree and pinpoint latency bottlenecks."
+/>
+
+<Flashcard
+  question="What is the Cache Stampede (Thundering Herd) problem and how can it be mitigated?"
+  answer="* Definition: Occurs when a heavily requested cache entry expires, causing multiple concurrent client threads to miss the cache simultaneously and bombard the backend database to regenerate the value.
+* Mitigation: Mitigated using cache locking (single thread recomputes), probabilistic early expiration (XFetch algorithm), or background asynchronous refresh before expiration."
+/>
+
+<Flashcard
+  question="What are the differences between Offset-based pagination and Cursor-based pagination in APIs?"
+  answer="* Offset-based Pagination: Uses `LIMIT` and `OFFSET` clauses (e.g., page numbers); becomes extremely slow on large datasets due to scanning skipped rows and suffers from data drift when records are inserted or deleted.
+* Cursor-based Pagination: Uses an opaque pointer (cursor) pointing to the last seen record's unique ID/timestamp, providing fast, scalable pagination unaffected by intermediate data mutations."
+/>
+
+<Flashcard
+  question="What is Split-Brain syndrome in distributed systems and how is it prevented?"
+  answer="* Definition: Occurs when a network partition splits a cluster into isolated sub-networks, each believing the other has failed and independently electing its own leader, leading to conflicting data writes and corruption.
+* Prevention: Prevented using quorum-based majority voting (requiring strictly more than $N/2$ nodes to make decisions) and fencing tokens."
+/>
+
+<Flashcard
+  question="What is the difference between Point-to-Point and Publish-Subscribe messaging patterns?"
+  answer="* Point-to-Point: Messages are sent to a queue where each message is consumed by exactly one worker, ensuring load distribution and no duplicate processing.
+* Publish-Subscribe: Messages are published to a topic and broadcasted to all active, independent subscribers simultaneously, supporting event-driven architectures."
+/>
+
+<Flashcard
+  question="What are the common API versioning strategies and their trade-offs?"
+  answer="* URI Path Versioning: Encodes version in the URL (e.g., `/api/v1/users`); highly visible and easy to test, but violates pure RESTful URI resource representation principles.
+* Request Header Versioning: Passes version via custom headers (e.g., `Accept: application/vnd.company.v1+json`); keeps URLs clean, but harder to test directly in a web browser.
+* Query Parameter Versioning: Passes version as a query param (e.g., `/users?version=1`); simple to implement, but prone to caching complexities."
+/>
+
+<Flashcard
+  question="What are the differences between message delivery semantics (At-Most-Once, At-Least-Once, Exactly-Once)?"
+  answer="* At-Most-Once: Messages are delivered zero or one time; messages can be lost if a failure occurs, but duplicate delivery is prevented.
+* At-Least-Once: Messages are retried until acknowledged; prevents message loss, but can introduce duplicate deliveries requiring idempotent consumers.
+* Exactly-Once: Guarantees each message is processed and recorded precisely once; highly complex and resource-intensive, usually achieved using idempotent operations combined with distributed transactions."
+/>
+
+<Flashcard
+  question="What is an Idempotency Key in distributed payment or mutation APIs?"
+  answer="* Definition: A unique token (UUID) passed by the client in an API request header when performing non-idempotent operations like charging a credit card or creating a financial transaction.
+* Mechanism: The server stores the request result mapped to the idempotency key; if a network timeout causes the client to retry the request, the server returns the cached response rather than executing the transaction a second time."
+/>
+
+<Flashcard
+  question="What is Tail Latency (e.g., p99 latency) and why is it critical in large distributed systems?"
+  answer="* Definition: Tail latency measures the response time experienced by the slowest requests (e.g., p99 means 99% of requests are faster than this value, while the remaining 1% are slower).
+* Significance: In distributed systems where a single user request fans out across dozens of microservices, even a small percentage of slow requests at each hop causes compound latency spikes, degrading the overall user experience."
+/>
+
+<Flashcard
+  question="What are the key architectural differences between G1 GC and ZGC in the JVM?"
+  answer="* G1 GC (Garbage-First): Divides the heap into equal-sized regions, targeting mixed collections to meet predictable pause time goals, but can experience stop-the-world pauses on massive heaps.
+* ZGC (Z Garbage Collector): A scalable, low-latency garbage collector that performs most work concurrently using load barriers and colored pointers, keeping pause times under milliseconds regardless of multi-terabyte heap sizes."
+/>
+
+<Flashcard
+  question="How do Content Delivery Networks (CDNs) optimize web performance and how does cache invalidation work?"
+  answer="* CDN Operation: Caches static and dynamic assets on edge servers distributed globally closer to end-users, reducing latency and offloading traffic from origin servers.
+* Cache Invalidation: Managed using TTL (Time-To-Live) expiration, explicit cache purging via API webhooks, or versioned asset URLs (cache busting)."
+/>
+
+<Flashcard
+  question="What is the 'Distributed Monolith' anti-pattern in microservices?"
+  answer="* Definition: An architectural anti-pattern where an application is split into separate microservices codebase-wise, but they remain tightly coupled through shared databases, synchronous REST calls, or mandatory distributed transactions.
+* Consequence: Inherits all the operational complexity of distributed systems without gaining any of the independent deployability, scaling, or fault-isolation benefits of true microservices."
+/>
+
+<Flashcard
+  question="What are the major trade-offs between Synchronous and Asynchronous communication in microservices?"
+  answer="* Synchronous Communication (e.g., REST, gRPC): Simple to implement and returns immediate responses, but creates tight coupling, cascading failures, and high latency under heavy load.
+* Asynchronous Communication (e.g., Message Brokers like Kafka, RabbitMQ): Decouples services, improves system resilience, and handles traffic spikes via queuing, but introduces eventual consistency and debugging complexity."
+/>
+
+<Flashcard
+  question="What is the difference between Layer 4 (L4) and Layer 7 (L7) Load Balancing?"
+  answer="* Layer 4 (Transport Layer): Routes traffic based on IP addresses and TCP/UDP ports without inspecting the packet payload; extremely fast and lightweight.
+* Layer 7 (Application Layer): Routes traffic by inspecting the actual application protocol content (e.g., HTTP URLs, headers, cookies, or gRPC payloads); enables advanced routing features like path-based splitting, SSL termination, and caching."
+/>
+
+<Flashcard
+  question="What is the architectural difference between event-driven (e.g., NGINX) and thread-per-request (e.g., traditional Apache) servers?"
+  answer="* Thread-Per-Request: Allocates a dedicated thread or process for each incoming client connection; simple to design, but struggles under massive concurrent connections due to high memory and context-switching overhead.
+* Event-Driven / Asynchronous: Uses non-blocking I/O multiplexing loops to handle thousands of concurrent connections efficiently using a small, fixed pool of worker threads."
+/>
+
+<Flashcard
+  question="What is the difference between Horizontal Pod Autoscaler (HPA) and Vertical Pod Autoscaler (VPA) in Kubernetes?"
+  answer="* Horizontal Pod Autoscaler (HPA): Automatically scales the number of pod replicas up or down based on observed CPU utilization or custom metrics.
+* Vertical Pod Autoscaler (VPA): Automatically adjusts the CPU and memory resource requests and limits of existing container pods based on historical usage."
+/>
+
+<Flashcard
+  question="What is the TCC (Try-Confirm-Cancel) pattern in distributed transactions?"
+  answer="* Definition: A compensation-based distributed transaction pattern consisting of three distinct phases: Try (reserves resources), Confirm (commits the transaction using reserved resources), and Cancel (rolls back reserves if any step fails).
+* Purpose: Provides an application-level alternative to rigid blocking 2PC protocols, ensuring eventual consistency in microservices without locking databases long-term."
+/>
+
+<Flashcard
+  question="What are Entities, Value Objects, and Aggregates in Domain-Driven Design (DDD)?"
+  answer="* Entity: An object defined primarily by its unique identity rather than its attributes (persists across changes).
+* Value Object: An immutable object defined entirely by its attributes rather than a unique identity (e.g., money or address).
+* Aggregate: A cluster of domain entities and value objects bound together by a root entity (Aggregate Root) to enforce consistency boundaries and transactional rules."
+/>
+
+<Flashcard
+  question="How do Node Failure Detection and Heartbeat mechanisms work in distributed systems?"
+  answer="* Heartbeating: Nodes periodically transmit small 'ping' messages to a central monitor or peer nodes to signal they are alive.
+* Failure Detection Trade-offs: Because network delays and packet drops are common, systems must balance accuracy (avoiding false positives) against speed (detecting actual crashes quickly), often using adaptive algorithms like Phi Accrual failure detectors."
+/>
+
+<Flashcard
+  question="What is the Bulkhead Pattern in microservices architecture?"
+  answer="* Definition: A fault-tolerance design pattern inspired by ship construction, where system resources (like thread pools, database connections, or memory) are partitioned into isolated pools.
+* Purpose: Prevents a failure or heavy traffic spike in one downstream service from consuming all shared resources and cascading failures across the entire application."
+/>
+
+<Flashcard
+  question="What is a Memory Model in programming languages (like the Java Memory Model)?"
+  answer="* Definition: A specification that defines how threads interact through computer memory, establishing rules for visibility, ordering, and atomicity of shared variables across multi-core processors.
+* Key Concepts: Addresses compiler optimizations, CPU caching, instruction reordering, and the use of synchronization boundaries (happens-before relationships)."
+/>
+
+<Flashcard
+  question="What are the key principles of Domain-Driven Design (DDD) Ubiquitous Language and Bounded Contexts?"
+  answer="* Ubiquitous Language: A rigorous, shared common language between software developers and domain experts used consistently in code, models, and discussions.
+* Bounded Context: A linguistic and structural boundary within which a domain model applies explicitly, preventing ambiguity when terms have different meanings across various parts of an enterprise."
+/>
+
+<Flashcard
+  question="What is the purpose of an API Rate Limiter's IP vs. User-based tracking strategy?"
+  answer="* IP-based Tracking: Restricts request limits based on the client's network IP address; useful for unauthenticated traffic, but can inadvertently block entire corporate networks or shared Wi-Fi routers behind a single NAT IP.
+* User-based Tracking: Restricts limits based on authenticated user IDs or API tokens; highly accurate for individual user quotas, but requires valid authentication."
+/>
+
+<Flashcard
+  question="What is an Exponential Backoff with Jitter strategy in retry mechanisms?"
+  answer="* Exponential Backoff: Increases the wait time between subsequent failed retry attempts exponentially (e.g., 2s, 4s, 8s, 16s) to avoid overwhelming recovering downstream services.
+* Jitter: Adds random variance (jitter) to the backoff delay to prevent synchronized 'thundering herd' retries from multiple clients hitting the server at identical intervals."
+/>
+
+<Flashcard
+  question="What is a Distributed Deadlock and how is it detected?"
+  answer="* Definition: A deadlock condition where two or more nodes across a distributed system are waiting for resources held by each other, spanning multiple database instances or microservices.
+* Detection: Detected using centralized wait-for graph analysis, distributed timeout mechanisms, or transaction aborts coordinated via saga orchestrators."
+/>
+
+<Flashcard
+  question="What is a Vector Clock and how is it used in distributed systems?"
+  answer="* Definition: A data structure used to track causality and ordering of events across distributed nodes without requiring synchronized physical clocks.
+* Mechanism: Each node maintains a vector of logical timestamps; when data is updated, counters are incremented to detect concurrent updates and resolve version conflicts."
+/>
+
+<Flashcard
+  question="What is the Gossip Protocol and where is it used?"
+  answer="* Definition: A decentralized peer-to-peer communication mechanism inspired by social gossip, where nodes periodically exchange cluster state information with a few randomly selected peers.
+* Use Case: Widely used for cluster membership, failure detection, and state dissemination in large distributed systems (e.g., Cassandra, Consul)."
+/>
+
+<Flashcard
+  question="What are Java Virtual Threads (Project Loom) and how do they differ from Platform Threads?"
+  answer="* Platform Threads: Thin wrappers around OS-level kernel threads; expensive to create and limited in number.
+* Virtual Threads: Lightweight, user-mode threads managed directly by the JVM runtime; cheap to create by the millions, enabling highly scalable blocking I/O applications without complex asynchronous callback models."
+/>
+
+<Flashcard
+  question="What is the difference between an API Gateway Pattern and Backends for Frontends (BFF) Pattern?"
+  answer="* API Gateway: A single centralized reverse proxy serving all clients across an enterprise with cross-cutting concerns (routing, auth, rate limiting).
+* BFF (Backends for Frontends): Specialized API gateways tailored specifically for individual client types (e.g., separate BFFs for mobile apps, web browsers, and smart devices) to optimize payloads and user experience."
+/>
+
+<Flashcard
+  question="What is a Kubernetes Ingress Controller and how does it differ from a Service?"
+  answer="* Kubernetes Service: An internal abstraction layer that groups pods and provides stable internal networking and load balancing within a cluster.
+* Ingress Controller: An edge component (like NGINX or Traefik) that manages external HTTP/HTTPS routing rules, SSL termination, and name-based virtual hosting into internal cluster services."
+/>
+
+<Flashcard
+  question="What is the difference between Active and Passive Load Balancer health checks?"
+  answer="* Active Health Checks: The load balancer proactively sends periodic test requests (pings, HTTP probes) to backend servers to verify their health status.
+* Passive Health Checks: The load balancer monitors actual incoming client traffic and responses in real-time, removing servers from the pool if they return a threshold of server error codes."
+/>
+
+<Flashcard
+  question="What is a Circuit Breaker fallback mechanism and why is it important?"
+  answer="* Definition: A secondary code path executed when a circuit breaker trips open or a downstream service call fails.
+* Importance: Provides graceful degradation by returning cached data, default fallback responses, or error messages rather than failing the entire user request."
+/>
+
+<Flashcard
+  question="What is a Merkle Tree (Hash Tree) and how is it used in distributed systems?"
+  answer="* Definition: A tree data structure where every leaf node is labeled with the cryptographic hash of a data block, and every non-leaf node is labeled with the cryptographic hash of its child labels.
+* Use Case: Enables highly efficient and secure verification of large data structures across distributed nodes, allowing systems to compare data sync differences without transferring entire datasets."
+/>
+
+<Flashcard
+  question="What are the differences between Inter-Process Communication (IPC) mechanisms like Pipes, Message Queues, and Shared Memory?"
+  answer="* Pipes: Stream-oriented, unidirectional communication channels between related processes.
+* Message Queues: Allow independent processes to exchange structured messages asynchronously with decoupled message boundaries.
+* Shared Memory: The fastest IPC mechanism where multiple processes map a common region of physical RAM directly, requiring explicit synchronization locks to prevent race conditions."
+/>
+
+<Flashcard
+  question="What is a Fencing Token in distributed locking and how does it prevent split-brain anomalies?"
+  answer="* Definition: A monotonically increasing serial number issued by a locking service (like ZooKeeper) whenever a lock is acquired.
+* Prevention: If a slow node holding an expired lease tries to write to storage, the storage engine rejects requests containing older or invalid fencing token numbers, preventing stale writes from corrupting data."
+/>
+
+<Flashcard
+  question="What is Distributed Tracing Sampling and why is it necessary?"
+  answer="* Definition: The practice of recording and transmitting only a subset (e.g., 1% or 5%) of total distributed traces rather than 100% of request logs.
+* Necessity: At massive web scale, logging every single request consumes excessive network bandwidth, storage, and CPU overhead; sampling retains statistically valid performance insights while controlling costs."
+/>
+
+<Flashcard
+  question="What is the difference between Hot, Warm, and Cold storage tiers in cloud architectures?"
+  answer="* Hot Storage: High-performance, low-latency storage optimized for frequently accessed data (higher cost).
+* Warm Storage: Balanced tier for semi-frequently accessed data or backups that require moderate retrieval times.
+* Cold (Archive) Storage: Inexpensive storage for rarely accessed long-term archival data, featuring higher retrieval latencies and restoration costs."
+/>
+
+<Flashcard
+  question="How is a Bloom Filter's false positive rate tuned and calculated?"
+  answer="* Tuning Parameters: The false positive probability is determined by the size of the bit array ($m$), the number of hash functions ($k$), and the expected number of inserted elements ($n$).
+* Optimization: Increasing the bit array size or adding more optimal hash functions reduces the false positive rate at the expense of increased memory usage and compute time."
+/>
+
+<Flashcard
+  question="What are API Gateway Caching strategies and when should they be applied?"
+  answer="* Strategy: Configuring the API gateway to cache responses for GET requests matching specific endpoints and headers.
+* Application: Ideal for static or semi-static read-heavy data that changes infrequently, drastically reducing backend microservice load and network latency."
+/>
+
+<Flashcard
+  question="What is the difference between Canary Releases and A/B Testing?"
+  answer="* Canary Release: A deployment strategy focused on operational risk mitigation, rolling out a new version to a small percentage of users to verify performance, stability, and error rates.
+* A/B Testing: A product experimentation strategy focused on business metrics, running two concurrent UI or functional versions simultaneously to measure user engagement and conversion rates."
+/>
