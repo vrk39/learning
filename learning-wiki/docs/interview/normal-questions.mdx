@@ -1,0 +1,263 @@
+<Flashcard
+  question="What is a wrapper class in Java and what are its primary purposes?"
+  answer="* Definition: Wrapper classes encapsulate primitive data types into objects (e.g., Integer for int, Double for double).
+* Collection Framework: The Java collection framework works exclusively with objects, requiring wrapper classes for primitive values.
+* Utility & Synchronization: Provides utility methods (parsing, conversions) and enables synchronization mechanisms in multithreading which operate on objects.
+* Call by Value: Helps modify original values where reference-based object behavior is desired."
+/>
+
+<Flashcard
+  question="What is the difference between the == operator and the equals() method in Java?"
+  answer="* == Operator: Used for reference comparison, checking whether two object references point to the exact same memory location (or comparing primitive values directly).
+* equals() Method: Used for content comparison, evaluating whether the logical values or contents of two objects are equal (as defined by the class implementation)."
+/>
+
+<Flashcard
+  question="What are the differences between final, finally, and finalize in Java?"
+  answer="* final: A non-access modifier used to restrict variables (constant value), methods (prevent overriding), and classes (prevent inheritance).
+* finally: A block used in exception handling with try/catch to guarantee execution of crucial clean-up code regardless of whether an exception occurs.
+* finalize: A method in the Object class invoked by the Garbage Collector right before an object is destroyed, used for clean-up activities (now deprecated)."
+/>
+
+<Flashcard
+  question="What are the differences between the instanceof operator and the Class.isInstance() method?"
+  answer="* instanceof: A language-level operator used at compile time to check if an object is an instance of a specific class, subclass, or interface.
+* Class.isInstance(): A runtime reflection method (equivalent to the instanceof operator) used when the class type is only known dynamically at runtime (e.g., loaded via Class.forName())."
+/>
+
+<Flashcard
+  question="What is the difference between a shallow copy and a deep copy in Java?"
+  answer="* Shallow Copy: Copies all primitive fields directly. For object reference fields, only the memory references are copied, meaning changes to nested objects affect both the original and the copied object.
+* Deep Copy: Creates a completely independent copy of all fields, including recursively cloning any nested objects, ensuring that modifications to the copy have zero impact on the original object."
+/>
+
+<Flashcard
+  question="What is a Deployment Descriptor (web.xml) and how does it map URLs to servlets?"
+  answer="* Definition: A core XML configuration file (web.xml) in Java web applications used as a deployment descriptor with <web-app> as its root element.
+* URL Mapping: When a request comes in, the web server matches the request URL with the pattern specified in the <url-pattern> attribute.
+* Routing Control: It links the URL pattern to a specific servlet name via servlet mapping, routing control to the designated servlet class."
+/>
+
+<Flashcard
+  question="What are the main differences between static and non-static variables and methods in Java?"
+  answer="* Static Members: Belong to the class as a whole rather than any individual instance; shared among all instances and stored in class memory.
+* Non-Static Members: Belong to individual object instances, meaning each object has its own copy of non-static variables.
+* Execution Context: Static methods can only access other static members directly and cannot use 'this' or 'super' keywords."
+/>
+
+<Flashcard
+  question="What is the difference between ClassNotFoundException and NoClassDefFoundError?"
+  answer="* ClassNotFoundException: A checked exception that occurs at runtime when an application tries to load a class dynamically (e.g., using Class.forName() or loadClass()) and the class is missing from the classpath.
+* NoClassDefFoundError: An error that occurs at runtime when a particular class was present at compile-time, but could not be found by the JVM at execution time."
+/>
+
+<Flashcard
+  question="What is a Covariant Return Type in Java method overriding?"
+  answer="* Definition: Allows an overriding method in a subclass to have a different return type than the overridden method in the parent class.
+* Restriction: The child method's return type must be a sub-type (subclass) of the parent method's return type.
+* Benefit: Makes code cleaner by eliminating the need for explicit type casting when returning specialized subclass objects."
+/>
+
+<Flashcard
+  question="What are Enums in Java and what advanced features do they support?"
+  answer="* Definition: Enumerations used to represent a fixed group of named constants whose possible values are known at compile time.
+* Object-Oriented Features: Enums in Java are full classes; they can declare variables, implement interfaces, and define custom methods.
+* Constructors: Each enum constant invokes the enum constructor separately when initialized."
+/>
+
+<Flashcard
+  question="What are the sizes, default values, and ranges of primitive data types in Java?"
+  answer="* byte: 8-bit, default 0, range -128 to 127
+* short: 16-bit, default 0, range -32,768 to 32,767
+* int: 32-bit, default 0, range -2.14B to 2.14B
+* long: 64-bit, default 0L, range -9.22 quintillion to 9.22 quintillion
+* float: 32-bit, default 0.0f, up to 7 decimal digits
+* double: 64-bit, default 0.0d, up to 16 decimal digits
+* char: 16-bit, default \\u0000, stores single unicode character / ASCII
+* boolean: 1 bit, default false, true/false"
+/>
+
+<Flashcard
+  question="What is object cloning in Java and how is it implemented?"
+  answer="* Definition: Object cloning refers to the creation of an exact copy of an existing object, initializing its fields with corresponding values.
+* Cloneable Interface: To use the object's clone() method, the class must implement the marker interface Cloneable.
+* Exception Handling: Calling clone() can throw a CloneNotSupportedException if the class does not implement Cloneable."
+/>
+
+<Flashcard
+  question="Why does an IndexOutOfBoundsException occur in Java?"
+  answer="* Cause: Thrown when an index of a sequence (such as an array, string, or list) is out of bounds (either negative or greater than or equal to the collection size).
+* Common Scenarios: Using incorrect loop conditions (e.g., i <= array.length instead of i < array.length) or attempting to access invalid indices in dynamic collections."
+/>
+
+<Flashcard
+  question="How do you write a custom immutable class in Java that contains a mutable field like a HashMap?"
+  answer="* Class Declaration: Declare the class as final.
+* Private Final Fields: Make all fields private and final.
+* Deep Copy in Constructor: Perform a deep copy of any passed mutable collection arguments during instantiation rather than assigning them directly.
+* Defensive Copy in Getters: Return a defensive or cloned copy of the mutable field in getter methods to prevent external modifications."
+/>
+
+<Flashcard
+  question="What is the load-on-startup element in web.xml and what are its benefits?"
+  answer="* Definition: An element configured inside a servlet definition in web.xml that loads the servlet at application deployment or server start time rather than on the first request.
+* Pre-initialization: Positive values (0, 1, 2...) load servlets in ascending order during startup, reducing latency for the very first user request.
+* Lazy Loading: Passing a negative value means the servlet will load lazily on demand during the first incoming request."
+/>
+
+<Flashcard
+  question="What is the difference between static synchronization and non-static synchronization?"
+  answer="* Object-Level Lock (Non-Static): Synchronizes on the current instance (this), allowing multiple threads to access synchronized methods concurrently if they operate on different object instances.
+* Class-Level Lock (Static): Locks on the Class object itself, meaning only one thread can execute any static synchronized method across all instances of that class simultaneously."
+/>
+
+<Flashcard
+  question="What is the purpose of the System.gc() method?"
+  answer="* Definition: A method call that suggests to the Java Virtual Machine (JVM) that it should expend effort toward recycling unused objects to make their memory available for quick reuse.
+* Non-Guaranteed: It is only a request; the JVM and Garbage Collector decide independently when and whether to execute garbage collection."
+/>
+
+<Flashcard
+  question="How do you configure session timeout limits in a Java web application?"
+  answer="* Default Behavior: Web containers like Tomcat configure a global default session timeout (typically 30 minutes).
+* Overriding via web.xml: You can configure custom application-level session timeouts using the session-config tag:
+  <session-config>
+      <session-timeout>15</session-timeout>
+  </session-config> (value in minutes)."
+/>
+
+<Flashcard
+  question="What are the four access modifiers in Java and what are their scopes?"
+  answer="* Private: Accessible only within the defining class itself.
+* Default (Package-private): Accessible only within classes in the same package (no modifier specified).
+* Protected: Accessible within the same package and through inheritance subclasses outside the package.
+* Public: Accessible everywhere across any package or class."
+/>
+
+<Flashcard
+  question="How is the JVM heap memory classified?"
+  answer="* Young Generation: Divided into Eden Space and two Survivor Spaces (S0, S1), where new objects are allocated and short-lived objects are cleared via minor GC.
+* Old / Tenured Generation: Stores long-lived objects that survive multiple minor GC cycles, cleaned via major GC / full GC.
+* Metaspace / Permanent Generation: Stores class metadata, method definitions, and static variables (Metaspace replaced PermGen in Java 8 and uses native memory)."
+/>
+
+<Flashcard
+  question="How can you prevent objects of a class from being garbage collected in Java?"
+  answer="* Increasing Heap Memory: Delaying memory pressure by enlarging heap size so old objects are not immediately evicted.
+* Singleton Pattern: Storing the object reference in a static field, extending its lifetime to match the program's lifecycle.
+* Overriding finalize(): Overriding the finalize() method to reassign the object reference to a reachable variable (though deprecated and discouraged)."
+/>
+
+<Flashcard
+  question="What is the primary purpose and function of web.xml in Java web applications?"
+  answer="* URL Mapping: Defines mappings between incoming URL paths and the specific servlets designed to handle requests for those paths.
+* Routing: The web server uses this configuration to identify the correct servlet class and invoke its request-handling methods.
+* Configuration Hub: Acts as the deployment descriptor for servlet configurations, welcome files, and session timeouts."
+/>
+
+<Flashcard
+  question="How do you convert a Java object to JSON and vice versa using the Jackson library?"
+  answer="* Object to JSON: Use ObjectMapper with mapper.writeValueAsString(obj) or mapper.writeValue(new File(...), obj).
+* JSON to Object: Use ObjectMapper with mapper.readValue(jsonString, TargetClass.class) or read from a file source.
+* Tree Model: Can also parse into a JsonNode using mapper.readTree(...) for flexible node traversal."
+/>
+
+<Flashcard
+  question="What are generic vs non-generic collections in Java and why are generics preferred?"
+  answer="* Generic Collections: Parameterized types (e.g., List<Integer>) that enforce type safety at compile-time and eliminate explicit type casting during retrieval.
+* Non-Generic Collections: Hold raw objects (Object), requiring manual type casting on every retrieval and risking runtime ClassCastException.
+* Safety: Generics shift type-checking from runtime to compile-time."
+/>
+
+<Flashcard
+  question="What is the difference between loosely coupled and tightly coupled systems in Java?"
+  answer="* Tightly Coupled: Classes are highly dependent on each other; changes in one class force modifications in the other, and reference variables hold single concrete implementations.
+* Loosely Coupled: Classes interact through well-defined interfaces; components are independent, making code easier to maintain, extend, and test."
+/>
+
+<Flashcard
+  question="How do static binding and dynamic binding differ during method execution in Java?"
+  answer="* Static Binding (Early Binding): The method call is resolved by the compiler at compile-time (used for private, final, and static methods).
+* Dynamic Binding (Late Binding): The method call is resolved at runtime based on the actual object type rather than the reference type (used for overridden polymorphic methods)."
+/>
+
+<Flashcard
+  question="What are the three main types of inner classes supported in Java?"
+  answer="* Member Inner Class: A non-static class defined within another class, requiring an instance of the outer class to be instantiated.
+* Static Nested Class: A static class defined inside an outer class that does not require an outer class instance to be accessed.
+* Anonymous Inner Class: A class without a name declared and instantiated simultaneously, typically used for quick interface or abstract class implementations."
+/>
+
+<Flashcard
+  question="How does the Java ClassLoader hierarchy work?"
+  answer="* Bootstrap ClassLoader: Loads core Java API classes (e.g., java.lang.*) from rt.jar, implemented in native code.
+* Extension ClassLoader: Loads classes from the extension directories or module path.
+* System/Application ClassLoader: Loads application-specific classes from the defined classpath or module path."
+/>
+
+<Flashcard
+  question="How does non-static synchronization work and how does it differ from static synchronization locks?"
+  answer="* Object-Level Lock: Non-static synchronized methods acquire a lock on the specific current object instance (`this`).
+* Concurrency: Multiple threads can execute non-static synchronized methods simultaneously as long as they operate on different object instances.
+* Comparison: Unlike static synchronization (which acquires a class-level lock), non-static locks do not block threads working on separate instances of the same class."
+/>
+
+<Flashcard
+  question="How can you create a WSDL (Web Services Description Language) file using Eclipse?"
+  answer="* Web Tools Platform: Use the Eclipse IDE Web Services wizards or Web Developer tools.
+* Process: Right-click a web service project or Java bean class, navigate to Web Services -> Create WSDL, and Eclipse will auto-generate the WSDL contract defining endpoints, operations, and bindings."
+/>
+
+<Flashcard
+  question="What changes were introduced to Java 8 interfaces regarding default and static methods?"
+  answer="* Default Methods: Allows interfaces to include method bodies using the `default` keyword without breaking existing classes that implement the interface, supporting backward compatibility and trait-like behavior.
+* Static Methods: Interfaces can now contain static utility methods directly inside the interface definition, which are called via the interface name."
+/>
+
+<Flashcard
+  question="What is the Diamond Problem in Java and how do generic classes support multiple type parameters?"
+  answer="* Multiple Generic Values: Java classes and interfaces can accept multiple type parameters (e.g., class ABC<T, U>).
+* Diamond Problem: Java avoids multiple inheritance of state (diamond problem with classes), but permits multiple interface implementation. 
+* Default Method Conflicts: If a class implements two interfaces with identical default methods, the compiler forces the class to explicitly override and resolve the ambiguity."
+/>
+
+<Flashcard
+  question="What is JPA (Java Persistence API) and what is its primary role in Java enterprise applications?"
+  answer="* Definition: JPA is a standard Java specification for accessing, persisting, and managing relational data between Java objects and relational databases.
+* ORM Bridge: Acts as a bridge between object-oriented domain models and relational database systems, relying on implementations like Hibernate, EclipseLink, or TopLink."
+/>
+
+<Flashcard
+  question="What are non-generic collections and why are they considered less safe than generic collections?"
+  answer="* Non-Generic Collections: Hold raw objects (`Object`), meaning they can accept any type of data, making them non-type-safe.
+* Retrieval: Require explicit, individual type casting on every retrieval, which risks runtime `ClassCastException` errors.
+* Comparison: Generic collections shift safety checks to compile-time and eliminate casting overhead."
+/>
+
+<Flashcard
+  question="What is the serialization process in Java and how is it implemented?"
+  answer="* Definition: The process of converting the state of an object into a byte stream so it can be persisted to disk, saved in a file, or transferred across a network.
+* Implementation: The class must implement the `Serializable` marker interface.
+* Execution: Accomplished using `FileOutputStream` and `ObjectOutputStream` via the `writeObject()` method."
+/>
+
+<Flashcard
+  question="What is the deserialization process in Java and how is it performed?"
+  answer="* Definition: The reverse process of serialization, where a stored byte stream is read and used to recreate the exact Java object in memory.
+* Implementation: Relies on classes implementing the `Serializable` interface.
+* Execution: Accomplished using `FileInputStream` and `ObjectInputStream` via the `readObject()` method."
+/>
+
+<Flashcard
+  question="What are the syntax and structural differences between Member, Static, and Anonymous inner classes in Java?"
+  answer="* Member Inner Class: Non-static nested class tied to an outer class instance; instantiated via `outerInstance.new Inner()`.
+* Static Nested Class: Static class inside an outer class; does not require an outer instance and is instantiated via `Outer.Nested()`.
+* Anonymous Inner Class: A nameless class declared and instantiated inline, typically used to quickly implement a single-method interface or abstract class."
+/>
+
+<Flashcard
+  question="How does exception handling behave during method overriding in Java?"
+  answer="* Unchecked Exceptions: Subclass overridden methods can freely declare any unchecked runtime exceptions regardless of the parent method's signature.
+* Checked Exceptions Rule 1: If the superclass method does not declare a checked exception, the subclass overridden method cannot declare any new or broader checked exceptions.
+* Checked Exceptions Rule 2: If the superclass method declares a checked exception, the subclass method can declare the same exception, a narrower subclass exception, or no exception at all."
+/>
