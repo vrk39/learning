@@ -1,0 +1,33 @@
+<Flashcard
+  question="What is the Singleton Design Pattern and how do you implement a thread-safe version using double-checked locking?"
+  answer="* Definition: Restricts the instantiation of a class and ensures that only one instance of the class exists in the JVM[cite: 1].
+* Private Constructor: Prevents direct external instantiation of the class[cite: 1].
+* Double-Checked Locking: Checks if the instance is null before and after entering the synchronized block inside the getInstance() method to optimize performance and thread safety[cite: 1].
+* Alternative: Enums can also be used to implement clean and effective singletons[cite: 1]."
+/>
+
+<Flashcard
+  question="What is the Factory Design Pattern and how does it work?"
+  answer="* Definition: Used when we have a superclass with multiple subclasses and, based on a given input, we need to return one specific subclass[cite: 1].
+* Responsibility Transfer: Takes the responsibility of class instantiation out of the client program and delegates it to a factory class[cite: 1].
+* Implementation: The factory method can be made static, or the factory class itself can follow a singleton pattern[cite: 1]."
+/>
+
+<Flashcard
+  question="What is the Prototype Design Pattern and when should it be used?"
+  answer="* Definition: Used when object creation is a costly affair requiring significant time and resources, and a similar object already exists[cite: 1].
+* Mechanism: Provides a mechanism to copy the original object to a new object using Java cloning and then modify it according to needs[cite: 1].
+* Deep Copy Implementation: The clone() method is typically overridden to perform a deep copy of mutable collection fields or object references[cite: 1]."
+/>
+
+<Flashcard
+  question="What are the roles of the Abstract Factory and Builder design patterns?"
+  answer="* Abstract Factory Pattern: Provides an interface for creating families of related or dependent objects without specifying their concrete classes[cite: 1].
+* Builder Pattern: Designed to construct complex objects step by step, separating the construction process from its final representation[cite: 1]."
+/>
+
+<Flashcard
+  question="What is a software design pattern and why are they used?"
+  answer="* Definition: A well-described, reusable solution to a common software engineering problem[cite: 1].
+* Purpose: Provides proven development paradigms, speeds up the software design process, and improves code maintainability and communication among developers[cite: 1]."
+/>
