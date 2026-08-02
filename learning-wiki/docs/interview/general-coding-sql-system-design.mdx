@@ -1,0 +1,971 @@
+<Flashcard
+  question="What is the difference between Process and Thread?"
+  answer="* Process: An independent program in execution with its own isolated memory space and system resources, making context-switching heavier.
+* Thread: The smallest unit of execution within a process; multiple threads share the same process memory space and resources, making context-switching lightweight."
+/>
+
+<Flashcard
+  question="What are ACID properties in a Database Management System?"
+  answer="* Atomicity: Ensures all operations in a transaction complete successfully or the entire transaction is rolled back (all-or-nothing).
+* Consistency: Ensures a transaction brings the database from one valid state to another, maintaining all predefined rules and constraints.
+* Isolation: Ensures concurrent transactions execute independently without interfering with each other's intermediate states.
+* Durability: Ensures that once a transaction is committed, its changes survive system crashes or power failures permanently."
+/>
+
+<Flashcard
+  question="What is the difference between clustered and non-clustered indexes in a database?"
+  answer="* Clustered Index: Alters the physical order of table rows on disk to match the index order; a table can only have one clustered index (typically the primary key).
+* Non-Clustered Index: Maintains a separate structure from the data rows containing index keys and pointers/locators to the actual physical rows; a table can have multiple non-clustered indexes."
+/>
+
+<Flashcard
+  question="What are the primary database normalization forms (1NF, 2NF, 3NF)?"
+  answer="* 1NF (First Normal Form): Ensures atomic values in each column and eliminates repeating groups.
+* 2NF (Second Normal Form): Must be in 1NF and eliminate partial functional dependencies (all non-key attributes must be fully dependent on the primary key).
+* 3NF (Third Normal Form): Must be in 2NF and eliminate transitive dependencies (non-key attributes must depend only on the primary key, not on other non-key attributes)."
+/>
+
+<Flashcard
+  question="What is the CAP Theorem in distributed systems?"
+  answer="* Definition: States that a distributed data store can simultaneously provide at most two of the following three guarantees: Consistency, Availability, and Partition Tolerance.
+* Partition Tolerance (P): The system continues to operate despite network partitions; since network failures are inevitable in distributed systems, modern systems must choose between Consistency (CP) and Availability (AP) during a partition."
+/>
+
+<Flashcard
+  question="What are the common caching strategies (Cache-Aside, Write-Through, Write-Back)?"
+  answer="* Cache-Aside (Lazy Loading): Application checks cache first; on a miss, it fetches from the database, populates the cache, and returns the data.
+* Write-Through: Data is written to the cache and database simultaneously within the same transaction.
+* Write-Back (Write-Behind): Data is written directly to the cache, and the cache asynchronously writes updates to the database later for high write performance."
+/>
+
+<Flashcard
+  question="What are the common load balancing algorithms?"
+  answer="* Round Robin: Distributes requests sequentially across servers in a cyclic order.
+* Least Connections: Directs traffic to the server with the active lowest number of concurrent connections.
+* IP Hash: Uses the client's IP address to hash and route requests consistently to the same server (session persistence)."
+/>
+
+<Flashcard
+  question="What is idempotency in REST APIs and which HTTP methods are inherently idempotent?"
+  answer="* Definition: An operation is idempotent if making multiple identical requests produces the same result as making a single request.
+* Idempotent Methods: `GET`, `PUT`, `DELETE`, `HEAD`, and `OPTIONS`.
+* Non-Idempotent Methods: `POST` (repeating a POST request typically creates duplicate resources)."
+/>
+
+<Flashcard
+  question="What are the SOLID principles in Object-Oriented Design?"
+  answer="* Single Responsibility Principle (SRP): A class should have only one reason to change.
+* Open/Closed Principle (OCP): Software entities should be open for extension, but closed for modification.
+* Liskov Substitution Principle (LSP): Objects of a superclass should be replaceable with objects of its subclasses without breaking application correctness.
+* Interface Segregation Principle (ISP): Clients should not be forced to depend on interfaces they do not use.
+* Dependency Inversion Principle (DIP): Depend upon abstractions, not on concretions."
+/>
+
+<Flashcard
+  question="What is the Saga design pattern in microservices and what are its two main types?"
+  answer="* Definition: A pattern to manage data consistency across microservices in a distributed transaction without traditional ACID transactions.
+* Orchestration Saga: A central orchestrator service coordinates transaction steps and manages compensating actions on failure.
+* Choreography Saga: Services listen to events and execute local transactions independently without a central coordinator."
+/>
+
+<Flashcard
+  question="What is the difference between B-Trees and B+ Trees used in database indexing?"
+  answer="* B-Tree: Stores both keys and data pointers in internal nodes and leaf nodes, which can lead to larger node sizes and more disk lookups for range queries.
+* B+ Tree: Stores all data pointers exclusively in the leaf nodes, while internal nodes hold only routing keys; leaf nodes are linked sequentially for fast and efficient range scans."
+/>
+
+<Flashcard
+  question="What are SQL transaction isolation levels and what concurrency anomalies do they prevent?"
+  answer="* Read Uncommitted: Lowest level; allows dirty reads, non-repeatable reads, and phantom reads.
+* Read Committed: Prevents dirty reads by ensuring queries only see committed data.
+* Repeatable Read: Prevents dirty and non-repeatable reads by ensuring data read once cannot be changed by other transactions until completion.
+* Serializable: Highest level; prevents dirty reads, non-repeatable reads, and phantom reads by enforcing strict transaction serialization."
+/>
+
+<Flashcard
+  question="What is the difference between Token Bucket and Leaky Bucket rate-limiting algorithms?"
+  answer="* Token Bucket: Tokens are added at a constant rate up to a max capacity; requests consume tokens, allowing bursts of traffic as long as tokens are available.
+* Leaky Bucket: Requests enter a queue of fixed capacity and are processed at a steady, constant rate, smoothing out traffic bursts and enforcing a strict output limit."
+/>
+
+<Flashcard
+  question="What is the difference between Horizontal Scaling and Vertical Scaling?"
+  answer="* Vertical Scaling (Scale Up): Adding more resources (CPU, RAM, storage) to a single server instance; bounded by hardware limits and single points of failure.
+* Horizontal Scaling (Scale Out): Adding more server instances to a pool and distributing traffic across them; offers high availability and virtually limitless scaling potential."
+/>
+
+<Flashcard
+  question="What is the difference between a Forward Proxy and a Reverse Proxy?"
+  answer="* Forward Proxy: Sits in front of clients, acting on behalf of clients to hide their identity, bypass restrictions, or filter outbound web traffic.
+* Reverse Proxy: Sits in front of backend servers, accepting client requests and routing them to appropriate servers, handling load balancing, SSL termination, and caching."
+/>
+
+<Flashcard
+  question="What is Database Sharding and what are its trade-offs?"
+  answer="* Definition: A database architecture pattern that horizontally partitions a large database into smaller, independent pieces (shards) distributed across multiple servers.
+* Trade-offs: Greatly improves write throughput and scalability, but introduces architectural complexity, cross-shard query latency, and re-sharding challenges."
+/>
+
+<Flashcard
+  question="What is Consistent Hashing and why is it used in distributed systems?"
+  answer="* Definition: A hashing technique where servers and data keys are mapped onto a shared circular hash ring.
+* Purpose: When a server is added or removed, only a minimal fraction (k/N keys) needs to be remapped, minimizing cache misses and data movement in distributed caches or databases."
+/>
+
+<Flashcard
+  question="What are the differences between INNER JOIN, LEFT JOIN, RIGHT JOIN, and FULL OUTER JOIN in SQL?"
+  answer="* INNER JOIN: Returns only records that have matching values in both tables.
+* LEFT JOIN: Returns all records from the left table, and the matched records from the right table (unmatched right side values appear as NULL).
+* RIGHT JOIN: Returns all records from the right table, and the matched records from the left table (unmatched left side values appear as NULL).
+* FULL OUTER JOIN: Returns all records when there is a match in either the left or the right table, filling missing matches with NULL."
+/><Flashcard
+  question="What is a Deadlock in concurrent systems and what are the 4 Coffman conditions required for it to occur?"
+  answer="* Definition: A state where two or more threads/processes are permanently blocked, each waiting for a resource held by another.
+* Coffman Conditions:
+  1. Mutual Exclusion: Resources can only be held by one process at a time.
+  2. Hold and Wait: Processes hold currently acquired resources while waiting for additional ones.
+  3. No Preemption: Resources cannot be forcibly taken away from a process.
+  4. Circular Wait: A closed chain of processes exists where each process holds a resource needed by the next process in the chain."
+/>
+
+<Flashcard
+  question="What is database index fragmentation and how can it be resolved?"
+  answer="* Definition: Occurs when data pages become logically out of order or scattered on disk due to extensive insert, update, or delete operations, leading to inefficient disk I/O.
+* Resolution: Resolved by performing index defragmentation (reorganizing index pages) or an index rebuild operation."
+/>
+
+<Flashcard
+  question="What is the Strangler Fig pattern in system architecture?"
+  answer="* Definition: A design pattern used to gradually migrate a legacy monolithic system to a new microservices architecture.
+* Mechanism: New functionality is built as microservices around the edges of the monolith, and gradually parts of the legacy system are intercepted and replaced until the old monolith is completely 'strangled' and decommissioned."
+/>
+
+<Flashcard
+  question="What is the difference between Client-Side and Server-Side Service Discovery?"
+  answer="* Client-Side Discovery: The client queries a service registry directly to obtain available service instance locations and implements load balancing locally (e.g., Netflix Eureka client).
+* Server-Side Discovery: The client sends requests to an external load balancer or API gateway, which queries the service registry and routes traffic to backend instances transparently."
+/>
+
+<Flashcard
+  question="What are the key responsibilities of an API Gateway in a microservices architecture?"
+  answer="* Core Functions: Acts as a single entry point for all client requests, handling routing, protocol translation, SSL termination, rate limiting, authentication/authorization, request logging, and response caching."
+/>
+
+<Flashcard
+  question="What are the major trade-offs between SQL (Relational) and NoSQL (Non-Relational) databases?"
+  answer="* SQL Databases: Schema-strict, supports complex ACID-compliant transactions and relational joins, ideal for structured data with high consistency requirements (vertical scaling-heavy).
+* NoSQL Databases: Schema-flexible, optimized for high write/read throughput, horizontal scalability, and unstructured or semi-structured data (often trading strong consistency for high availability)."
+/>
+
+<Flashcard
+  question="What are the performance downsides and trade-offs of having too many indexes on a database table?"
+  answer="* Downsides: While indexes speed up SELECT queries, they degrade write performance (INSERT, UPDATE, DELETE) because every index must be updated concurrently; they also consume significant additional disk storage space and memory cache overhead."
+/>
+
+<Flashcard
+  question="What is a Dead Letter Queue (DLQ) in message-driven systems?"
+  answer="* Definition: A specialized holding queue where message brokers route messages that cannot be processed successfully after a maximum retry threshold (often due to poison messages or processing errors).
+* Purpose: Prevents message processing blockages and allows developers to inspect, debug, or reprocess failed messages safely."
+/>
+
+<Flashcard
+  question="What is the difference between optimistic and pessimistic concurrency control in applications?"
+  answer="* Optimistic Concurrency Control: Assumes conflicts are rare; allows multiple users to read and modify data without locking, checking for version conflicts upon commit.
+* Pessimistic Concurrency Control: Assumes conflicts are frequent; locks records immediately during read operations to prevent concurrent modifications until the transaction completes."
+/>
+
+<Flashcard
+  question="What is database denormalization and why is it used?"
+  answer="* Definition: The process of intentionally introducing redundancy into a normalized database schema (e.g., by adding redundant columns or pre-joining tables).
+* Purpose: Reduces expensive join operations and improves read/query performance for read-heavy applications, at the cost of increased storage and complex write logic."
+/>
+
+<Flashcard
+  question="What is the Event-Driven architecture pattern and what are its key components?"
+  answer="* Definition: A software architecture paradigm where decoupled services communicate asynchronously by producing and consuming events.
+* Key Components: Event Producers (generate events), Event Channels / Brokers (transit events, like Kafka or RabbitMQ), and Event Consumers (process events reactively)."
+/>
+
+<Flashcard
+  question="What is connection pooling and why is it crucial for database-driven applications?"
+  answer="* Definition: A cache of database connections maintained so that connections can be reused when future requests to the database are required.
+* Purpose: Eliminates the heavy performance overhead of establishing a new TCP connection and authenticating a database session for every single incoming client request."
+/>
+
+<Flashcard
+  question="What is the difference between Short Polling, Long Polling, and WebSockets?"
+  answer="* Short Polling: Client repeatedly sends HTTP requests at fixed time intervals to check for new data, resulting in high network overhead and empty responses.
+* Long Polling: Client sends a request, and the server holds the connection open until new data is available or a timeout occurs, then responds.
+* WebSockets: Establishes a persistent, full-duplex TCP connection between client and server, allowing real-time, bi-directional data exchange with minimal overhead."
+/>
+
+<Flashcard
+  question="What is the CQRS (Command Query Responsibility Segregation) design pattern?"
+  answer="* Definition: A pattern that separates read operations (Queries) from write operations (Commands) into distinct models or database stores.
+* Purpose: Allows independent scaling, optimization, and tuning of read-heavy and write-heavy workloads separately."
+/>
+
+<Flashcard
+  question="What is a Bloom filter and what is its primary use case?"
+  answer="* Definition: A space-efficient probabilistic data structure used to test whether an element is a member of a set.
+* Characteristics: Can yield false positive matches (indicating an element is present when it is not), but never false negatives (guaranteeing if it says an element is absent, it truly is).
+* Use Case: Quick initial cache lookup checks or avoiding disk reads for non-existent keys."
+/>
+
+<Flashcard
+  question="What is database replication and what are the differences between master-slave and master-master replication?"
+  answer="* Database Replication: The process of copying and maintaining database data across multiple server nodes for high availability and load distribution.
+* Master-Slave Replication: Writes go to the single Master node, which replicates data asynchronously or synchronously to multiple Read-Only Slave nodes.
+* Master-Master Replication: Multiple master nodes accept both reads and writes, synchronizing changes between each other (complex due to conflict resolution challenges)."
+/>
+
+<Flashcard
+  question="What is the difference between Sliding Window Log and Sliding Window Counter rate-limiting algorithms?"
+  answer="* Sliding Window Log: Keeps track of exact timestamps of each request in a log; highly accurate, but consumes heavy memory for large volumes of requests.
+* Sliding Window Counter: Combines the fixed window counter with a weighted rolling average from the previous window; memory-efficient and handles request spikes smoothly."
+/>
+
+<Flashcard
+  question="What is the difference between Vertical Partitioning and Horizontal Partitioning (Sharding) in databases?"
+  answer="* Vertical Partitioning: Splitting a table by columns (e.g., separating frequently accessed columns from large text or blob columns into a separate table).
+* Horizontal Partitioning (Sharding): Splitting a table by rows based on a partitioning key (e.g., country code or user ID) across multiple distinct database tables or servers."
+/>
+
+<Flashcard
+  question="What are the key architectural differences between REST, GraphQL, and gRPC?"
+  answer="* REST: Standard resource-based HTTP architecture using JSON/XML payloads; prone to over-fetching or under-fetching data.
+* GraphQL: Client-driven query language over HTTP, allowing clients to request exactly the specific fields and nested data they need in a single round-trip.
+* gRPC: High-performance, low-latency RPC framework using Protocol Buffers (binary serialization) over HTTP/2, optimized for internal microservices communication."
+/>
+
+<Flashcard
+  question="What is Distributed Locking and how is it typically implemented using tools like Redis or ZooKeeper?"
+  answer="* Definition: A synchronization mechanism used to ensure that only one node across a distributed cluster can access a shared resource at any given time.
+* Implementation: Redis uses algorithms like Redlock (setting a key with an expiration timeout and unique token), while ZooKeeper uses ephemeral sequential nodes to coordinate locks."
+/>
+
+<Flashcard
+  question="When should you avoid creating a database index? (Index Anti-Patterns)"
+  answer="* Low Cardinality Columns: Columns with very few unique values (e.g., boolean 'is_active' flags where values are mostly true or false).
+* Frequently Modified Tables: Tables with heavy write/insert/update throughput where index maintenance overhead outweighs query gains.
+* Small Tables: Tables with very few rows, where full table scans are faster than index lookups."
+/>
+
+<Flashcard
+  question="What is the Two-Phase Commit (2PC) protocol and why is it often avoided in modern microservices?"
+  answer="* Definition: An atomic commitment protocol ensuring all nodes in a distributed transaction either commit or abort.
+* Limitations: It is a blocking protocol; if the coordinator fails or a network partition occurs, participant nodes can remain locked indefinitely, severely hurting availability and throughput."
+/>
+
+<Flashcard
+  question="What is a memory leak in programming, and what are its common causes?"
+  answer="* Definition: Occurs when allocated memory is no longer needed by the application, but the garbage collector or reference tracker fails to release it back to the system.
+* Common Causes: Unclosed database connections/streams, static collections holding references indefinitely, unremoved event listeners, and thread-local variables not being cleared."
+/>
+
+<Flashcard
+  question="What are Load Shedding and Backpressure in high-load backend systems?"
+  answer="* Load Shedding: A server-side mechanism where the system deliberately drops or rejects incoming low-priority requests when overloaded to prevent complete system crashes.
+* Backpressure: A flow-control mechanism where a downstream consumer signals an upstream producer to slow down its rate of data production when it cannot keep up."
+/>
+
+<Flashcard
+  question="What is the difference between Hash Indexes and B+ Tree Indexes?"
+  answer="* Hash Index: Uses a hash table to map keys directly to data pointers, providing $O(1)$ lookups for exact-match queries, but completely inefficient for range queries (e.g., BETWEEN, `>`, `<`).
+* B+ Tree Index: Organizes data hierarchically in balanced trees, supporting both exact lookups and extremely efficient range scans because leaf nodes are sequentially linked."
+/>
+
+<Flashcard
+  question="What is the Left-most Prefix Rule for composite database indexes?"
+  answer="* Definition: A rule stating that a composite index (an index on multiple columns like `(col1, col2, col3)`) can only be used by the database query optimizer if the query uses the columns in a strict left-to-right order.
+* Implication: An index on `(A, B, C)` can speed up queries filtering on `A`, `A AND B`, or `A AND B AND C`, but cannot be utilized effectively if filtering only on `B` or `C` alone."
+/>
+
+<Flashcard
+  question="What are the key architectural differences between HTTP/1.1, HTTP/2, and HTTP/3?"
+  answer="* HTTP/1.1: Text-based protocol; suffers from Head-of-Line (HoL) blocking at the connection level, requiring multiple TCP connections for concurrent requests.
+* HTTP/2: Binary protocol; introduces multiplexing over a single TCP connection, header compression (HPACK), and server push, eliminating application-layer HoL blocking.
+* HTTP/3: Replaces TCP with QUIC (built on UDP); eliminates transport-layer HoL blocking entirely, enabling faster connection establishment and seamless migration across network changes."
+/>
+
+<Flashcard
+  question="What is the difference between OAuth 2.0 and OpenID Connect (OIDC)?"
+  answer="* OAuth 2.0: An authorization framework focused on granting third-party applications limited access to user resources without exposing credentials (answers 'What is the user allowed to do?').
+* OpenID Connect (OIDC): An identity layer built on top of OAuth 2.0 that adds standardized authentication and uses JSON Web Tokens (JWT) called ID Tokens to verify user identity (answers 'Who is the user?')."
+/>
+
+<Flashcard
+  question="What is the Raft consensus algorithm and how does it work in distributed systems?"
+  answer="* Definition: A consensus algorithm designed as an alternative to Paxos, making distributed consensus easier to understand and implement.
+* Core Mechanism: Relies on a strong leader election model where a designated Leader node handles all log replication across follower nodes, using heartbeats and randomized timeouts to handle network partitions and failovers."
+/>
+
+<Flashcard
+  question="What is CORS (Cross-Origin Resource Sharing) and how do preflight requests work?"
+  answer="* Definition: A security mechanism implemented by web browsers that restricts web pages from making requests to a different domain than the one that served the web page.
+* Preflight Request: For complex HTTP requests (e.g., using custom headers or PUT/DELETE methods), the browser automatically sends an HTTP `OPTIONS` request first to verify if the server permits cross-origin communication before dispatching the actual request."
+/>
+
+<Flashcard
+  question="What are the trade-offs between Session-based Authentication and Token-based (JWT) Authentication?"
+  answer="* Session-based Authentication: Server stores user session state in memory or a centralized store (e.g., Redis); allows instant session revocation, but introduces scalability bottlenecks and memory overhead on the server.
+* Token-based (JWT) Authentication: Stateless architecture where the client stores a cryptographically signed token; highly scalable and decentralized, but making tokens immediately invalid before expiration requires complex token blacklisting."
+/>
+
+<Flashcard
+  question="What is a Database Connection Leak and how can it be prevented?"
+  answer="* Definition: Occurs when an application opens a database connection from a connection pool but fails to close it (typically due to unhandled exceptions or missing `finally`/`try-with-resources` blocks), eventually exhausting the connection pool.
+* Prevention: Always use `try-with-resources` blocks for managing database resources, configure connection leak detection timeouts in connection pool settings (e.g., HikariCP's `leakDetectionThreshold`), and use ORMs that manage sessions safely."
+/>
+
+<Flashcard
+  question="What is Event Sourcing and how does it differ from traditional state-based persistence?"
+  answer="* Traditional Persistence: Stores only the current state of an entity in database rows, overwriting values on updates.
+* Event Sourcing: Stores every change to the application state as a sequence of immutable, append-only events; current state is derived by replaying the event log, providing a complete audit trail and time-travel querying capabilities."
+/>
+
+<Flashcard
+  question="What are the differences between Blue-Green Deployment and Canary Deployment strategies?"
+  answer="* Blue-Green Deployment: Maintains two identical production environments (Blue and Green); one is live while the other is updated, allowing instant, zero-downtime traffic switching via load balancers.
+* Canary Deployment: Gradually rolls out a new version of an application to a small subset of users (canary group) while monitoring performance and errors before rolling it out to the entire user base."
+/>
+
+<Flashcard
+  question="How does Generational Garbage Collection work in JVM-based languages?"
+  answer="* Weak Generational Hypothesis: Most objects die young.
+* Young Generation: Divided into Eden and Survivor spaces (S0, S1) where newly created objects reside; minor garbage collections happen frequently here.
+* Old (Tenured) Generation: Stores long-lived objects that survive multiple minor GC cycles; major garbage collections (full GC) occur less frequently here because cleaning the old space is more expensive."
+/>
+
+<Flashcard
+  question="What is the difference between Rate Limiting and Throttling?"
+  answer="* Rate Limiting: Restricts the maximum number of requests a client can make within a specified time window (e.g., max 100 requests per minute), returning an HTTP 429 Too Many Requests status code when exceeded.
+* Throttling: Dynamically slows down or delays the processing of incoming requests when system load is high to protect server resources, rather than immediately rejecting them."
+/>
+
+<Flashcard
+  question="What is a Service Mesh and what problems does it solve in microservices?"
+  answer="* Definition: A dedicated infrastructure layer (e.g., Istio, Linkerd) built directly into a microservices architecture to manage service-to-service communication transparently via sidecar proxies.
+* Problems Solved: Handles traffic management, service discovery, load balancing, mutual TLS (mTLS) security, resilience (retries/circuit breaking), and telemetry without altering application source code."
+/>
+
+<Flashcard
+  question="What is Perfect Forward Secrecy (PFS) in cryptography and TLS?"
+  answer="* Definition: A security property of cryptographic protocols ensuring that session keys derived from public key exchanges will not be compromised even if the long-term private key of the server is compromised in the future.
+* Mechanism: Accomplished by using ephemeral Diffie-Hellman key exchanges where unique keys are generated for every session and immediately discarded."
+/>
+
+<Flashcard
+  question="What are the core configuration parameters of a Java ThreadPoolExecutor?"
+  answer="* corePoolSize: The minimum number of threads kept alive in the pool even if idle.
+* maximumPoolSize: The maximum number of threads allowed to run concurrently in the pool.
+* keepAliveTime: The time limit excess idle threads wait before terminating.
+* workQueue: The blocking queue used to hold pending tasks submitted before execution resources become available."
+/>
+
+<Flashcard
+  question="What is Distributed Tracing and how do Trace IDs and Span IDs work?"
+  answer="* Definition: A method used to profile and monitor applications across distributed microservices by tracking the end-to-end lifecycle of a single request.
+* Trace ID: A unique identifier assigned to the original incoming request that persists across all downstream microservice calls.
+* Span ID: A unique identifier assigned to each individual unit of work or network hop within that trace, allowing systems to construct a hierarchical execution tree and pinpoint latency bottlenecks."
+/>
+
+<Flashcard
+  question="What is the Cache Stampede (Thundering Herd) problem and how can it be mitigated?"
+  answer="* Definition: Occurs when a heavily requested cache entry expires, causing multiple concurrent client threads to miss the cache simultaneously and bombard the backend database to regenerate the value.
+* Mitigation: Mitigated using cache locking (single thread recomputes), probabilistic early expiration (XFetch algorithm), or background asynchronous refresh before expiration."
+/>
+
+<Flashcard
+  question="What are the differences between Offset-based pagination and Cursor-based pagination in APIs?"
+  answer="* Offset-based Pagination: Uses `LIMIT` and `OFFSET` clauses (e.g., page numbers); becomes extremely slow on large datasets due to scanning skipped rows and suffers from data drift when records are inserted or deleted.
+* Cursor-based Pagination: Uses an opaque pointer (cursor) pointing to the last seen record's unique ID/timestamp, providing fast, scalable pagination unaffected by intermediate data mutations."
+/>
+
+<Flashcard
+  question="What is the difference between a Mutex and a Semaphore?"
+  answer="* Mutex (Mutual Exclusion): A locking mechanism used to synchronize access to a shared resource, allowing only one thread to access it at a time (features ownership, meaning only the thread that locked it can unlock it).
+* Semaphore: A signaling mechanism using an internal counter to allow a specified maximum number of concurrent threads to access a resource (has no ownership restriction)."
+/>
+
+<Flashcard
+  question="What is the principle of 'Composition over Inheritance' in Object-Oriented Design?"
+  answer="* Definition: A design principle suggesting that classes should achieve code reuse and polymorphic behavior through containment (composition) rather than class inheritance.
+* Purpose: Avoids rigid, deeply coupled class hierarchies, reduces side effects from parent class modifications, and prevents the fragile base class problem."
+/>
+
+<Flashcard
+  question="What is Split-Brain syndrome in distributed systems and how is it prevented?"
+  answer="* Definition: Occurs when a network partition splits a cluster into isolated sub-networks, each believing the other has failed and independently electing its own leader, leading to conflicting data writes and corruption.
+* Prevention: Prevented using quorum-based majority voting (requiring strictly more than $N/2$ nodes to make decisions) and fencing tokens."
+/>
+
+<Flashcard
+  question="What is the difference between Point-to-Point and Publish-Subscribe messaging patterns?"
+  answer="* Point-to-Point: Messages are sent to a queue where each message is consumed by exactly one worker, ensuring load distribution and no duplicate processing.
+* Publish-Subscribe: Messages are published to a topic and broadcasted to all active, independent subscribers simultaneously, supporting event-driven architectures."
+/>
+
+<Flashcard
+  question="Why is choosing the right Sharding Key crucial in distributed database design?"
+  answer="* Importance: An ideal sharding key provides high cardinality, uniform data distribution, and aligns with common access query patterns.
+* Poor Choice Impact: Can result in data hotspots (where a single shard handles the vast majority of traffic and storage) and cross-shard query latency penalties."
+/>
+
+<Flashcard
+  question="What is the difference between CountDownLatch and CyclicBarrier in Java concurrency?"
+  answer="* CountDownLatch: A one-shot synchronization aid that allows one or more threads to wait until a set of operations performed in other threads completes (the count cannot be reset).
+* CyclicBarrier: Allows a fixed number of threads to wait for each other at a common barrier point, and it can be automatically reset and reused for subsequent coordination cycles."
+/>
+
+<Flashcard
+  question="What are the common API versioning strategies and their trade-offs?"
+  answer="* URI Path Versioning: Encodes version in the URL (e.g., `/api/v1/users`); highly visible and easy to test, but violates pure RESTful URI resource representation principles.
+* Request Header Versioning: Passes version via custom headers (e.g., `Accept: application/vnd.company.v1+json`); keeps URLs clean, but harder to test directly in a web browser.
+* Query Parameter Versioning: Passes version as a query param (e.g., `/users?version=1`); simple to implement, but prone to caching complexities."
+/>
+
+<Flashcard
+  question="What are the differences between message delivery semantics (At-Most-Once, At-Least-Once, Exactly-Once)?"
+  answer="* At-Most-Once: Messages are delivered zero or one time; messages can be lost if a failure occurs, but duplicate delivery is prevented.
+* At-Least-Once: Messages are retried until acknowledged; prevents message loss, but can introduce duplicate deliveries requiring idempotent consumers.
+* Exactly-Once: Guarantees each message is processed and recorded precisely once; highly complex and resource-intensive, usually achieved using idempotent operations combined with distributed transactions."
+/>
+
+<Flashcard
+  question="What are JVM Garbage Collection Roots (GC Roots) and how do they determine reachability?"
+  answer="* Definition: GC Roots are special objects that are always considered reachable and serve as the base starting points for tracing object memory graphs in the JVM.
+* Common GC Roots: Local variables and parameters on active thread stacks, active Java native interface (JNI) references, static variables of loaded classes, and active synchronization monitors."
+/>
+
+<Flashcard
+  question="What are Dirty Read, Non-Repeatable Read, and Phantom Read anomalies in SQL databases?"
+  answer="* Dirty Read: A transaction reads uncommitted data written by a concurrent transaction that later rolls back.
+* Non-Repeatable Read: A transaction reads the same row twice, but gets different values because another concurrent transaction updated or deleted the row in between.
+* Phantom Read: A transaction executes a query returning a set of rows matching a condition, but gets a different set of rows (new matching rows inserted) when re-executing due to a concurrent transaction."
+/>
+
+<Flashcard
+  question="What are the primary OAuth 2.0 grant types and their use cases?"
+  answer="* Authorization Code Grant (with PKCE): Most secure grant type using a temporary code exchange; ideal for server-side web apps, mobile apps, and single-page applications (SPAs).
+* Client Credentials Grant: Used for server-to-server machine communication where there is no end-user context.
+* Refresh Token Grant: Used to obtain a new access token without re-prompting the user for credentials."
+/>
+
+<Flashcard
+  question="What is the difference between Deadlock and Livelock in concurrent systems?"
+  answer="* Deadlock: Threads are permanently blocked in a waiting state, consuming zero CPU cycles while waiting for resources held by each other.
+* Livelock: Threads are actively changing their states and responding to each other in a continuous loop without making any actual forward progress, consuming high CPU utilization."
+/>
+
+<Flashcard
+  question="What is the purpose of a Database Query Execution Plan (EXPLAIN command)?"
+  answer="* Definition: A roadmap generated by the database query optimizer detailing how it intends to execute an SQL query (e.g., choosing between a full table scan, index scan, or specific join algorithms).
+* Purpose: Used by developers and DBAs to diagnose slow queries, identify missing indexes, analyze scan costs, and optimize database performance."
+/>
+
+<Flashcard
+  question="What is an Idempotency Key in distributed payment or mutation APIs?"
+  answer="* Definition: A unique token (UUID) passed by the client in an API request header when performing non-idempotent operations like charging a credit card or creating a financial transaction.
+* Mechanism: The server stores the request result mapped to the idempotency key; if a network timeout causes the client to retry the request, the server returns the cached response rather than executing the transaction a second time."
+/>
+
+<Flashcard
+  question="What are the common database sharding partitioning strategies?"
+  answer="* Range-based Sharding: Splits data into shards based on specific value ranges (e.g., user IDs 1-1000 in shard A), risking data hotspots if traffic clusters in a specific range.
+* Hash-based Sharding: Applies a hash function to an attribute (like user ID) and maps it to a shard index, ensuring uniform data and traffic distribution.
+* Directory-based Sharding: Uses a lookup service (directory) to track which shard stores which data key, offering high flexibility at the cost of an extra lookup hop."
+/>
+
+<Flashcard
+  question="What is Tail Latency (e.g., p99 latency) and why is it critical in large distributed systems?"
+  answer="* Definition: Tail latency measures the response time experienced by the slowest requests (e.g., p99 means 99% of requests are faster than this value, while the remaining 1% are slower).
+* Significance: In distributed systems where a single user request fans out across dozens of microservices, even a small percentage of slow requests at each hop causes compound latency spikes, degrading the overall user experience."
+/>
+
+<Flashcard
+  question="What are the key architectural differences between G1 GC and ZGC in the JVM?"
+  answer="* G1 GC (Garbage-First): Divides the heap into equal-sized regions, targeting mixed collections to meet predictable pause time goals, but can experience stop-the-world pauses on massive heaps.
+* ZGC (Z Garbage Collector): A scalable, low-latency garbage collector that performs most work concurrently using load barriers and colored pointers, keeping pause times under milliseconds regardless of multi-terabyte heap sizes."
+/>
+
+<Flashcard
+  question="What is Write Amplification in database storage engines?"
+  answer="* Definition: The ratio between the amount of data physically written to the storage medium (SSD/disk) compared to the logical amount of data written by the application.
+* Impact: High write amplification (common in Log-Structured Merge-tree or LSM-tree storage engines during background compaction) accelerates disk wear and degrades write performance."
+/>
+
+<Flashcard
+  question="How do Content Delivery Networks (CDNs) optimize web performance and how does cache invalidation work?"
+  answer="* CDN Operation: Caches static and dynamic assets on edge servers distributed globally closer to end-users, reducing latency and offloading traffic from origin servers.
+* Cache Invalidation: Managed using TTL (Time-To-Live) expiration, explicit cache purging via API webhooks, or versioned asset URLs (cache busting)."
+/>
+
+<Flashcard
+  question="What is the 'Distributed Monolith' anti-pattern in microservices?"
+  answer="* Definition: An architectural anti-pattern where an application is split into separate microservices codebase-wise, but they remain tightly coupled through shared databases, synchronous REST calls, or mandatory distributed transactions.
+* Consequence: Inherits all the operational complexity of distributed systems without gaining any of the independent deployability, scaling, or fault-isolation benefits of true microservices."
+/>
+
+<Flashcard
+  question="What is CPU Cache Locality (Spatial vs Temporal) and False Sharing in multi-threaded programming?"
+  answer="* Temporal Locality: Re-accessing recently used memory locations soon after.
+* Spatial Locality: Accessing memory locations close to recently accessed data (exploited via CPU cache lines).
+* False Sharing: Occurs when two or more threads running on separate CPU cores modify independent variables that happen to reside on the same cache line, causing unnecessary cache invalidations and severe performance degradation."
+/>
+
+<Flashcard
+  question="What are the major trade-offs between Synchronous and Asynchronous communication in microservices?"
+  answer="* Synchronous Communication (e.g., REST, gRPC): Simple to implement and returns immediate responses, but creates tight coupling, cascading failures, and high latency under heavy load.
+* Asynchronous Communication (e.g., Message Brokers like Kafka, RabbitMQ): Decouples services, improves system resilience, and handles traffic spikes via queuing, but introduces eventual consistency and debugging complexity."
+/>
+
+<Flashcard
+  question="What is the Transactional Outbox Pattern in microservices and why is it used?"
+  answer="* Definition: A design pattern used to reliably publish domain events to a message broker alongside database updates within a single local transaction.
+* Mechanism: Instead of publishing directly, events are saved to an 'outbox' table in the same database transaction; a separate background worker or CDC (Change Data Capture) tool reads the outbox table and publishes the messages to the broker, ensuring dual-write consistency."
+/>
+
+<Flashcard
+  question="What is the difference between Layer 4 (L4) and Layer 7 (L7) Load Balancing?"
+  answer="* Layer 4 (Transport Layer): Routes traffic based on IP addresses and TCP/UDP ports without inspecting the packet payload; extremely fast and lightweight.
+* Layer 7 (Application Layer): Routes traffic by inspecting the actual application protocol content (e.g., HTTP URLs, headers, cookies, or gRPC payloads); enables advanced routing features like path-based splitting, SSL termination, and caching."
+/>
+
+<Flashcard
+  question="What is Write-Ahead Logging (WAL) and database checkpointing?"
+  answer="* Write-Ahead Logging (WAL): A technique where changes are sequentially written to an append-only log on disk before making modifications to the actual database data pages, ensuring durability and crash recovery.
+* Checkpointing: A process where the database engine flushes dirty data pages from memory to disk and truncates the WAL log up to that point to speed up recovery times."
+/>
+
+<Flashcard
+  question="What is the architectural difference between event-driven (e.g., NGINX) and thread-per-request (e.g., traditional Apache) servers?"
+  answer="* Thread-Per-Request: Allocates a dedicated thread or process for each incoming client connection; simple to design, but struggles under massive concurrent connections due to high memory and context-switching overhead.
+* Event-Driven / Asynchronous: Uses non-blocking I/O multiplexing loops to handle thousands of concurrent connections efficiently using a small, fixed pool of worker threads."
+/>
+
+<Flashcard
+  question="What is the difference between Horizontal Pod Autoscaler (HPA) and Vertical Pod Autoscaler (VPA) in Kubernetes?"
+  answer="* Horizontal Pod Autoscaler (HPA): Automatically scales the number of pod replicas up or down based on observed CPU utilization or custom metrics.
+* Vertical Pod Autoscaler (VPA): Automatically adjusts the CPU and memory resource requests and limits of existing container pods based on historical usage."
+/>
+
+<Flashcard
+  question="What is a Race Condition and how can it be prevented?"
+  answer="* Definition: A concurrency flaw where the output or correctness of a program depends on the unpredictable sequence or timing of uncontrollable thread executions.
+* Prevention: Prevented by using synchronization primitives (e.g., mutexes, locks, atomic variables), thread-safe collections, or immutable data structures to protect critical sections."
+/>
+
+<Flashcard
+  question="What is Database Connection Multiplexing and what tool is commonly used for it with PostgreSQL?"
+  answer="* Definition: A technique that allows a large number of client applications to share a smaller pool of persistent database server connections efficiently.
+* PgBouncer: A lightweight connection pooler for PostgreSQL that sits between applications and the database, routing client connections to a pooled set of backend server connections to reduce connection setup overhead."
+/>
+
+<Flashcard
+  question="What is a JVM Safepoint and why is it important for Garbage Collection?"
+  answer="* Definition: A specific point during program execution where the state of all threads is known to be consistent and safely inspected by the JVM runtime.
+* Importance: Required for Stop-The-World (STW) operations like Garbage Collection, thread dumps, and biased locking revocation, because threads cannot be safely modified while actively executing bytecode."
+/>
+
+<Flashcard
+  question="What is the TCC (Try-Confirm-Cancel) pattern in distributed transactions?"
+  answer="* Definition: A compensation-based distributed transaction pattern consisting of three distinct phases: Try (reserves resources), Confirm (commits the transaction using reserved resources), and Cancel (rolls back reserves if any step fails).
+* Purpose: Provides an application-level alternative to rigid blocking 2PC protocols, ensuring eventual consistency in microservices without locking databases long-term."
+/>
+
+<Flashcard
+  question="What are the differences between B-Tree and LSM-Tree (Log-Structured Merge-tree) storage engines?"
+  answer="* B-Tree: Optimizes for read performance by maintaining in-place updates on sorted disk pages; high write amplification due to random disk writes.
+* LSM-Tree: Optimizes for write performance by appending writes sequentially to an in-memory buffer (MemTable) and flushing to sorted string tables (SSTables) on disk, handling high write throughput at the cost of background compaction overhead."
+/>
+
+<Flashcard
+  question="What is Compare-And-Swap (CAS) and how does it enable lock-free programming?"
+  answer="* Definition: An atomic hardware-level instruction that compares the contents of a memory location with a given value and, only if they are the same, modifies that memory location to a new value.
+* Lock-Free Programming: Enables threads to update shared variables without using blocking mutexes or locks, relying instead on retry loops when concurrent modifications cause the CAS operation to fail."
+/>
+
+<Flashcard
+  question="What are Entities, Value Objects, and Aggregates in Domain-Driven Design (DDD)?"
+  answer="* Entity: An object defined primarily by its unique identity rather than its attributes (persists across changes).
+* Value Object: An immutable object defined entirely by its attributes rather than a unique identity (e.g., money or address).
+* Aggregate: A cluster of domain entities and value objects bound together by a root entity (Aggregate Root) to enforce consistency boundaries and transactional rules."
+/>
+
+<Flashcard
+  question="What is Zero Trust Architecture (ZTA) in network security?"
+  answer="* Definition: A security paradigm based on the principle of 'never trust, always verify', meaning no user or device—inside or outside the network perimeter—is trusted by default.
+* Core Pillars: Requires continuous, explicit authentication, authorization, and micro-segmentation for every access request to applications and data."
+/>
+
+<Flashcard
+  question="How do Node Failure Detection and Heartbeat mechanisms work in distributed systems?"
+  answer="* Heartbeating: Nodes periodically transmit small 'ping' messages to a central monitor or peer nodes to signal they are alive.
+* Failure Detection Trade-offs: Because network delays and packet drops are common, systems must balance accuracy (avoiding false positives) against speed (detecting actual crashes quickly), often using adaptive algorithms like Phi Accrual failure detectors."
+/>
+
+<Flashcard
+  question="What is the Bulkhead Pattern in microservices architecture?"
+  answer="* Definition: A fault-tolerance design pattern inspired by ship construction, where system resources (like thread pools, database connections, or memory) are partitioned into isolated pools.
+* Purpose: Prevents a failure or heavy traffic spike in one downstream service from consuming all shared resources and cascading failures across the entire application."
+/>
+
+<Flashcard
+  question="What are the main architectural challenges and strategies when rebalancing Database Shards?"
+  answer="* Challenge: When a sharding cluster scales out, redistributing data keys across new shards requires moving massive volumes of data, which can cause high network I/O and performance degradation.
+* Strategies: Mitigated by using consistent hashing rings, running background data migration tools with dual-writes, or choosing an optimal initial sharding key to minimize future rebalancing."
+/>
+
+<Flashcard
+  question="What is the difference between Synchronous and Asynchronous Replication in databases?"
+  answer="* Synchronous Replication: The primary node waits for confirmation that replica nodes have successfully written data before acknowledging a transaction to the client, guaranteeing zero data loss at the cost of higher write latency.
+* Asynchronous Replication: The primary node commits writes locally and acknowledges the client immediately, replicating data to secondary nodes in the background for high performance, but risking data loss if the primary fails before replication completes."
+/>
+
+<Flashcard
+  question="What is the Actor Model in concurrent programming and how does it work?"
+  answer="* Definition: A conceptual model of concurrent computation where primitive units called 'Actors' encapsulate state, behavior, and a mailbox.
+* Mechanism: Actors do not share memory; instead, they communicate exclusively by passing immutable messages asynchronously to each other's mailboxes, eliminating explicit thread locking and race conditions."
+/>
+
+<Flashcard
+  question="What is Object Pooling and when should it be used?"
+  answer="* Definition: A software design pattern that maintains a cache of pre-initialized, reusable objects rather than allocating and destroying them repeatedly.
+* Use Case: Best utilized for expensive resources whose creation overhead is high (e.g., database connections, socket channels, or heavy graphics objects), but can waste memory if pool sizes are improperly tuned."
+/>
+
+<Flashcard
+  question="What is the difference between Optimistic and Pessimistic Locking at the database level?"
+  answer="* Optimistic Locking: Assumes data conflicts are rare; allows simultaneous reads and writes without database locks, validating version columns or timestamps at commit time and throwing exceptions if a conflict occurs.
+* Pessimistic Locking: Assumes conflicts are frequent; locks database rows immediately upon read using clauses like `SELECT ... FOR UPDATE` to block other transactions until the operation completes."
+/>
+
+<Flashcard
+  question="What is a Memory Model in programming languages (like the Java Memory Model)?"
+  answer="* Definition: A specification that defines how threads interact through computer memory, establishing rules for visibility, ordering, and atomicity of shared variables across multi-core processors.
+* Key Concepts: Addresses compiler optimizations, CPU caching, instruction reordering, and the use of synchronization boundaries (happens-before relationships)."
+/>
+
+<Flashcard
+  question="What are the key principles of Domain-Driven Design (DDD) Ubiquitous Language and Bounded Contexts?"
+  answer="* Ubiquitous Language: A rigorous, shared common language between software developers and domain experts used consistently in code, models, and discussions.
+* Bounded Context: A linguistic and structural boundary within which a domain model applies explicitly, preventing ambiguity when terms have different meanings across various parts of an enterprise."
+/>
+
+<Flashcard
+  question="What is the difference between Load Testing, Stress Testing, and Spike Testing?"
+  answer="* Load Testing: Evaluates system behavior under expected normal and peak user traffic volumes to verify performance metrics.
+* Stress Testing: Pushes the system beyond normal operational capacity (often until breaking point) to identify failure modes, bottlenecks, and recovery behavior.
+* Spike Testing: Tests system resilience against sudden, extreme surges in traffic volume for short durations."
+/>
+
+<Flashcard
+  question="What is the purpose of the volatile keyword in Java?"
+  answer="* Memory Visibility: Ensures that changes made to a `volatile` variable by one thread are immediately visible to other threads, bypassing local CPU cache lines and forcing reads/writes directly to main memory.
+* Instruction Reordering: Prevents the compiler and processor from reordering instructions around the volatile variable, but does not provide atomicity for compound operations (like increments)."
+/>
+
+<Flashcard
+  question="What is a Tail-Recursive function and why is tail-call optimization important?"
+  answer="* Tail-Recursion: A recursive function where the recursive call is the absolute final operation performed by the function, leaving no pending operations to execute after the recursive step returns.
+* Tail-Call Optimization (TCO): A compiler optimization where stack frames for tail-recursive calls are reused instead of allocating new stack space, preventing stack overflow errors."
+/>
+
+<Flashcard
+  question="What is a Reversible Migration vs. Non-Reversible Migration in database schema updates?"
+  answer="* Reversible Migration: Database schema scripts that include both an upgrade (`up`) and a downgrade (`down`) path, allowing developers to roll back schema changes safely if deployment fails.
+* Non-Reversible Migration: Destructive schema changes (e.g., dropping a table or deleting columns) that cannot be automatically undone without data loss or complex recovery backups."
+/>
+
+<Flashcard
+  question="What is the difference between a Process-based and Thread-based Web Server architecture?"
+  answer="* Process-based: Spawns a completely independent operating system process to handle each incoming client connection; offers strong memory isolation and crash resilience, but has high memory and context-switching overhead.
+* Thread-based: Allocates lightweight threads within a single shared process address space to handle requests concurrently; offers faster context switching, but a single rogue thread can crash the entire server process."
+/>
+
+<Flashcard
+  question="What is Data Skew in distributed computing and how can it be mitigated?"
+  answer="* Definition: An imbalance in workload distribution where a small subset of nodes or partitions receive a disproportionately high amount of data or traffic compared to others.
+* Mitigation: Solved by choosing better partitioning keys, adding salt (random suffixes) to high-cardinality keys, or implementing dynamic load balancing strategies."
+/>
+
+<Flashcard
+  question="What is an Immutable Object and what are its benefits in concurrent programming?"
+  answer="* Definition: An object whose internal state cannot be modified whatsoever after it is constructed.
+* Benefits: Naturally thread-safe, requires no synchronization locks, immune to race conditions, can be safely shared across multiple threads, and simplifies caching logic."
+/>
+
+<Flashcard
+  question="What is the purpose of an API Rate Limiter's IP vs. User-based tracking strategy?"
+  answer="* IP-based Tracking: Restricts request limits based on the client's network IP address; useful for unauthenticated traffic, but can inadvertently block entire corporate networks or shared Wi-Fi routers behind a single NAT IP.
+* User-based Tracking: Restricts limits based on authenticated user IDs or API tokens; highly accurate for individual user quotas, but requires valid authentication."
+/>
+
+<Flashcard
+  question="What is the difference between a Blue-Green deployment and a Rolling deployment?"
+  answer="* Blue-Green Deployment: Maintains two identical production environments (Active/Inactive), switching router traffic instantaneously to the new version for zero-downtime cutovers.
+* Rolling Deployment: Gradually replaces instances of the old version with the new version incrementally across server nodes, reducing resource requirements during deployment."
+/>
+
+<Flashcard
+  question="What is the difference between Soft Delete and Hard Delete in database records?"
+  answer="* Hard Delete: Permanently removes database rows using a `DELETE` SQL statement, freeing up disk storage space immediately.
+* Soft Delete: Marks records as inactive or deleted by updating a flag column (e.g., `is_deleted = true` or `deleted_at timestamp`), preserving historical data integrity for audits and relationship constraints at the cost of bloated table sizes."
+/>
+
+<Flashcard
+  question="What is an Exponential Backoff with Jitter strategy in retry mechanisms?"
+  answer="* Exponential Backoff: Increases the wait time between subsequent failed retry attempts exponentially (e.g., 2s, 4s, 8s, 16s) to avoid overwhelming recovering downstream services.
+* Jitter: Adds random variance (jitter) to the backoff delay to prevent synchronized 'thundering herd' retries from multiple clients hitting the server at identical intervals."
+/>
+
+<Flashcard
+  question="What is the difference between a Functional Programming paradigm and Object-Oriented Programming?"
+  answer="* Functional Programming: Focuses on pure functions, immutable data structures, and the evaluation of mathematical expressions, avoiding shared mutable state and side effects.
+* Object-Oriented Programming: Focuses on encapsulating state and behavior together into mutable objects that interact through method calls and inheritance hierarchies."
+/>
+
+<Flashcard
+  question="What is the difference between Database Connection Leaking and Connection Exhaustion?"
+  answer="* Connection Leak: A coding bug where an application opens database connections and fails to close them, gradually draining the available pool over time.
+* Connection Exhaustion: A symptom where valid traffic spikes exceed the maximum configured capacity of the database connection pool, causing new incoming requests to time out."
+/>
+
+<Flashcard
+  question="What is a Distributed Deadlock and how is it detected?"
+  answer="* Definition: A deadlock condition where two or more nodes across a distributed system are waiting for resources held by each other, spanning multiple database instances or microservices.
+* Detection: Detected using centralized wait-for graph analysis, distributed timeout mechanisms, or transaction aborts coordinated via saga orchestrators."
+/>
+
+<Flashcard
+  question="What is a Vector Clock and how is it used in distributed systems?"
+  answer="* Definition: A data structure used to track causality and ordering of events across distributed nodes without requiring synchronized physical clocks.
+* Mechanism: Each node maintains a vector of logical timestamps; when data is updated, counters are incremented to detect concurrent updates and resolve version conflicts."
+/>
+
+<Flashcard
+  question="What is the Gossip Protocol and where is it used?"
+  answer="* Definition: A decentralized peer-to-peer communication mechanism inspired by social gossip, where nodes periodically exchange cluster state information with a few randomly selected peers.
+* Use Case: Widely used for cluster membership, failure detection, and state dissemination in large distributed systems (e.g., Cassandra, Consul)."
+/>
+
+<Flashcard
+  question="What are Java Virtual Threads (Project Loom) and how do they differ from Platform Threads?"
+  answer="* Platform Threads: Thin wrappers around OS-level kernel threads; expensive to create and limited in number.
+* Virtual Threads: Lightweight, user-mode threads managed directly by the JVM runtime; cheap to create by the millions, enabling highly scalable blocking I/O applications without complex asynchronous callback models."
+/>
+
+<Flashcard
+  question="What is a CompletableFuture in Java and how does it support asynchronous programming?"
+  answer="* Definition: An extension of Java's Future interface representing the result of an asynchronous computation.
+* Features: Allows chaining non-blocking callbacks, combining multiple asynchronous tasks (`allOf`, `anyOf`), and handling exceptions declaratively using functional programming pipelines."
+/>
+
+<Flashcard
+  question="What is Hexagonal Architecture (Ports and Adapters) in software design?"
+  answer="* Definition: An architectural pattern that isolates the core domain business logic from external concerns (databases, UI, APIs, third-party services).
+* Mechanism: Business logic interacts with the outside world exclusively through 'Ports' (interfaces) and 'Adapters' (implementations), making the core system highly testable and decoupled."
+/>
+
+<Flashcard
+  question="What is Cross-Site Request Forgery (CSRF) and how is it prevented?"
+  answer="* Definition: An attack where a malicious website tricks a victim's web browser into executing unauthorized commands on a trusted site where the user is currently authenticated.
+* Prevention: Prevented using anti-CSRF tokens (synchronizer token pattern), SameSite cookie attributes (`Strict` or `Lax`), and requiring re-authentication for sensitive actions."
+/>
+
+<Flashcard
+  question="What is SQL Injection and how can parameterized queries prevent it?"
+  answer="* Definition: A security vulnerability where attackers inject malicious SQL strings into input fields to manipulate backend database queries.
+* Prevention: Parameterized queries (prepared statements) treat user input strictly as data parameters rather than executable SQL code, neutralizing injection vectors completely."
+/>
+
+<Flashcard
+  question="What is the difference between Recursive and Authoritative DNS servers?"
+  answer="* Recursive DNS Resolver: Acts as an intermediary for clients, querying multiple upstream servers to find and cache the requested IP address for a domain name.
+* Authoritative DNS Server: Holds the actual DNS record configurations (like A, CNAME, TXT records) for a domain and provides the definitive answer to recursive resolvers."
+/>
+
+<Flashcard
+  question="What is the ForkJoinPool framework in Java and what is work-stealing?"
+  answer="* ForkJoinPool: A specialized executor service designed for parallel recursive divide-and-conquer tasks.
+* Work-Stealing Algorithm: Idle worker threads in the pool can 'steal' tasks from the back of the double-ended queues (deques) of busier threads, maximizing CPU utilization and core load balancing."
+/>
+
+<Flashcard
+  question="What is ThreadLocal storage in Java and what are its potential memory leaks in application servers?"
+  answer="* ThreadLocal: Provides thread-local variables where each thread accessing the variable gets its own independently initialized copy.
+* Memory Leak Risk: In servlet containers (like Tomcat) that reuse worker threads from a thread pool, failing to call `remove()` on ThreadLocal variables can leave data attached to pooled threads indefinitely, causing memory leaks."
+/>
+
+<Flashcard
+  question="What is the difference between Optimistic Offline Lock and Pessimistic Offline Lock patterns?"
+  answer="* Optimistic Offline Lock: Resolves conflicts across multiple database sessions by checking version stamps when changes are saved; allows concurrent edits without long-lived database locks.
+* Pessimistic Offline Lock: Prevents concurrent conflicts entirely by holding an exclusive lock on a business record across multiple database transactions from read until commit."
+/>
+
+<Flashcard
+  question="What is the difference between an API Gateway Pattern and Backends for Frontends (BFF) Pattern?"
+  answer="* API Gateway: A single centralized reverse proxy serving all clients across an enterprise with cross-cutting concerns (routing, auth, rate limiting).
+* BFF (Backends for Frontends): Specialized API gateways tailored specifically for individual client types (e.g., separate BFFs for mobile apps, web browsers, and smart devices) to optimize payloads and user experience."
+/>
+
+<Flashcard
+  question="What is a Kubernetes Ingress Controller and how does it differ from a Service?"
+  answer="* Kubernetes Service: An internal abstraction layer that groups pods and provides stable internal networking and load balancing within a cluster.
+* Ingress Controller: An edge component (like NGINX or Traefik) that manages external HTTP/HTTPS routing rules, SSL termination, and name-based virtual hosting into internal cluster services."
+/>
+
+<Flashcard
+  question="What is a Content Security Policy (CSP) header and how does it protect web applications?"
+  answer="* Definition: An HTTP response header that allows site operators to restrict and control the resources (such as JavaScript, CSS, images) that the browser is allowed to load for a given page.
+* Protection: Effectively mitigates Cross-Site Scripting (XSS) and data injection attacks by blocking unauthorized script executions."
+/>
+
+<Flashcard
+  question="What is the purpose of Database Index Statistics and why does periodic query optimization matter?"
+  answer="* Index Statistics: Metadata maintained by the database engine regarding the distribution and cardinality of data values within indexed columns.
+* Importance: The query optimizer uses these statistics to calculate execution costs; outdated statistics can cause the optimizer to choose poor execution plans (e.g., full table scans over indexes), degrading query performance."
+/>
+
+<Flashcard
+  question="What is the difference between Active and Passive Load Balancer health checks?"
+  answer="* Active Health Checks: The load balancer proactively sends periodic test requests (pings, HTTP probes) to backend servers to verify their health status.
+* Passive Health Checks: The load balancer monitors actual incoming client traffic and responses in real-time, removing servers from the pool if they return a threshold of server error codes."
+/>
+
+<Flashcard
+  question="What is a Session Fixation attack and how can it be mitigated?"
+  answer="* Definition: An attack where a malicious actor tricks a victim into authenticating using a pre-determined session identifier controlled by the attacker.
+* Mitigation: Prevented by generating a brand new session identifier and invalidating the old one immediately upon successful user login/authentication."
+/>
+
+<Flashcard
+  question="What are the architectural trade-offs between Monoliths, Microservices, and Serverless?"
+  answer="* Monolith: Simple to build and deploy initially, but difficult to scale or maintain as codebases grow large.
+* Microservices: High scalability and independent deployability, but introduces distributed system complexity, network latency, and operational overhead.
+* Serverless: Zero infrastructure management and automatic scaling with pay-per-execution pricing, but suffers from cold starts and vendor lock-in."
+/>
+
+<Flashcard
+  question="What is a Circuit Breaker fallback mechanism and why is it important?"
+  answer="* Definition: A secondary code path executed when a circuit breaker trips open or a downstream service call fails.
+* Importance: Provides graceful degradation by returning cached data, default fallback responses, or error messages rather than failing the entire user request."
+/>
+
+<Flashcard
+  question="What are the trade-offs between JSON and Protocol Buffers (Protobuf) serialization formats?"
+  answer="* JSON: Human-readable, text-based format natively supported by web browsers, but has larger payload sizes and higher parsing overhead.
+* Protocol Buffers: Binary serialization format that is exceptionally compact, parses rapidly, and enforces strict schema typing via `.proto` files, but requires specialized compilers and is not human-readable without decoding."
+/>
+
+<Flashcard
+  question="What are Time-Series Databases (TSDB) and how do they differ from relational databases?"
+  answer="* Definition: Specialized databases optimized for handling time-stamped or time-series data streams (e.g., IoT sensor metrics, financial ticks, server logs).
+* Key Differences: Designed for exceptionally high write throughput, efficient time-range queries, and automated data retention/downsampling policies, whereas relational databases struggle with high-frequency time-indexed writes."
+/>
+
+<Flashcard
+  question="What is the difference between Symmetric and Asymmetric Encryption?"
+  answer="* Symmetric Encryption: Uses the exact same secret key for both encryption and decryption; extremely fast and efficient for large volumes of data (e.g., AES).
+* Asymmetric Encryption: Uses a key pair—a public key for encryption and a private key for decryption; slower performance, but solves the secure key distribution problem (e.g., RSA, ECC)."
+/>
+
+<Flashcard
+  question="What is a Merkle Tree (Hash Tree) and how is it used in distributed systems?"
+  answer="* Definition: A tree data structure where every leaf node is labeled with the cryptographic hash of a data block, and every non-leaf node is labeled with the cryptographic hash of its child labels.
+* Use Case: Enables highly efficient and secure verification of large data structures across distributed nodes, allowing systems to compare data sync differences without transferring entire datasets."
+/>
+
+<Flashcard
+  question="What is a Database Materialized View and how does it differ from a Standard View?"
+  answer="* Standard View: A virtual table based on the result-set of an SQL query; executed dynamically every time the view is queried, saving no physical data on disk.
+* Materialized View: A database object that stores the query result physically on disk as a cached table snapshot, significantly speeding up complex read queries at the cost of periodic refresh overhead."
+/>
+
+<Flashcard
+  question="What is a Feature Flag (Toggle) architecture and what are its trade-offs?"
+  answer="* Definition: A development technique that allows developers to toggle application features on or off remotely without deploying new code or restarting services.
+* Trade-offs: Enables dark launching, canary releases, and rapid rollbacks of faulty features, but introduces technical debt from stale flags and complex combinatorial testing states."
+/>
+
+<Flashcard
+  question="What are the differences between Inter-Process Communication (IPC) mechanisms like Pipes, Message Queues, and Shared Memory?"
+  answer="* Pipes: Stream-oriented, unidirectional communication channels between related processes.
+* Message Queues: Allow independent processes to exchange structured messages asynchronously with decoupled message boundaries.
+* Shared Memory: The fastest IPC mechanism where multiple processes map a common region of physical RAM directly, requiring explicit synchronization locks to prevent race conditions."
+/>
+
+<Flashcard
+  question="What is a Fencing Token in distributed locking and how does it prevent split-brain anomalies?"
+  answer="* Definition: A monotonically increasing serial number issued by a locking service (like ZooKeeper) whenever a lock is acquired.
+* Prevention: If a slow node holding an expired lease tries to write to storage, the storage engine rejects requests containing older or invalid fencing token numbers, preventing stale writes from corrupting data."
+/>
+
+<Flashcard
+  question="What is Semantic Versioning (SemVer) and why is it important for API contracts?"
+  answer="* Definition: A versioning convention structured as MAJOR.MINOR.PATCH (e.g., `2.4.1`).
+* Rules: MAJOR version for incompatible API changes, MINOR version for backward-compatible functional additions, and PATCH version for backward-compatible bug fixes.
+* Importance: Prevents breaking downstream microservice dependencies unexpectedly."
+/>
+
+<Flashcard
+  question="What is the difference between Stateful and Stateless architectures?"
+  answer="* Stateful Architecture: Servers retain client session state and data locally across multiple requests, requiring sticky sessions and complicating horizontal scaling.
+* Stateless Architecture: Every incoming request from a client contains all necessary authentication and context data, allowing any server node in a pool to handle any request interchangeably for seamless horizontal scaling."
+/>
+
+<Flashcard
+  question="What is Distributed Tracing Sampling and why is it necessary?"
+  answer="* Definition: The practice of recording and transmitting only a subset (e.g., 1% or 5%) of total distributed traces rather than 100% of request logs.
+* Necessity: At massive web scale, logging every single request consumes excessive network bandwidth, storage, and CPU overhead; sampling retains statistically valid performance insights while controlling costs."
+/>
+
+<Flashcard
+  question="What are the common refresh strategies for Database Materialized Views?"
+  answer="* Complete Refresh: Recomputes the entire underlying query from scratch and rebuilds the materialized view table.
+* Incremental (Fast) Refresh: Updates only the rows that have changed based on transaction logs or database change data capture (CDC), saving substantial compute resources."
+/>
+
+<Flashcard
+  question="What is Dynamic DNS (DDNS) and how does it work?"
+  answer="* Definition: A service that automatically updates DNS record mappings in real-time when an IP address changes.
+* Mechanism: Client devices or routers run a lightweight client daemon that notifies the DNS provider immediately whenever their public IP address is reassigned (commonly used for home servers or dynamic cloud environments)."
+/>
+
+<Flashcard
+  question="What is the difference between Hot, Warm, and Cold storage tiers in cloud architectures?"
+  answer="* Hot Storage: High-performance, low-latency storage optimized for frequently accessed data (higher cost).
+* Warm Storage: Balanced tier for semi-frequently accessed data or backups that require moderate retrieval times.
+* Cold (Archive) Storage: Inexpensive storage for rarely accessed long-term archival data, featuring higher retrieval latencies and restoration costs."
+/>
+
+<Flashcard
+  question="How is a Bloom Filter's false positive rate tuned and calculated?"
+  answer="* Tuning Parameters: The false positive probability is determined by the size of the bit array ($m$), the number of hash functions ($k$), and the expected number of inserted elements ($n$).
+* Optimization: Increasing the bit array size or adding more optimal hash functions reduces the false positive rate at the expense of increased memory usage and compute time."
+/>
+
+<Flashcard
+  question="What are API Gateway Caching strategies and when should they be applied?"
+  answer="* Strategy: Configuring the API gateway to cache responses for GET requests matching specific endpoints and headers.
+* Application: Ideal for static or semi-static read-heavy data that changes infrequently, drastically reducing backend microservice load and network latency."
+/>
+
+<Flashcard
+  question="What is Immutable Infrastructure and what are its primary benefits?"
+  answer="* Definition: An operational paradigm where servers and infrastructure components are never modified in place after deployment; instead, if updates are needed, they are replaced entirely with newly built images.
+* Benefits: Eliminates configuration drift, ensures exact environment consistency across staging and production, and simplifies rollback procedures."
+/>
+
+<Flashcard
+  question="How does a Circuit Breaker test service recovery during its Half-Open state?"
+  answer="* Mechanism: When a circuit breaker is in the Open state and a configured timeout elapses, it transitions to the Half-Open state.
+* Testing: It allows a limited, controlled number of test request probes through to the downstream service; if these test requests succeed, the circuit closes (normal operation), but if any fail, it trips back to the Open state."
+/>
+
+<Flashcard
+  question="What is the difference between Canary Releases and A/B Testing?"
+  answer="* Canary Release: A deployment strategy focused on operational risk mitigation, rolling out a new version to a small percentage of users to verify performance, stability, and error rates.
+* A/B Testing: A product experimentation strategy focused on business metrics, running two concurrent UI or functional versions simultaneously to measure user engagement and conversion rates."
+/>
