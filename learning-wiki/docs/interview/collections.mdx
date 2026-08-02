@@ -1,0 +1,219 @@
+<Flashcard
+  question="How do you iterate over a HashMap using EntrySet?"
+  answer="* Use the entrySet() method to get a Set view of the mappings contained in the map.
+* Iterate through the set using an enhanced for loop, an iterator, or Java 8 Streams.
+* Example Syntax: for (Map.Entry<K, V> entry : map.entrySet()) { K key = entry.getKey(); V value = entry.getValue(); }
+* Efficiency: More efficient than iterating over keySet() and looking up values via get(), as it avoids secondary lookups."
+/>
+
+<Flashcard
+  question="What is the internal working of a HashMap and the index generation formula?"
+  answer="* Data Structure: An array of Node objects (buckets) combined with linked lists (or balanced trees when bucket size exceeds 8 post-Java 8).
+* Hash Calculation: When a key is put, its hashCode() method is called and subjected to a supplemental hash function to reduce collisions.
+* Index Formula: Index is calculated using bitwise AND: index = hashCode(Key) & (n - 1) where n is the current capacity of the bucket array (always a power of 2)."
+/>
+
+<Flashcard
+  question="What are the Initial Capacity and Threshold in a HashMap?"
+  answer="* Initial Capacity: The default initial capacity of a HashMap is 16. It must always be a power of two.
+* Load Factor: The default load factor is 0.75, which represents how full the map can get before it is resized.
+* Threshold: Calculated as Capacity * Load Factor. When the number of key-value pairs exceeds this threshold, the map undergoes rehashing and resizing (doubling the capacity)."
+/>
+
+<Flashcard
+  question="Why does HashMap use an array and linked list (or tree) internally?"
+  answer="* Array: Provides O(1) time complexity for direct index-based access.
+* Linked List / TreeNode: Handles hash collisions (when two different keys generate the same bucket index).
+* Java 8 Optimization: If a bucket's linked list exceeds 8 nodes, it converts to a self-balancing Red-Black Tree, improving worst-case search performance from O(N) to O(log N)."
+/>
+
+<Flashcard
+  question="What is IdentityHashMap and when is it used?"
+  answer="* Definition: An implementation of the Map interface that uses reference equality (==) instead of object equality (equals()) when comparing keys.
+* Key Equality: Two keys k1 and k2 are considered equal if and only if k1 == k2.
+* Hash Code: Uses System.identityHashCode(Object) instead of the object's overridden hashCode().
+* Use Cases: Special-case data structures where reference-based tracking is strictly required (e.g., deep cloning, serialization graph tracking). It is not synchronized and has a default size of 21."
+/>
+
+<Flashcard
+  question="What is CopyOnWriteArrayList and when should it be used?"
+  answer="* Definition: A thread-safe variant of ArrayList in which all mutative operations (add, set, etc.) are implemented by making a fresh copy of the underlying array.
+* Thread Safety: Completely thread-safe without requiring external synchronization for read operations.
+* Performance Cost: Costly for write-heavy applications because a cloned array is created on every modification.
+* Ideal Use Case: Best choice when read operations vastly outnumber write operations (e.g., event listener lists)."
+/>
+
+<Flashcard
+  question="What are the main differences between HashSet and TreeSet?"
+  answer="* Ordering: HashSet does not maintain any order of elements, whereas TreeSet maintains elements in sorted (ascending) order.
+* Performance: HashSet offers O(1) performance for basic operations (add, remove, contains), whereas TreeSet offers O(log N) performance due to its underlying Red-Black tree structure.
+* Null Values: HashSet allows one null element, whereas TreeSet does not allow null elements because it relies on the compareTo() method, which throws a NullPointerException."
+/>
+
+<Flashcard
+  question="What are the differences between ArrayList and LinkedList?"
+  answer="* Underlying Data Structure: ArrayList uses a dynamic growable array, whereas LinkedList uses a doubly-linked list.
+* Performance (Access): ArrayList provides O(1) random access via index, whereas LinkedList requires O(N) traversal to access an element by index.
+* Performance (Manipulation): LinkedList performs better for frequent insertions and deletions (O(1) if position is known), whereas ArrayList requires shifting elements, making insertions/deletions costlier (O(N))."
+/>
+
+<Flashcard
+  question="What is the difference between Fail-Fast and Fail-Safe iterators?"
+  answer="* Fail-Fast Iterators: Immediately throw a ConcurrentModificationException if the collection is structurally modified (add, remove) while being iterated over, except via the iterator's own remove method. (e.g., ArrayList, HashMap iterators).
+* Fail-Safe Iterators: Operate on a clone or separate view of the collection, so they never throw a ConcurrentModificationException and reflect modifications made after the iterator was created. (e.g., CopyOnWriteArrayList, ConcurrentHashMap iterators)."
+/>
+
+<Flashcard
+  question="What is the contract between equals() and hashCode() when storing custom objects in hash-based collections?"
+  answer="* Contract Rule 1: If two objects are equal according to the equals() method, they must produce the same integer result when their hashCode() method is called.
+* Contract Rule 2: If two objects have the same hashCode(), they are not required to be equal. However, unequal hash codes ensure unequal objects, reducing hash collisions.
+* Impact on Collections: Violating this contract breaks hash-based data structures like HashMap, HashSet, and LinkedHashMap, causing objects placed in the collection to become unretrievable."
+/>
+
+<Flashcard
+  question="What are the common ways to iterate over elements in a Java Collection?"
+  answer="* Iterator: Using iterator() and hasNext() / next() methods, which allows safe element removal during traversal.
+* Enhanced for-loop (for-each): Clean syntax for looping through items without explicitly handling the iterator object.
+* Java 8 Streams: Using collection.stream().forEach(...) or declarative stream pipelines.
+* forEach() method: Using the Iterable.forEach(Consumer) method introduced in Java 8."
+/>
+
+<Flashcard
+  question="What are some common ways to convert an Array to a List or Set in Java?"
+  answer="* Array to List: Arrays.asList(array), List.of(array), Lists.newArrayList(array) (Guava), or via Streams (Arrays.stream(array).collect(Collectors.toList())).
+* Array to Set: new HashSet<>(Arrays.asList(array)), Sets.newHashSet(array) (Guava), or via Streams (Arrays.stream(array).collect(Collectors.toSet())).
+* Note: Arrays.asList() returns a fixed-size list backed by the original array."
+/>
+
+<Flashcard
+  question="What is LinkedHashSet and how does it differ from HashSet?"
+  answer="* Definition: A hash table and linked list implementation of the Set interface, running with predictable iteration order.
+* Ordering: Unlike HashSet, which makes no guarantees about iteration order, LinkedHashSet maintains the insertion order in which elements were added.
+* Performance: Slightly higher memory and CPU overhead than HashSet due to maintaining the doubly-linked list, but still provides near O(1) performance for basic operations."
+/>
+
+<Flashcard
+  question="What are the key differences between a standard Array and an ArrayList?"
+  answer="* Size: Arrays have a fixed length determined at creation time, whereas ArrayList is dynamically sized and grows automatically as elements are added.
+* Data Types: Arrays can hold both primitive data types and objects, whereas ArrayList can only hold objects (requiring wrapper classes for primitives).
+* Functionality: Arrays lack built-in utility methods (like add, remove, contains), whereas ArrayList provides a rich API for data manipulation."
+/>
+
+<Flashcard
+  question="What rules must be followed to create an immutable user-defined class to safely store in collections?"
+  answer="* Class Declaration: Declare the class as final so it cannot be subclassed.
+* Field Visibility: Make all fields private and final so they cannot be modified after construction.
+* No Setters: Do not provide any setter methods that modify field values.
+* Deep Copy in Constructor/Getters: Initialize mutable objects using deep copies in the constructor, and return defensive/deep copies in getter methods to prevent external mutation."
+/>
+
+<Flashcard
+  question="How do you store and sort user-defined custom classes in TreeSet, TreeMap, or HashSet?"
+  answer="* TreeSet & TreeMap: The custom class must either implement the Comparable interface (defining compareTo()) or a custom Comparator must be provided to the constructor to determine sorting order.
+* HashSet & HashMap: Sorting is not required, but custom objects *must* properly override both equals() and hashCode() to ensure unique identification and correct bucket assignment."
+/>
+
+<Flashcard
+  question="What is the high-level hierarchy of the Java Collections Framework?"
+  answer="* Root Interface: java.util.Collection extends the Iterable interface.
+* Main Sub-interfaces: List (ordered, allows duplicates), Set (unique elements), and Queue (holds elements prior to processing).
+* Map Hierarchy: Map is a separate core interface (does not inherit from Collection), but it is a central part of the Collections Framework."
+/>
+
+<Flashcard
+  question="What is the role of the Garbage Collector (GC) thread and the finalize() method in object lifecycle management?"
+  answer="* GC Thread: Automatically identifies and destroys unused, unreferenced objects from heap memory to reclaim space.
+* finalize() Method: A legacy method in the Object class invoked by the GC right before an object is deleted, allowing custom clean-up operations.
+* Note: finalize() is deprecated; modern Java applications use try-with-resources or cleaner mechanisms instead."
+/>
+
+<Flashcard
+  question="How does IdentityHashMap compare keys differently than a standard HashMap?"
+  answer="* Standard HashMap: Uses object equality (`equals()`) and `hashCode()` to compare keys.
+* IdentityHashMap: Uses reference equality (`k1 == k2`) instead of logical value equality.
+* Hash Code: Uses `System.identityHashCode(Object)` rather than the object's overridden `hashCode()` method."
+/>
+
+<Flashcard
+  question="What is a WeakHashMap and when are its entries automatically removed?"
+  answer="* Key Reference Type: Uses weak references (`WeakReference`) for its keys.
+* Automatic Removal: If a key object is no longer strongly referenced anywhere else in the application, the Garbage Collector clears the reference, and the entry is automatically removed from the map.
+* Use Case: Ideal for building memory-sensitive caches and metadata associations."
+/>
+
+<Flashcard
+  question="What are the main differences between Map and Set interfaces in Java?"
+  answer="* Map: Stores data in key-value pairs where each key must be unique and maps to a specific value.
+* Set: A collection that contains only unique elements without corresponding values.
+* Hierarchy: Neither extends the other directly, but both are core pillars of the Java Collections Framework."
+/>
+
+<Flashcard
+  question="What is the Iterator interface in Java and what are its primary methods?"
+  answer="* Definition: An interface used to traverse through a collection one element at a time.
+* Primary Methods: hasNext() (returns true if more elements exist), next() (returns the next element), and remove() (removes the last element returned by the iterator).
+* Advantage: Allows safe traversal and structural modification of collections during iteration."
+/>
+
+<Flashcard
+  question="Why is standard HashMap not thread-safe, and how does the concurrent package address this?"
+  answer="* HashMap: Non-synchronized structure; concurrent structural modifications can corrupt internal links or cause infinite loops.
+* Concurrent Package: Provides thread-safe alternatives like ConcurrentHashMap, which allows concurrent reads and safe segmented/node-level writes without locking the entire map."
+/>
+
+<Flashcard
+  question="What is the default initial size of an IdentityHashMap and what are its key behavioral traits?"
+  answer="* Default Size: The initial capacity of an IdentityHashMap is 21.
+* Key Comparison: Uses reference equality (k1 == k2) instead of logical object equality (equals()).
+* Serialization: Does not implement Cloneable or Serializable interfaces."
+/>
+
+<Flashcard
+  question="What are the specific behavioral features of WeakHashMap regarding order and key references?"
+  answer="* Insertion Order: WeakHashMap maintains the insertion order of its elements.
+* Reference Type: Uses weak references for keys, meaning keys are automatically removed by the Garbage Collector when no strong references remain.
+* Interface Limits: Does not implement Cloneable or Serializable interfaces."
+/>
+
+<Flashcard
+  question="What is the purpose of the finalize() method and when is it executed?"
+  answer="* Execution: Called by the Garbage Collector right before an object is destroyed and its memory is reclaimed.
+* Purpose: Allows objects to perform custom clean-up activities before removal.
+* Limitations: Unpredictable execution timing and deprecated in modern Java due to performance and safety issues."
+/>
+
+<Flashcard
+  question="How do iterators of CopyOnWriteArrayList behave regarding modifications and exceptions?"
+  answer="* No ConcurrentModificationException: The iterator of a CopyOnWriteArrayList never throws a ConcurrentModificationException because it operates on a snapshot/cloned copy of the underlying array.
+* Unsupported Operations: Calling remove(), add(), or set() on the iterator throws an UnsupportedOperationException."
+/>
+
+<Flashcard
+  question="What is the concept of Concurrency Level in ConcurrentHashMap?"
+  answer="* Definition: An estimate of the number of concurrently updating threads.
+* Segment Locking: Historically divided the map into segments (default concurrency level of 16), allowing 16 threads to perform update operations simultaneously by locking specific segments rather than the whole map."
+/>
+
+<Flashcard
+  question="How do HashSet and TreeSet handle null values differently?"
+  answer="* HashSet: Allows a single null value as an element because it uses hashing and equals().
+* TreeSet: Does not allow null values because it sorts elements using compareTo() (or a Comparator), which throws a NullPointerException when encountering null."
+/>
+
+<Flashcard
+  question="What specific order does LinkedHashSet maintain, and how does it achieve it?"
+  answer="* Insertion Order: Maintains the exact order in which elements were inserted into the set.
+* Implementation: Combines a hash table with a doubly-linked list running through all its entries to track the insertion sequence."
+/>
+
+<Flashcard
+  question="What is the difference between Array and ArrayList regarding primitive data types?"
+  answer="* Array: Can store both primitive data types (e.g., int, char) and object references directly.
+* ArrayList: Can only store objects. Primitive values must be stored using their respective wrapper classes (e.g., Integer, Character) via autoboxing."
+/>
+
+<Flashcard
+  question="How is a HashSet implemented internally using a Map?"
+  answer="* Internal Backing: A HashSet is implemented internally using a backing HashMap instance.
+* Storage: Elements added to a HashSet are stored as the keys of the backing HashMap, with a dummy constant PRESENT object acting as the value for all keys."
+/>
