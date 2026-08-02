@@ -1,0 +1,25 @@
+<Flashcard
+  question="What is the purpose of the transient keyword in Java serialization?"
+  answer="* Variable Modifier: Transient is a variable modifier used during serialization[cite: 1].
+* Ignoring Values: If we do not want to save the value of a specific variable in a file, we use the transient keyword[cite: 1].
+* Default Values: When the JVM encounters a transient keyword, it ignores the original value and saves the default value of that data type instead[cite: 1]."
+/>
+
+<Flashcard
+  question="Why do we need serialization in Java?"
+  answer="* Object Lifespan: Objects created in Java live and die with the JVM, meaning they are destroyed when the JVM terminates[cite: 1].
+* Reusability & Transfer: Serialization allows us to reuse an object between several JVMs or transfer an object across a network to another machine[cite: 1]."
+/>
+
+<Flashcard
+  question="What are serialization and deserialization in Java?"
+  answer="* Serialization: The process used to convert the state of an object into a byte stream to be saved to a local disk file or sent across a network[cite: 1].
+* Deserialization: The reverse process where the byte stream is used to recreate the actual Java object in memory[cite: 1]."
+/>
+
+<Flashcard
+  question="What is serialVersionUID and why should we declare it?"
+  answer="* Version Verification: The JVM associates a version number (serialVersionUID) with each serializable class to verify compatibility during deserialization[cite: 1].
+* Preventing Exceptions: Without explicit declaration, adding or removing fields can change the automatically generated version number, throwing an InvalidClassException[cite: 1].
+* Best Practice: It is highly recommended to declare serialVersionUID manually to ensure classes remain compatible with previously serialized objects[cite: 1]."
+/>
