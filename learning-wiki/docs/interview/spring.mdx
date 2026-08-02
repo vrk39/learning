@@ -1,0 +1,109 @@
+<Flashcard
+  question="What are the key differences between Spring Framework and Spring Boot?"
+  answer="* Spring Framework: A lightweight, open-source enterprise framework providing core features like Dependency Injection, AOP, and modular layers, but requiring extensive manual configuration and boilerplate XML/annotations[cite: 1].
+* Spring Boot: Built on top of the Spring Framework, providing auto-configuration, starter dependencies, and embedded servers to enable rapid, production-ready application development with minimal configuration[cite: 1]."
+/>
+
+<Flashcard
+  question="What is the Spring IoC (Inversion of Control) Container and how does it manage beans?"
+  answer="* Core Container: The IoC container is at the core of the Spring Framework, responsible for instantiating, configuring, assembling, and managing complete bean life cycles[cite: 1].
+* Dependency Injection: The container uses DI to inject object dependencies into components automatically[cite: 1].
+* Implementations: Provided via BeanFactory (lazy initialization) and ApplicationContext (eager initialization with advanced enterprise features)[cite: 1]."
+/>
+
+<Flashcard
+  question="What are the primary types of Dependency Injection supported in Spring?"
+  answer="* Constructor Injection: Dependencies are provided through class constructor parameters, ensuring immutability and mandatory dependencies[cite: 1].
+* Setter Injection: Dependencies are assigned using public setter methods, allowing optional dependencies and flexible re-configuration[cite: 1]."
+/>
+
+<Flashcard
+  question="What are the different bean scopes available in Spring?"
+  answer="* Singleton: Only one shared instance of the bean is created per Spring container (default scope)[cite: 1].
+* Prototype: A brand new bean instance is created every time it is requested from the container[cite: 1].
+* Request: A new bean instance is created for each HTTP request (web applications only)[cite: 1].
+* Session: A new bean instance is created for each HTTP session[cite: 1]."
+/>
+
+<Flashcard
+  question="What are the core features and modules of the Spring Framework?"
+  answer="* Core Container: Manages bean definition and dependency injection[cite: 1].
+* Data Access / Integration: Simplifies JDBC, ORM, and transaction management[cite: 1].
+* Web & AOP: Provides support for web applications (Spring MVC) and Aspect-Oriented Programming for cross-cutting concerns[cite: 1].
+* Security & Testing: Built-in support for authentication/authorization and unit/integration testing[cite: 1]."
+/>
+
+<Flashcard
+  question="What is the Bean Life Cycle in Spring and how is it managed?"
+  answer="* Container Initialization: The Spring container starts up and instantiates the bean instance as requested[cite: 1].
+* Dependency Injection: The container injects all required dependencies into the bean properties[cite: 1].
+* Custom Initialization: Custom logic can be executed immediately after instantiation using custom init() methods[cite: 1].
+* Destruction: When the container closes, custom destroy methods clean up resources[cite: 1]."
+/>
+
+<Flashcard
+  question="What is Autowiring in Spring, what are its types, and what is its primary limitation?"
+  answer="* Definition: A feature that enables the Spring framework to inject object dependencies implicitly[cite: 1].
+* Types: Supports 'no', 'byName', 'byType', 'constructor', and 'autodetect'[cite: 1].
+* Limitation: Autowiring cannot be used to inject primitive data types[cite: 1]."
+/>
+
+<Flashcard
+  question="What are the differences between @Component, @Controller, @Service, and @Repository annotations?"
+  answer="* @Component: A universal stereotype annotation used to create generic Spring beans for dependency injection[cite: 1].
+* @Controller: A specialization of @Component indicating that the class handles web requests and mappings[cite: 1].
+* @Service: Used to designate classes containing business logic[cite: 1].
+* @Repository: Used for the database persistence layer; it also automatically translates database-specific exceptions into generic DataAccessException[cite: 1]."
+/>
+
+<Flashcard
+  question="What does the @SpringBootApplication annotation do internally?"
+  answer="* Component Composition: It is a convenience annotation that combines three core annotations into a single declaration[cite: 1].
+* @Configuration: Tags the class as a source of bean definitions for the application context[cite: 1].
+* @EnableAutoConfiguration: Enables Spring Boot's auto-configuration mechanism based on classpath dependencies[cite: 1].
+* @ComponentScan: Enables component scanning within the current package and its sub-packages[cite: 1]."
+/>
+
+<Flashcard
+  question="How are transactions managed in Spring and what is the role of @Transactional?"
+  answer="* Management Types: Spring supports both programmatic and declarative transaction management[cite: 1].
+* @Transactional Annotation: Used declaratively on methods or classes to ensure that all database operations within execute inside a transaction boundary (all-or-nothing atomicity)[cite: 1].
+* Rollback Behavior: By default, transactions roll back automatically on runtime (unchecked) exceptions, but can be configured for checked exceptions via rollbackFor[cite: 1]."
+/>
+
+<Flashcard
+  question="What is Spring MVC and how does a web request get processed through it?"
+  answer="* DispatcherServlet: Acts as the central front controller receiving all incoming HTTP requests.
+* HandlerMapping: Directs the request to the appropriate controller method based on URL mappings.
+* ModelAndView: The controller processes the request and returns model data and a view name to the DispatcherServlet.
+* ViewResolver: Resolves the view name into an actual view template (e.g., Thymeleaf, JSP) to render the final response."
+/>
+
+<Flashcard
+  question="What is Aspect-Oriented Programming (AOP) in Spring and what are its key terminology concepts?"
+  answer="* Definition: A programming paradigm aimed at separating cross-cutting concerns (like logging, security, and transaction management) from core business logic.
+* Aspect: A modularization of a concern that cuts across multiple classes.
+* JoinPoint & Pointcut: JoinPoint represents a point during execution; Pointcut defines expressions matching join points where advice should run.
+* Advice: Action taken by an aspect at a particular join point (Before, After, Around, AfterThrowing, AfterReturning)."
+/>
+
+<Flashcard
+  question="What are Spring Boot Starters and what purpose do they serve?"
+  answer="* Definition: A set of convenient dependency descriptors that you can include in your application.
+* Purpose: Eliminates manual dependency management and version compatibility guesswork by bundling a curated collection of related libraries (e.g., `spring-boot-starter-web`, `spring-boot-starter-data-jpa`).
+* Ease of Use: Provides a one-stop-shop for setting up specific tech stacks quickly."
+/>
+
+<Flashcard
+  question="How can you implement global exception handling in a Spring Boot application?"
+  answer="* @ControllerAdvice / @RestControllerAdvice: Annotated global interceptor class that handles exceptions across all controllers.
+* @ExceptionHandler: Methods within the advice class annotated with specific exception types to catch and translate them into standardized HTTP error responses (e.g., `ResponseEntity`).
+* Benefits: Keeps controllers clean of try-catch boilerplate and ensures uniform error payloads across the API."
+/>
+
+<Flashcard
+  question="What is Spring Data JPA and how does it simplify database operations?"
+  answer="* Definition: Part of the larger Spring Data family, making it easy to use data access technologies and relational databases consistently.
+* Repository Interfaces: Provides interfaces like `JpaRepository` and `CrudRepository` providing built-in CRUD operations out of the box.
+* Derived Query Methods: Automatically generates database queries by parsing method names (e.g., `findByEmailAndStatus`) without needing explicit JPQL or SQL queries."
+/>
