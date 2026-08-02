@@ -1,0 +1,51 @@
+<Flashcard
+  question="What are some common pre-defined utility functions available in the Java String class?"
+  answer="* Manipulation & Inspection: Methods like length(), charAt(int), substring(int, int), indexOf(String), and contains(CharSequence).
+* Transformations: toLowerCase(), toUpperCase(), trim(), strip(), and replace(char, char).
+* Comparison & Splitting: equals(), equalsIgnoreCase(), compareTo(), and split(String regex)."
+/>
+
+<Flashcard
+  question="What is the role of the Constant Pool (String Constant Pool) in Java?"
+  answer="* Definition: A special memory region in the JVM heap where string literals are stored.
+* Memory Optimization: Prevents the creation of duplicate string objects by making literals point to the same shared instance in the pool.
+* Literal vs New: Using string literals allocates or reuses memory in the constant pool, whereas using the `new` keyword explicitly forces allocation on the heap outside the pool."
+/>
+
+<Flashcard
+  question="What is the difference between creating a String using a literal versus using the new keyword?"
+  answer="* String Literal: Checks the String Constant Pool first. If the string exists, it returns a reference to the pooled instance; otherwise, it creates a new object in the pool.
+* New Keyword: Always creates a brand new String object on the heap memory outside the string constant pool, and can also intern the string manually using intern()."
+/>
+
+<Flashcard
+  question="What are the differences between replace(), replaceAll(), and replaceFirst() methods in Java Strings?"
+  answer="* replace(CharSequence target, CharSequence replacement): Replaces all occurrences of a specific target sequence with the specified replacement string (does not use regular expressions).
+* replaceAll(String regex, String replacement): Replaces each substring of the string that matches the given regular expression with the given replacement.
+* replaceFirst(String regex, String replacement): Replaces only the first substring of the string that matches the given regular expression."
+/>
+
+<Flashcard
+  question="Which methods in the java.lang.Object class are declared final?"
+  answer="* Final Methods: wait(), wait(long), wait(long, int), notify(), notifyAll(), and getClass().
+* Purpose: These methods are declared final because their low-level implementation relies heavily on monitor locks and native thread coordination, and overriding them could break runtime synchronization safety."
+/>
+
+<Flashcard
+  question="How does the equals() method behave when called on StringBuilder or StringBuffer objects?"
+  answer="* Default Behavior: StringBuilder and StringBuffer **do not** override the equals() method inherited from java.lang.Object.
+* Reference Comparison: Calling equals() on two StringBuilder instances compares their memory references (like ==) rather than their text content.
+* Conversion: To compare content, you must convert them to Strings first (e.g., sb1.toString().equals(sb2.toString()))."
+/>
+
+<Flashcard
+  question="How does the Java compiler handle string concatenation using the '+' operator?"
+  answer="* Compiler Optimization: In older Java versions, the compiler translates '+' string concatenations into StringBuffer operations; in modern Java (Java 5+), it uses StringBuilder.
+* Underlying Mechanism: It creates a StringBuilder instance, invokes append() for each operand, and calls toString() at the end to generate the final String object."
+/>
+
+<Flashcard
+  question="Why are StringBuilder and StringBuffer preferred over String for heavy string modifications?"
+  answer="* Immutability Penalty: Every modification to a standard String creates a brand new object in memory, generating unnecessary garbage and overhead.
+* Mutable Buffer: StringBuilder and StringBuffer use a resizable, internal character array buffer, allowing in-place modifications, insertions, and deletions without creating intermediate objects."
+/>
