@@ -107,3 +107,217 @@
 * Repository Interfaces: Provides interfaces like `JpaRepository` and `CrudRepository` providing built-in CRUD operations out of the box.
 * Derived Query Methods: Automatically generates database queries by parsing method names (e.g., `findByEmailAndStatus`) without needing explicit JPQL or SQL queries."
 />
+
+<Flashcard
+  question="What are Spring Profiles and how do they work?"
+  answer="* Definition: A mechanism in Spring that allows segregation of bean definitions and configuration properties based on different environments (e.g., dev, test, prod).
+* Usage: Activated using the `spring.profiles.active` property or via command-line arguments.
+* Annotation: Classes or beans can be conditionally loaded using the `@Profile(\"dev\")` annotation."
+/>
+
+<Flashcard
+  question="What is Spring Boot Actuator and what are its primary features?"
+  answer="* Definition: A sub-project of Spring Boot that brings production-ready features to your application.
+* Monitoring & Management: Exposes operational endpoints over HTTP or JMX to inspect application health, metrics, environment properties, and thread dumps.
+* Key Endpoints: `/actuator/health`, `/actuator/metrics`, `/actuator/env`, and `/actuator/beans`."
+/>
+
+<Flashcard
+  question="How does Spring Security manage authentication and authorization?"
+  answer="* Architecture: Built around a chain of servlet filters (`SecurityFilterChain`) that intercept incoming HTTP requests.
+* Authentication: Handled via `AuthenticationManager` and providers which verify user credentials and populate the security context.
+* Authorization: Controls access to specific URL paths or method calls using role-based rules and annotations like `@PreAuthorize`."
+/>
+
+<Flashcard
+  question="What are the differences between RestTemplate and WebClient in Spring?"
+  answer="* RestTemplate: A synchronous, blocking HTTP client used for traditional REST API consumption (maintenance mode in modern Spring).
+* WebClient: A modern, non-blocking, reactive HTTP client introduced in Spring WebFlux, supporting both synchronous and asynchronous/reactive operations using Project Reactor (`Mono` and `Flux`)."
+/>
+
+<Flashcard
+  question="How does caching work in Spring and what annotations are used?"
+  answer="* Abstraction: Spring provides a transparent caching abstraction that caches the result of method executions to avoid repeated expensive computations.
+* @EnableCaching: Enables Spring's annotation-driven cache management capability.
+* Core Annotations: `@Cacheable` (stores method output into cache), `@CachePut` (updates cache without affecting method execution), and `@CacheEvict` (clears entries from cache)."
+/>
+
+<Flashcard
+  question="How do you execute background or scheduled tasks in Spring?"
+  answer="* @EnableScheduling: Enables scheduling capabilities in the Spring configuration class.
+* @Scheduled: Applied to methods with zero arguments to run them periodically using fixed rates, fixed delays, or cron expressions.
+* Async Tasks: Combined with `@EnableAsync` and `@Async` to execute tasks asynchronously on separate background threads."
+/>
+
+<Flashcard
+  question="How do you define custom Spring beans using @Bean and @Configuration?"
+  answer="* @Configuration: Marks a class as a source of bean definitions, telling the container to process it to generate bean instances.
+* @Bean: Placed on methods inside a configuration class to explicitly declare a third-party library instance or customized object as a managed Spring bean."
+/>
+
+<Flashcard
+  question="What are the differences between BeanFactory and ApplicationContext?"
+  answer="* BeanFactory: The most basic IoC container providing basic dependency injection support with lazy bean instantiation (loads beans on demand).
+* ApplicationContext: An advanced extension of BeanFactory that provides eager bean initialization, enterprise-ready features like internationalization, event propagation, AOP integration, and web-specific application contexts."
+/>
+
+<Flashcard
+  question="How does Spring Boot handle externalized configuration?"
+  answer="* Property Files: Uses `application.properties` or `application.yml` files located in standard classpaths.
+* @Value: Injects individual configuration property values directly into fields.
+* @ConfigurationProperties: Binds groups of hierarchical properties safely into strongly-typed Java configuration classes."
+/>
+
+<Flashcard
+  question="What is a circular dependency in Spring and how does the framework handle it?"
+  answer="* Definition: Occurs when Bean A depends on Bean B, and Bean B simultaneously depends on Bean A, creating a closed loop during injection.
+* Default Handling: In modern Spring Boot (starting from version 2.6), circular dependencies are disabled by default and throw an exception to encourage clean architecture.
+* Resolution: Can be resolved using `@Lazy` injection, setter/field injection instead of constructor injection, or refactoring the code to remove the circular coupling."
+/>
+
+<Flashcard
+  question="What is the difference between @Primary and @Qualifier in Spring?"
+  answer="* @Primary: Marks a specific bean as the default choice to be injected when multiple candidate beans of the same type exist.
+* @Qualifier: Used at the injection point (along with @Autowired) to explicitly specify the exact bean name or ID to inject, overriding any primary configuration."
+/>
+
+<Flashcard
+  question="What is the role of the @SpringBootConfiguration annotation?"
+  answer="* Specialized Configuration: A specialized version of the standard @Configuration annotation indicating that a class declares one or more Spring beans.
+* Meta-annotation: It is included within the composite @SpringBootApplication annotation, ensuring Spring Boot main classes are automatically recognized as configuration sources."
+/>
+
+<Flashcard
+  question="How do you use @Valid and handle validation errors in Spring MVC REST controllers?"
+  answer="* Bean Validation: Annotate request payload fields with validation constraints like `@NotNull`, `@Size`, or `@Email`.
+* Controller Trigger: Prefix the request body parameter with `@Valid` to trigger automatic validation by the framework.
+* Error Handling: Capture validation failures using a `BindingResult` parameter or handle them globally using a `@ExceptionHandler` catching `MethodArgumentNotValidException`."
+/>
+
+<Flashcard
+  question="What is a Spring Boot Starter Parent and what benefits does it provide?"
+  answer="* Dependency Management: Acts as a parent POM that provides default dependency management and curated version numbers for common open-source libraries (e.g., Jackson, Hibernate, SLF4J).
+* Default Configurations: Sets up default compiler versions (Java), resource filtering, and plugin configurations (like `spring-boot-maven-plugin`) for smooth builds."
+/>
+
+<Flashcard
+  question="How does Spring handle database migrations using tools like Flyway or Liquibase?"
+  answer="* Automated Migrations: Integrates seamlessly with database version control tools to execute schema scripts automatically upon application startup.
+* Version Tracking: Maintains a history table in the target database (`flyway_schema_history` or `DATABASECHANGELOG`) to track which scripts have already been executed.
+* Consistency: Ensures all environments (dev, test, prod) have identical, version-controlled database schemas."
+/>
+
+<Flashcard
+  question="What is Spring Cloud and what are its key components?"
+  answer="* Definition: A framework built on top of Spring Boot that provides tools for quickly building common patterns in distributed systems (microservices).
+* Key Components: Service Discovery (Eureka), API Gateway (Spring Cloud Gateway), Configuration Server (Spring Cloud Config), and Circuit Breakers (Resilience4j)."
+/>
+
+<Flashcard
+  question="What is Spring Batch and when should it be used?"
+  answer="* Definition: A lightweight, comprehensive batch framework designed for processing large volumes of records efficiently.
+* Core Use Cases: Automated, high-volume batch jobs requiring transaction management, chunk-based processing, job chunking, skipping, and restart capabilities."
+/>
+
+<Flashcard
+  question="How do you write integration tests for Spring Boot applications using @SpringBootTest?"
+  answer="* Full Context Loading: The `@SpringBootTest` annotation instructs Spring Boot to load the complete application context, including all beans and configurations.
+* Web Environment: Can be configured with `webEnvironment` parameters (e.g., `RANDOM_PORT`) to run an embedded server instance for end-to-end API testing using `TestRestTemplate` or `WebTestClient`."
+/>
+
+<Flashcard
+  question="What is the purpose of Spring HATEOAS?"
+  answer="* Hypermedia-Driven APIs: A library providing APIs to create REST representations that follow the HATEOAS (Hypermedia as the Engine of Application State) principle.
+* Dynamic Links: Allows servers to dynamically inject related link resources and navigation actions directly into JSON or XML response payloads."
+/>
+
+<Flashcard
+  question="How do you implement stateless JWT (JSON Web Token) authentication in a Spring Security application?"
+  answer="* Custom Filter: Create a custom OncePerRequestFilter that intercepts incoming requests, extracts the JWT token from the Authorization header, and validates its signature.
+* Security Context: Upon successful validation, populate the `SecurityContextHolder` with the authenticated user's credentials and authorities.
+* Session Management: Configure session creation policy as stateless (`SessionCreationPolicy.STATELESS`) to disable standard HTTP sessions."
+/>
+
+<Flashcard
+  question="What is Spring Cloud Config and how does it manage configurations?"
+  answer="* Centralized Configuration: Provides server-side and client-side support for externalized configuration in a distributed system.
+* Git Backend: Typically stores configuration property files in a centralized Git repository, allowing microservices to fetch environment-specific settings dynamically upon startup or via refresh events."
+/>
+
+<Flashcard
+  question="What is the role of Spring Data REST?"
+  answer="* Hypermedia-Based Endpoints: Automatically builds hypermedia-driven RESTful endpoints on top of Spring Data repositories without needing explicit controller implementations.
+* Rapid Prototyping: Instantly exposes standard CRUD endpoints over HTTP for JPA entities with minimal setup."
+/>
+
+<Flashcard
+  question="What is Spring Cloud Sleuth and Zipkin, and how do they help in microservices?"
+  answer="* Distributed Tracing: Spring Cloud Sleuth automatically injects correlation IDs (trace IDs and span IDs) into HTTP headers and logs as requests flow across microservices.
+* Zipkin Integration: Collects and visualizes these trace logs to help developers track request lifecycles and diagnose latency bottlenecks in a distributed system."
+/>
+
+<Flashcard
+  question="What is the role of Spring Cloud Gateway in a microservices architecture?"
+  answer="* Definition: A modern, reactive API gateway built on Spring WebFlux that serves as the single entry point for all client requests.
+* Core Features: Handles dynamic routing, security authentication, rate limiting, request/response transformation, and load balancing across backend services."
+/>
+
+<Flashcard
+  question="What is Eureka Server and Discovery Client in Spring Cloud?"
+  answer="* Service Discovery: Implements a service registry pattern where microservices register themselves dynamically with the Eureka Server upon startup.
+* Client-Side Load Balancing: Allows client services to look up active service instances dynamically from the registry without hardcoding IP addresses."
+/>
+
+<Flashcard
+  question="What is a Circuit Breaker pattern in Spring Cloud and how is it implemented using Resilience4j?"
+  answer="* Fault Tolerance: Prevents cascading failures in distributed systems when a downstream service becomes slow or unresponsive.
+* Resilience4j States: Operates in three primary states—Closed (normal operation), Open (tripped after failures to fail fast), and Half-Open (testing if the service recovered)."
+/>
+
+<Flashcard
+  question="How do you handle pagination and sorting in Spring Data JPA?"
+  answer="* Pageable Interface: Pass a `Pageable` object (created via `PageRequest.of(page, size, sort)`) into repository query methods.
+* Page vs Slice: Returning a `Page` provides total element and page counts (runs an extra count query), while a `Slice` only checks if a next slice exists, optimizing performance for infinite scroll."
+/>
+
+<Flashcard
+  question="What are Spring Projections and when should they be used?"
+  answer="* Definition: A feature in Spring Data that allows retrieving a subset of attributes from an entity rather than fetching the entire database row.
+* Types: Supports interface-based projections (getter-based) and class-based (DTO) projections to improve query performance and reduce memory usage."
+/>
+
+<Flashcard
+  question="How do you execute custom native SQL queries in Spring Data JPA?"
+  answer="* @Query Annotation: Use the `@Query` annotation on repository methods with the `nativeQuery = true` attribute.
+* Parameters: Bind method parameters using positional (`?1`, `?2`) or named parameters (`:paramName`) annotated with `@Param`."
+/>
+
+<Flashcard
+  question="What is the role of the @Transactional(readOnly = true) attribute?"
+  answer="* Performance Optimization: Instructs the persistence provider (Hibernate/JPA) to optimize the transaction for read-only operations.
+* Dirty Checking: Disables automatic dirty-checking snapshots, reducing memory overhead and potentially allowing database-level query optimizations."
+/>
+
+<Flashcard
+  question="How does Spring Boot handle database connection pooling out-of-the-box?"
+  answer="* HikariCP: Spring Boot uses HikariCP as the default, high-performance JDBC connection pool in modern versions.
+* Configuration: Can be tuned easily via `application.properties` using properties like `spring.datasource.hikari.maximum-pool-size` and `connection-timeout`."
+/>
+
+<Flashcard
+  question="What is the difference between @Controller and @RestController?"
+  answer="* @Controller: Traditionally used in Spring MVC to render views (like HTML, JSP, or Thymeleaf templates) where methods return view names as strings.
+* @RestController: A convenience annotation combining `@Controller` and `@ResponseBody`, designed specifically for RESTful APIs where method return values are automatically serialized into JSON or XML response bodies."
+/>
+
+<Flashcard
+  question="What is the purpose of Spring Boot DevTools?"
+  answer="* Developer Productivity: Provides fast application restart capabilities by automatically reloading application code changes whenever files on the classpath are modified.
+* LiveReload: Integrates with browser extensions to trigger automatic browser refreshes upon UI/resource changes, disabling template caching automatically during development."
+/>
+
+<Flashcard
+  question="How do you configure asynchronous execution in Spring?"
+  answer="* @EnableAsync: Add this annotation to a configuration class to enable asynchronous method execution capability.
+* @Async: Apply the `@Async` annotation to specific service methods so they execute asynchronously on a separate thread pool managed by an `Executor` bean, returning a `CompletableFuture` if results are needed."
+/>
