@@ -1,37 +1,44 @@
+---
+id: jsp-interview-questions
+title: JSP Interview Questions
+---
+
+import Flashcard from '@site/src/components/Flashcard';
+
 <Flashcard
   question="What is the JSP lifecycle and what are its core phases?"
-  answer="* Translation Phase: The JSP container translates the JSP file into a servlet source (.java file)[cite: 1].
-* Compilation Phase: The container compiles the servlet source into a Java bytecode class file (.class)[cite: 1].
-* Initialization Phase: The jspInit() method is called once when the JSP servlet instance is created[cite: 1].
-* Execution Phase: The _jspService() method handles incoming client requests and generates responses[cite: 1].
-* Destruction Phase: The jspDestroy() method is invoked when the JSP is about to be taken out of service[cite: 1]."
+  answer="* Translation Phase: The JSP container translates the JSP file into a servlet source (.java file).
+* Compilation Phase: The container compiles the servlet source into a Java bytecode class file (.class).
+* Initialization Phase: The jspInit() method is called once when the JSP servlet instance is created.
+* Execution Phase: The _jspService() method handles incoming client requests and generates responses.
+* Destruction Phase: The jspDestroy() method is invoked when the JSP is about to be taken out of service."
 />
 
 <Flashcard
   question="How can you prevent direct access to JSP files in a Java web application?"
-  answer="* WEB-INF Directory: Place JSP files inside the WEB-INF folder because resources located under WEB-INF cannot be accessed directly by clients via direct URL requests[cite: 1].
-* Controller Routing: Force all requests to go through a controller servlet or MVC framework which forwards to the JSP internally[cite: 1]."
+  answer="* WEB-INF Directory: Place JSP files inside the WEB-INF folder because resources located under WEB-INF cannot be accessed directly by clients via direct URL requests.
+* Controller Routing: Force all requests to go through a controller servlet or MVC framework which forwards to the JSP internally."
 />
 
 <Flashcard
   question="How do you write comments, scriptlets, expressions, and declarations in JSP?"
-  answer="* Comments: HTML comments <!-- comment --> are sent to the client, whereas JSP comments <%-- comment --%> are hidden from the client[cite: 1].
-* Scriptlet: <% java code %> embeds arbitrary Java code executed during request processing[cite: 1].
-* Expression: <%= expression %> evaluates an expression and outputs the result directly to the response[cite: 1].
-* Declaration: <%! declarations %> declares class-level variables and methods inside the generated servlet class[cite: 1]."
+  answer="* Comments: HTML comments <!-- comment --> are sent to the client, whereas JSP comments <%-- comment --%> are hidden from the client.
+* Scriptlet: <% java code %> embeds arbitrary Java code executed during request processing.
+* Expression: <%= expression %> evaluates an expression and outputs the result directly to the response.
+* Declaration: <%! declarations %> declares class-level variables and methods inside the generated servlet class."
 />
 
 <Flashcard
   question="What are the implicit objects available in JSP?"
-  answer="* Definition: Objects created by the web container that are automatically available for use within JSP scriptlets and expressions[cite: 1].
-* Core Objects: request, response, session, application, out, config, pageContext, page, and exception[cite: 1]."
+  answer="* Definition: Objects created by the web container that are automatically available for use within JSP scriptlets and expressions.
+* Core Objects: request, response, session, application, out, config, pageContext, page, and exception."
 />
 
 <Flashcard
   question="How do you handle exceptions in JSP pages?"
-  answer="* isErrorPage Attribute: Designate an error-handling JSP page by setting <%@ page isErrorPage='true' %>[cite: 1].
-* errorPage Attribute: Point a vulnerable or standard JSP page to the error handler using <%@ page errorPage='error.jsp' %>[cite: 1].
-* Exception Object: Access the thrown exception using the implicit 'exception' object on the designated error page[cite: 1]."
+  answer="* isErrorPage Attribute: Designate an error-handling JSP page by setting <%@ page isErrorPage='true' %>.
+* errorPage Attribute: Point a vulnerable or standard JSP page to the error handler using <%@ page errorPage='error.jsp' %>.
+* Exception Object: Access the thrown exception using the implicit 'exception' object on the designated error page."
 />
 
 <Flashcard

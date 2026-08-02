@@ -1,104 +1,111 @@
+---
+id: advanced-interview-qa
+title: Advanced Interview Q&A
+---
+
+import Flashcard from '@site/src/components/Flashcard';
+
 <Flashcard
   question="What is the difference between a List and a Set?"
-  answer="**4+ Years Experience:** A List allows duplicate elements and maintains insertion order[cite: 1]. A Set contains only unique elements[cite: 1].<br/><br/>**8+ Years Experience:** A List is an ordered collection that permits duplicates, making it suitable for indexed access[cite: 1]. A Set enforces uniqueness and does not guarantee insertion order, which is ideal for distinct collections[cite: 1]."
+  answer="**4+ Years Experience:** A List allows duplicate elements and maintains insertion order. A Set contains only unique elements.<br/><br/>**8+ Years Experience:** A List is an ordered collection that permits duplicates, making it suitable for indexed access. A Set enforces uniqueness and does not guarantee insertion order, which is ideal for distinct collections."
 />
 
 <Flashcard
   question="When should you use Vector instead of ArrayList?"
-  answer="**4+ Years Experience:** Vector is synchronized and thread-safe, whereas ArrayList is not synchronized[cite: 1].<br/><br/>**8+ Years Experience:** Vector is synchronized, meaning only one thread can access the code at a time[cite: 1]. ArrayList is not synchronized, allowing multiple threads to work on it simultaneously, which makes it more efficient in single-threaded environments[cite: 1]."
+  answer="**4+ Years Experience:** Vector is synchronized and thread-safe, whereas ArrayList is not synchronized.<br/><br/>**8+ Years Experience:** Vector is synchronized, meaning only one thread can access the code at a time. ArrayList is not synchronized, allowing multiple threads to work on it simultaneously, which makes it more efficient in single-threaded environments."
 />
 
 <Flashcard
   question="How does a HashMap work internally and what is the index generation formula?"
-  answer="**4+ Years Experience:** HashMap internally uses an array and a linked list data structure[cite: 1].<br/><br/>**8+ Years Experience:** HashMap relies on arrays and linked lists to manage buckets[cite: 1]. The position of the bucket is identified using the hashcode, specifically through the formula: `hashcode(Key) &amp; (n-1)`[cite: 1]."
+  answer="**4+ Years Experience:** HashMap internally uses an array and a linked list data structure.<br/><br/>**8+ Years Experience:** HashMap relies on arrays and linked lists to manage buckets. The position of the bucket is identified using the hashcode, specifically through the formula: `hashcode(Key) &amp; (n-1)`."
 />
 
 <Flashcard
   question="What is the difference between Fail-Fast and Fail-Safe Iterators?"
-  answer="**4+ Years Experience:** Fail-fast iterators throw a ConcurrentModificationException if the collection is modified during iteration[cite: 1].<br/><br/>**8+ Years Experience:** Fail-fast iterators immediately throw an exception upon detecting concurrent modification[cite: 1]. Fail-safe iterators prevent this exception by operating on a cloned copy of the collection rather than the original data[cite: 1]."
+  answer="**4+ Years Experience:** Fail-fast iterators throw a ConcurrentModificationException if the collection is modified during iteration.<br/><br/>**8+ Years Experience:** Fail-fast iterators immediately throw an exception upon detecting concurrent modification. Fail-safe iterators prevent this exception by operating on a cloned copy of the collection rather than the original data."
 />
 
 <Flashcard
   question="Why use ConcurrentHashMap from the concurrent package over HashMap?"
-  answer="**4+ Years Experience:** HashMap is fast but not thread-safe[cite: 1]. ConcurrentHashMap provides thread safety[cite: 1].<br/><br/>**8+ Years Experience:** ConcurrentHashMap handles thread safety via segment locking (or bucket locking) with a default concurrency level of 16[cite: 1]. Any number of threads can perform read operations without locking, but update operations require locking the specific segment[cite: 1]."
+  answer="**4+ Years Experience:** HashMap is fast but not thread-safe. ConcurrentHashMap provides thread safety.<br/><br/>**8+ Years Experience:** ConcurrentHashMap handles thread safety via segment locking (or bucket locking) with a default concurrency level of 16. Any number of threads can perform read operations without locking, but update operations require locking the specific segment."
 />
 
 <Flashcard
   question="What are the key characteristics of IdentityHashMap?"
-  answer="**4+ Years Experience:** It uses reference equality (`k1==k2`) for comparing keys instead of the values[cite: 1].<br/><br/>**8+ Years Experience:** It uses `System.identityHashCode()` and reference equality for comparisons, meaning two keys are equal only if they point to the exact same memory location[cite: 1]. It is not synchronized and has a default capacity size of 21[cite: 1]."
+  answer="**4+ Years Experience:** It uses reference equality (`k1==k2`) for comparing keys instead of the values.<br/><br/>**8+ Years Experience:** It uses `System.identityHashCode()` and reference equality for comparisons, meaning two keys are equal only if they point to the exact same memory location. It is not synchronized and has a default capacity size of 21."
 />
 
 <Flashcard
   question="What is CopyOnWriteArrayList?"
-  answer="**4+ Years Experience:** It is a thread-safe version of ArrayList that creates a cloned copy for every update operation[cite: 1].<br/><br/>**8+ Years Experience:** It creates a cloned copy of the underlying growable array for every update, allowing synchronized read operations without locking[cite: 1]. The iterator of CopyOnWriteArrayList cannot perform remove, add, or set operations, otherwise it throws an UnsupportedOperationException[cite: 1]."
+  answer="**4+ Years Experience:** It is a thread-safe version of ArrayList that creates a cloned copy for every update operation.<br/><br/>**8+ Years Experience:** It creates a cloned copy of the underlying growable array for every update, allowing synchronized read operations without locking. The iterator of CopyOnWriteArrayList cannot perform remove, add, or set operations, otherwise it throws an UnsupportedOperationException."
 />
 
 <Flashcard
   question="What is the difference between '==' and the equals() method?"
-  answer="**4+ Years Experience:** `==` checks if both objects point to the same memory location[cite: 1]. The `.equals()` method compares the actual values inside the objects[cite: 1].<br/><br/>**8+ Years Experience:** `==` is an operator used strictly for reference (address) comparison[cite: 1]. `.equals()` is a method used for content comparison, which is essential for evaluating logical equality in collections[cite: 1]."
+  answer="**4+ Years Experience:** `==` checks if both objects point to the same memory location. The `.equals()` method compares the actual values inside the objects.<br/><br/>**8+ Years Experience:** `==` is an operator used strictly for reference (address) comparison. `.equals()` is a method used for content comparison, which is essential for evaluating logical equality in collections."
 />
 
 <Flashcard
   question="What is the difference between final, finally, and finalize?"
-  answer="**4+ Years Experience:** `final` restricts modification of variables, methods, or classes[cite: 1]. `finally` guarantees code execution after try/catch[cite: 1]. `finalize` is called by the Garbage Collector for cleanup[cite: 1].<br/><br/>**8+ Years Experience:** The `final` keyword is a non-access specifier enforcing immutability and preventing inheritance or overriding[cite: 1]. The `finally` block ensures resource deallocation regardless of exceptions[cite: 1]. The `finalize` method executes just before object destruction for clean-up activities, though GC destroys the object immediately after its execution[cite: 1]."
+  answer="**4+ Years Experience:** `final` restricts modification of variables, methods, or classes. `finally` guarantees code execution after try/catch. `finalize` is called by the Garbage Collector for cleanup.<br/><br/>**8+ Years Experience:** The `final` keyword is a non-access specifier enforcing immutability and preventing inheritance or overriding. The `finally` block ensures resource deallocation regardless of exceptions. The `finalize` method executes just before object destruction for clean-up activities, though GC destroys the object immediately after its execution."
 />
 
 <Flashcard
   question="What is the difference between a shallow copy and a deep copy?"
-  answer="**4+ Years Experience:** A shallow copy copies original fields, but shared object references remain linked[cite: 1]. A deep copy creates separate copies of all fields[cite: 1].<br/><br/>**8+ Years Experience:** In a shallow copy, if an object is used as a field, its reference is copied, so changes impact both the original and copied objects[cite: 1]. A deep copy creates fully independent instances without shared references, ensuring there is no impact on each other if changes are made[cite: 1]."
+  answer="**4+ Years Experience:** A shallow copy copies original fields, but shared object references remain linked. A deep copy creates separate copies of all fields.<br/><br/>**8+ Years Experience:** In a shallow copy, if an object is used as a field, its reference is copied, so changes impact both the original and copied objects. A deep copy creates fully independent instances without shared references, ensuring there is no impact on each other if changes are made."
 />
 
 <Flashcard
   question="How do you create an immutable user-defined class?"
-  answer="**4+ Years Experience:** Make the class final, variables private and final, and use a parameterized constructor[cite: 1].<br/><br/>**8+ Years Experience:** Declare the class as final to prevent child class creation[cite: 1]. Make all data members private and final, perform deep copies during parameterized constructor initialization, and ensure getter methods return deep copies rather than actual object references[cite: 1]."
+  answer="**4+ Years Experience:** Make the class final, variables private and final, and use a parameterized constructor.<br/><br/>**8+ Years Experience:** Declare the class as final to prevent child class creation. Make all data members private and final, perform deep copies during parameterized constructor initialization, and ensure getter methods return deep copies rather than actual object references."
 />
 
 <Flashcard
   question="Why is the String class immutable in Java?"
-  answer="**4+ Years Experience:** Making String immutable makes it thread-safe and solves synchronization issues[cite: 1].<br/><br/>**8+ Years Experience:** Immutability provides security for parameters like database URLs and passwords[cite: 1]. It inherently supports concurrency (thread safety), allows for caching optimization in the String pool, and ensures safe class loading by preventing state changes[cite: 1]."
+  answer="**4+ Years Experience:** Making String immutable makes it thread-safe and solves synchronization issues.<br/><br/>**8+ Years Experience:** Immutability provides security for parameters like database URLs and passwords. It inherently supports concurrency (thread safety), allows for caching optimization in the String pool, and ensures safe class loading by preventing state changes."
 />
 
 <Flashcard
   question="What is the difference between StringBuilder and StringBuffer?"
-  answer="**4+ Years Experience:** StringBuilder is not synchronized and is faster[cite: 1]. StringBuffer is synchronized and thread-safe[cite: 1].<br/><br/>**8+ Years Experience:** StringBuilder is non-synchronized and non-thread-safe, making it highly efficient for single-threaded mutations[cite: 1]. StringBuffer is synchronized, ensuring thread safety at the cost of execution efficiency[cite: 1]."
+  answer="**4+ Years Experience:** StringBuilder is not synchronized and is faster. StringBuffer is synchronized and thread-safe.<br/><br/>**8+ Years Experience:** StringBuilder is non-synchronized and non-thread-safe, making it highly efficient for single-threaded mutations. StringBuffer is synchronized, ensuring thread safety at the cost of execution efficiency."
 />
 
 <Flashcard
   question="What is the difference between Checked and Unchecked exceptions?"
-  answer="**4+ Years Experience:** Checked exceptions are predicted by the JVM at compile time[cite: 1]. Unchecked exceptions extend RuntimeException and are checked at runtime[cite: 1].<br/><br/>**8+ Years Experience:** Checked exceptions (e.g., SQLException) enforce handling at compile time and must be explicitly caught or declared[cite: 1]. Unchecked exceptions (e.g., NullPointerException) propagate up the call stack automatically if uncaught, bypassing compile-time validation[cite: 1]."
+  answer="**4+ Years Experience:** Checked exceptions are predicted by the JVM at compile time. Unchecked exceptions extend RuntimeException and are checked at runtime.<br/><br/>**8+ Years Experience:** Checked exceptions (e.g., SQLException) enforce handling at compile time and must be explicitly caught or declared. Unchecked exceptions (e.g., NullPointerException) propagate up the call stack automatically if uncaught, bypassing compile-time validation."
 />
 
 <Flashcard
   question="What is the difference between throw and throws?"
-  answer="**4+ Years Experience:** `throw` throws the exception explicitly[cite: 1]. `throws` informs for the possible exception[cite: 1].<br/><br/>**8+ Years Experience:** The `throw` keyword explicitly instantiates and throws an exception within a method body[cite: 1]. The `throws` clause is part of the method signature, delegating the responsibility of exception propagation to the calling method[cite: 1]."
+  answer="**4+ Years Experience:** `throw` throws the exception explicitly. `throws` informs for the possible exception.<br/><br/>**8+ Years Experience:** The `throw` keyword explicitly instantiates and throws an exception within a method body. The `throws` clause is part of the method signature, delegating the responsibility of exception propagation to the calling method."
 />
 
 <Flashcard
   question="What is the difference between yield() and join()?"
-  answer="**4+ Years Experience:** `yield()` stops the current thread to give a chance to waiting threads[cite: 1]. `join()` puts the current thread on wait until the target thread is dead[cite: 1].<br/><br/>**8+ Years Experience:** `yield()` is a static method that pauses execution to allow threads of the same priority to run[cite: 1]. `join()` blocks the calling thread until the referenced thread terminates or a specified timeout expires in milliseconds, throwing an InterruptedException if interrupted[cite: 1]."
+  answer="**4+ Years Experience:** `yield()` stops the current thread to give a chance to waiting threads. `join()` puts the current thread on wait until the target thread is dead.<br/><br/>**8+ Years Experience:** `yield()` is a static method that pauses execution to allow threads of the same priority to run. `join()` blocks the calling thread until the referenced thread terminates or a specified timeout expires in milliseconds, throwing an InterruptedException if interrupted."
 />
 
 <Flashcard
   question="What is the difference between Callable and Runnable?"
-  answer="**4+ Years Experience:** Runnable cannot return a result[cite: 1]. Callable can return results using the `call()` method[cite: 1].<br/><br/>**8+ Years Experience:** Runnable requires overriding the `run()` method and cannot throw checked exceptions or return computation results[cite: 1]. Callable allows returning results and easily propagating checked exceptions via the `call()` method[cite: 1]."
+  answer="**4+ Years Experience:** Runnable cannot return a result. Callable can return results using the `call()` method.<br/><br/>**8+ Years Experience:** Runnable requires overriding the `run()` method and cannot throw checked exceptions or return computation results. Callable allows returning results and easily propagating checked exceptions via the `call()` method."
 />
 
 <Flashcard
   question="What is the difference between Spring and Spring Boot?"
-  answer="**4+ Years Experience:** Spring is a framework to build web applications[cite: 1]. Spring Boot is built on top of Spring and makes everything auto-configured[cite: 1].<br/><br/>**8+ Years Experience:** Spring provides enterprise layers (AOP, DI, MVC) requiring manual configuration[cite: 1]. Spring Boot reduces boilerplate code and XML configuration, utilizing `@EnableAutoConfiguration` to create production-ready, standalone applications rapidly[cite: 1]."
+  answer="**4+ Years Experience:** Spring is a framework to build web applications. Spring Boot is built on top of Spring and makes everything auto-configured.<br/><br/>**8+ Years Experience:** Spring provides enterprise layers (AOP, DI, MVC) requiring manual configuration. Spring Boot reduces boilerplate code and XML configuration, utilizing `@EnableAutoConfiguration` to create production-ready, standalone applications rapidly."
 />
 
 <Flashcard
   question="What is Inversion of Control (IoC) and Dependency Injection (DI)?"
-  answer="**4+ Years Experience:** The Spring container creates and manages objects[cite: 1]. DI removes dependencies from programming code to make it easy to manage[cite: 1].<br/><br/>**8+ Years Experience:** The Spring IoC container instantiates, wires, and manages the complete lifecycle of Spring Beans[cite: 1]. Dependency Injection (DI) is a design pattern that makes programming code loosely coupled, supporting both constructor and setter injection[cite: 1]."
+  answer="**4+ Years Experience:** The Spring container creates and manages objects. DI removes dependencies from programming code to make it easy to manage.<br/><br/>**8+ Years Experience:** The Spring IoC container instantiates, wires, and manages the complete lifecycle of Spring Beans. Dependency Injection (DI) is a design pattern that makes programming code loosely coupled, supporting both constructor and setter injection."
 />
 
 <Flashcard
   question="What is the difference between get() and load() in Hibernate?"
-  answer="**4+ Years Experience:** `load()` throws an exception if the unique id is not found[cite: 1]. `get()` returns null if the object doesn't exist[cite: 1].<br/><br/>**8+ Years Experience:** `load()` returns a proxy by default and delays database hits until the proxy is first invoked[cite: 1]. `get()` hits the database immediately to fetch the physical record, returning null if the unique id is missing[cite: 1]."
+  answer="**4+ Years Experience:** `load()` throws an exception if the unique id is not found. `get()` returns null if the object doesn't exist.<br/><br/>**8+ Years Experience:** `load()` returns a proxy by default and delays database hits until the proxy is first invoked. `get()` hits the database immediately to fetch the physical record, returning null if the unique id is missing."
 />
 
 <Flashcard
   question="What is the difference between save() and persist() in Hibernate?"
-  answer="**4+ Years Experience:** `save()` assigns the identifier immediately and returns a serializable object[cite: 1]. `persist()` returns a Void type[cite: 1].<br/><br/>**8+ Years Experience:** `save()` triggers an immediate INSERT statement regardless of transaction boundaries[cite: 1]. `persist()` does not guarantee immediate identifier assignment (it may happen at flush time) and avoids executing INSERTs outside of transaction boundaries, making it useful in long-running conversations[cite: 1]."
+  answer="**4+ Years Experience:** `save()` assigns the identifier immediately and returns a serializable object. `persist()` returns a Void type.<br/><br/>**8+ Years Experience:** `save()` triggers an immediate INSERT statement regardless of transaction boundaries. `persist()` does not guarantee immediate identifier assignment (it may happen at flush time) and avoids executing INSERTs outside of transaction boundaries, making it useful in long-running conversations."
 />

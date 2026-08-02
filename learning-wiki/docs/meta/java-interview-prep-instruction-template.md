@@ -1,3 +1,8 @@
+---
+id: java-interview-prep-instruction-template
+title: Reusable Instruction Template — Java Interview Prep Document Generator
+---
+
 # Reusable Instruction Template — Java Interview Prep Document Generator
 
 Copy this whole block, replace the `<TOPIC>` placeholders, and paste it as your prompt for any new topic (Collections, Multithreading/Concurrency, Spring/Spring Boot, JVM Internals, Streams/Lambdas, Design Patterns, Microservices, SQL/JPA, System Design, etc.). Keep the structure identical across topics so all your documents look and feel consistent.

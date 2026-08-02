@@ -1,0 +1,238 @@
+---
+id: database-design-and-storage-interview-questions
+title: Database Design & Storage Interview Questions
+---
+
+import Flashcard from '@site/src/components/Flashcard';
+
+<Flashcard
+  question="What are ACID properties in a Database Management System?"
+  answer="* Atomicity: Ensures all operations in a transaction complete successfully or the entire transaction is rolled back (all-or-nothing).
+* Consistency: Ensures a transaction brings the database from one valid state to another, maintaining all predefined rules and constraints.
+* Isolation: Ensures concurrent transactions execute independently without interfering with each other's intermediate states.
+* Durability: Ensures that once a transaction is committed, its changes survive system crashes or power failures permanently."
+/>
+
+<Flashcard
+  question="What is the difference between clustered and non-clustered indexes in a database?"
+  answer="* Clustered Index: Alters the physical order of table rows on disk to match the index order; a table can only have one clustered index (typically the primary key).
+* Non-Clustered Index: Maintains a separate structure from the data rows containing index keys and pointers/locators to the actual physical rows; a table can have multiple non-clustered indexes."
+/>
+
+<Flashcard
+  question="What are the primary database normalization forms (1NF, 2NF, 3NF)?"
+  answer="* 1NF (First Normal Form): Ensures atomic values in each column and eliminates repeating groups.
+* 2NF (Second Normal Form): Must be in 1NF and eliminate partial functional dependencies (all non-key attributes must be fully dependent on the primary key).
+* 3NF (Third Normal Form): Must be in 2NF and eliminate transitive dependencies (non-key attributes must depend only on the primary key, not on other non-key attributes)."
+/>
+
+<Flashcard
+  question="What is the difference between B-Trees and B+ Trees used in database indexing?"
+  answer="* B-Tree: Stores both keys and data pointers in internal nodes and leaf nodes, which can lead to larger node sizes and more disk lookups for range queries.
+* B+ Tree: Stores all data pointers exclusively in the leaf nodes, while internal nodes hold only routing keys; leaf nodes are linked sequentially for fast and efficient range scans."
+/>
+
+<Flashcard
+  question="What are SQL transaction isolation levels and what concurrency anomalies do they prevent?"
+  answer="* Read Uncommitted: Lowest level; allows dirty reads, non-repeatable reads, and phantom reads.
+* Read Committed: Prevents dirty reads by ensuring queries only see committed data.
+* Repeatable Read: Prevents dirty and non-repeatable reads by ensuring data read once cannot be changed by other transactions until completion.
+* Serializable: Highest level; prevents dirty reads, non-repeatable reads, and phantom reads by enforcing strict transaction serialization."
+/>
+
+<Flashcard
+  question="What is Database Sharding and what are its trade-offs?"
+  answer="* Definition: A database architecture pattern that horizontally partitions a large database into smaller, independent pieces (shards) distributed across multiple servers.
+* Trade-offs: Greatly improves write throughput and scalability, but introduces architectural complexity, cross-shard query latency, and re-sharding challenges."
+/>
+
+<Flashcard
+  question="What are the differences between INNER JOIN, LEFT JOIN, RIGHT JOIN, and FULL OUTER JOIN in SQL?"
+  answer="* INNER JOIN: Returns only records that have matching values in both tables.
+* LEFT JOIN: Returns all records from the left table, and the matched records from the right table (unmatched right side values appear as NULL).
+* RIGHT JOIN: Returns all records from the right table, and the matched records from the left table (unmatched left side values appear as NULL).
+* FULL OUTER JOIN: Returns all records when there is a match in either the left or the right table, filling missing matches with NULL."
+/>
+
+<Flashcard
+  question="What is database index fragmentation and how can it be resolved?"
+  answer="* Definition: Occurs when data pages become logically out of order or scattered on disk due to extensive insert, update, or delete operations, leading to inefficient disk I/O.
+* Resolution: Resolved by performing index defragmentation (reorganizing index pages) or an index rebuild operation."
+/>
+
+<Flashcard
+  question="What are the major trade-offs between SQL (Relational) and NoSQL (Non-Relational) databases?"
+  answer="* SQL Databases: Schema-strict, supports complex ACID-compliant transactions and relational joins, ideal for structured data with high consistency requirements (vertical scaling-heavy).
+* NoSQL Databases: Schema-flexible, optimized for high write/read throughput, horizontal scalability, and unstructured or semi-structured data (often trading strong consistency for high availability)."
+/>
+
+<Flashcard
+  question="What are the performance downsides and trade-offs of having too many indexes on a database table?"
+  answer="* Downsides: While indexes speed up SELECT queries, they degrade write performance (INSERT, UPDATE, DELETE) because every index must be updated concurrently; they also consume significant additional disk storage space and memory cache overhead."
+/>
+
+<Flashcard
+  question="What is database denormalization and why is it used?"
+  answer="* Definition: The process of intentionally introducing redundancy into a normalized database schema (e.g., by adding redundant columns or pre-joining tables).
+* Purpose: Reduces expensive join operations and improves read/query performance for read-heavy applications, at the cost of increased storage and complex write logic."
+/>
+
+<Flashcard
+  question="What is connection pooling and why is it crucial for database-driven applications?"
+  answer="* Definition: A cache of database connections maintained so that connections can be reused when future requests to the database are required.
+* Purpose: Eliminates the heavy performance overhead of establishing a new TCP connection and authenticating a database session for every single incoming client request."
+/>
+
+<Flashcard
+  question="What is database replication and what are the differences between master-slave and master-master replication?"
+  answer="* Database Replication: The process of copying and maintaining database data across multiple server nodes for high availability and load distribution.
+* Master-Slave Replication: Writes go to the single Master node, which replicates data asynchronously or synchronously to multiple Read-Only Slave nodes.
+* Master-Master Replication: Multiple master nodes accept both reads and writes, synchronizing changes between each other (complex due to conflict resolution challenges)."
+/>
+
+<Flashcard
+  question="What is the difference between Vertical Partitioning and Horizontal Partitioning (Sharding) in databases?"
+  answer="* Vertical Partitioning: Splitting a table by columns (e.g., separating frequently accessed columns from large text or blob columns into a separate table).
+* Horizontal Partitioning (Sharding): Splitting a table by rows based on a partitioning key (e.g., country code or user ID) across multiple distinct database tables or servers."
+/>
+
+<Flashcard
+  question="When should you avoid creating a database index? (Index Anti-Patterns)"
+  answer="* Low Cardinality Columns: Columns with very few unique values (e.g., boolean 'is_active' flags where values are mostly true or false).
+* Frequently Modified Tables: Tables with heavy write/insert/update throughput where index maintenance overhead outweighs query gains.
+* Small Tables: Tables with very few rows, where full table scans are faster than index lookups."
+/>
+
+<Flashcard
+  question="What is the difference between Hash Indexes and B+ Tree Indexes?"
+  answer="* Hash Index: Uses a hash table to map keys directly to data pointers, providing $O(1)$ lookups for exact-match queries, but completely inefficient for range queries (e.g., BETWEEN, `>`, `<`).
+* B+ Tree Index: Organizes data hierarchically in balanced trees, supporting both exact lookups and extremely efficient range scans because leaf nodes are sequentially linked."
+/>
+
+<Flashcard
+  question="What is the Left-most Prefix Rule for composite database indexes?"
+  answer="* Definition: A rule stating that a composite index (an index on multiple columns like `(col1, col2, col3)`) can only be used by the database query optimizer if the query uses the columns in a strict left-to-right order.
+* Implication: An index on `(A, B, C)` can speed up queries filtering on `A`, `A AND B`, or `A AND B AND C`, but cannot be utilized effectively if filtering only on `B` or `C` alone."
+/>
+
+<Flashcard
+  question="What is a Database Connection Leak and how can it be prevented?"
+  answer="* Definition: Occurs when an application opens a database connection from a connection pool but fails to close it (typically due to unhandled exceptions or missing `finally`/`try-with-resources` blocks), eventually exhausting the connection pool.
+* Prevention: Always use `try-with-resources` blocks for managing database resources, configure connection leak detection timeouts in connection pool settings (e.g., HikariCP's `leakDetectionThreshold`), and use ORMs that manage sessions safely."
+/>
+
+<Flashcard
+  question="Why is choosing the right Sharding Key crucial in distributed database design?"
+  answer="* Importance: An ideal sharding key provides high cardinality, uniform data distribution, and aligns with common access query patterns.
+* Poor Choice Impact: Can result in data hotspots (where a single shard handles the vast majority of traffic and storage) and cross-shard query latency penalties."
+/>
+
+<Flashcard
+  question="What are Dirty Read, Non-Repeatable Read, and Phantom Read anomalies in SQL databases?"
+  answer="* Dirty Read: A transaction reads uncommitted data written by a concurrent transaction that later rolls back.
+* Non-Repeatable Read: A transaction reads the same row twice, but gets different values because another concurrent transaction updated or deleted the row in between.
+* Phantom Read: A transaction executes a query returning a set of rows matching a condition, but gets a different set of rows (new matching rows inserted) when re-executing due to a concurrent transaction."
+/>
+
+<Flashcard
+  question="What is the purpose of a Database Query Execution Plan (EXPLAIN command)?"
+  answer="* Definition: A roadmap generated by the database query optimizer detailing how it intends to execute an SQL query (e.g., choosing between a full table scan, index scan, or specific join algorithms).
+* Purpose: Used by developers and DBAs to diagnose slow queries, identify missing indexes, analyze scan costs, and optimize database performance."
+/>
+
+<Flashcard
+  question="What are the common database sharding partitioning strategies?"
+  answer="* Range-based Sharding: Splits data into shards based on specific value ranges (e.g., user IDs 1-1000 in shard A), risking data hotspots if traffic clusters in a specific range.
+* Hash-based Sharding: Applies a hash function to an attribute (like user ID) and maps it to a shard index, ensuring uniform data and traffic distribution.
+* Directory-based Sharding: Uses a lookup service (directory) to track which shard stores which data key, offering high flexibility at the cost of an extra lookup hop."
+/>
+
+<Flashcard
+  question="What is Write Amplification in database storage engines?"
+  answer="* Definition: The ratio between the amount of data physically written to the storage medium (SSD/disk) compared to the logical amount of data written by the application.
+* Impact: High write amplification (common in Log-Structured Merge-tree or LSM-tree storage engines during background compaction) accelerates disk wear and degrades write performance."
+/>
+
+<Flashcard
+  question="What is Write-Ahead Logging (WAL) and database checkpointing?"
+  answer="* Write-Ahead Logging (WAL): A technique where changes are sequentially written to an append-only log on disk before making modifications to the actual database data pages, ensuring durability and crash recovery.
+* Checkpointing: A process where the database engine flushes dirty data pages from memory to disk and truncates the WAL log up to that point to speed up recovery times."
+/>
+
+<Flashcard
+  question="What is Database Connection Multiplexing and what tool is commonly used for it with PostgreSQL?"
+  answer="* Definition: A technique that allows a large number of client applications to share a smaller pool of persistent database server connections efficiently.
+* PgBouncer: A lightweight connection pooler for PostgreSQL that sits between applications and the database, routing client connections to a pooled set of backend server connections to reduce connection setup overhead."
+/>
+
+<Flashcard
+  question="What are the differences between B-Tree and LSM-Tree (Log-Structured Merge-tree) storage engines?"
+  answer="* B-Tree: Optimizes for read performance by maintaining in-place updates on sorted disk pages; high write amplification due to random disk writes.
+* LSM-Tree: Optimizes for write performance by appending writes sequentially to an in-memory buffer (MemTable) and flushing to sorted string tables (SSTables) on disk, handling high write throughput at the cost of background compaction overhead."
+/>
+
+<Flashcard
+  question="What are the main architectural challenges and strategies when rebalancing Database Shards?"
+  answer="* Challenge: When a sharding cluster scales out, redistributing data keys across new shards requires moving massive volumes of data, which can cause high network I/O and performance degradation.
+* Strategies: Mitigated by using consistent hashing rings, running background data migration tools with dual-writes, or choosing an optimal initial sharding key to minimize future rebalancing."
+/>
+
+<Flashcard
+  question="What is the difference between Synchronous and Asynchronous Replication in databases?"
+  answer="* Synchronous Replication: The primary node waits for confirmation that replica nodes have successfully written data before acknowledging a transaction to the client, guaranteeing zero data loss at the cost of higher write latency.
+* Asynchronous Replication: The primary node commits writes locally and acknowledges the client immediately, replicating data to secondary nodes in the background for high performance, but risking data loss if the primary fails before replication completes."
+/>
+
+<Flashcard
+  question="What is the difference between Optimistic and Pessimistic Locking at the database level?"
+  answer="* Optimistic Locking: Assumes data conflicts are rare; allows simultaneous reads and writes without database locks, validating version columns or timestamps at commit time and throwing exceptions if a conflict occurs.
+* Pessimistic Locking: Assumes conflicts are frequent; locks database rows immediately upon read using clauses like `SELECT ... FOR UPDATE` to block other transactions until the operation completes."
+/>
+
+<Flashcard
+  question="What is a Reversible Migration vs. Non-Reversible Migration in database schema updates?"
+  answer="* Reversible Migration: Database schema scripts that include both an upgrade (`up`) and a downgrade (`down`) path, allowing developers to roll back schema changes safely if deployment fails.
+* Non-Reversible Migration: Destructive schema changes (e.g., dropping a table or deleting columns) that cannot be automatically undone without data loss or complex recovery backups."
+/>
+
+<Flashcard
+  question="What is Data Skew in distributed computing and how can it be mitigated?"
+  answer="* Definition: An imbalance in workload distribution where a small subset of nodes or partitions receive a disproportionately high amount of data or traffic compared to others.
+* Mitigation: Solved by choosing better partitioning keys, adding salt (random suffixes) to high-cardinality keys, or implementing dynamic load balancing strategies."
+/>
+
+<Flashcard
+  question="What is the difference between Soft Delete and Hard Delete in database records?"
+  answer="* Hard Delete: Permanently removes database rows using a `DELETE` SQL statement, freeing up disk storage space immediately.
+* Soft Delete: Marks records as inactive or deleted by updating a flag column (e.g., `is_deleted = true` or `deleted_at timestamp`), preserving historical data integrity for audits and relationship constraints at the cost of bloated table sizes."
+/>
+
+<Flashcard
+  question="What is the difference between Database Connection Leaking and Connection Exhaustion?"
+  answer="* Connection Leak: A coding bug where an application opens database connections and fails to close them, gradually draining the available pool over time.
+* Connection Exhaustion: A symptom where valid traffic spikes exceed the maximum configured capacity of the database connection pool, causing new incoming requests to time out."
+/>
+
+<Flashcard
+  question="What is the purpose of Database Index Statistics and why does periodic query optimization matter?"
+  answer="* Index Statistics: Metadata maintained by the database engine regarding the distribution and cardinality of data values within indexed columns.
+* Importance: The query optimizer uses these statistics to calculate execution costs; outdated statistics can cause the optimizer to choose poor execution plans (e.g., full table scans over indexes), degrading query performance."
+/>
+
+<Flashcard
+  question="What are Time-Series Databases (TSDB) and how do they differ from relational databases?"
+  answer="* Definition: Specialized databases optimized for handling time-stamped or time-series data streams (e.g., IoT sensor metrics, financial ticks, server logs).
+* Key Differences: Designed for exceptionally high write throughput, efficient time-range queries, and automated data retention/downsampling policies, whereas relational databases struggle with high-frequency time-indexed writes."
+/>
+
+<Flashcard
+  question="What is a Database Materialized View and how does it differ from a Standard View?"
+  answer="* Standard View: A virtual table based on the result-set of an SQL query; executed dynamically every time the view is queried, saving no physical data on disk.
+* Materialized View: A database object that stores the query result physically on disk as a cached table snapshot, significantly speeding up complex read queries at the cost of periodic refresh overhead."
+/>
+
+<Flashcard
+  question="What are the common refresh strategies for Database Materialized Views?"
+  answer="* Complete Refresh: Recomputes the entire underlying query from scratch and rebuilds the materialized view table.
+* Incremental (Fast) Refresh: Updates only the rows that have changed based on transaction logs or database change data capture (CDC), saving substantial compute resources."
+/>

@@ -1,41 +1,48 @@
+---
+id: interface-interview-questions
+title: Interface Interview Questions
+---
+
+import Flashcard from '@site/src/components/Flashcard';
+
 <Flashcard
   question="What is a Java interface and why is it used?"
-  answer="* Definition: A blueprint of a class containing abstract methods by default and fields that are public, static, and final[cite: 1].
-* Multiple Inheritance: Enables Java to achieve multiple inheritance since classes cannot inherit multiple classes[cite: 1].
-* Loose Coupling: Used to achieve total abstraction and low coupling between components[cite: 1]."
+  answer="* Definition: A blueprint of a class containing abstract methods by default and fields that are public, static, and final.
+* Multiple Inheritance: Enables Java to achieve multiple inheritance since classes cannot inherit multiple classes.
+* Loose Coupling: Used to achieve total abstraction and low coupling between components."
 />
 
 <Flashcard
   question="What are the main differences between an abstract class and an interface in Java?"
-  answer="* Method Types: An interface can only have abstract methods (plus default and static methods from Java 8), whereas an abstract class can have both abstract and non-abstract methods[cite: 1].
-* Variables: Interface variables are implicitly public, static, and final, while abstract classes can contain non-final and non-static variables[cite: 1].
-* Inheritance Syntax: Interfaces are implemented using 'implements', while abstract classes are extended using 'extends'[cite: 1]."
+  answer="* Method Types: An interface can only have abstract methods (plus default and static methods from Java 8), whereas an abstract class can have both abstract and non-abstract methods.
+* Variables: Interface variables are implicitly public, static, and final, while abstract classes can contain non-final and non-static variables.
+* Inheritance Syntax: Interfaces are implemented using 'implements', while abstract classes are extended using 'extends'."
 />
 
 <Flashcard
   question="What is a marker interface in Java and what is its purpose?"
-  answer="* Definition: An interface that contains no methods or constants inside it[cite: 1].
-* Purpose: Provides run-time type information (RTTI) about objects so the compiler and JVM have additional context[cite: 1].
-* Example: Used to signal special behavior, such as serializability or deletability[cite: 1]."
+  answer="* Definition: An interface that contains no methods or constants inside it.
+* Purpose: Provides run-time type information (RTTI) about objects so the compiler and JVM have additional context.
+* Example: Used to signal special behavior, such as serializability or deletability."
 />
 
 <Flashcard
   question="How do you create and use a custom marker interface in Java?"
-  answer="* Creation: Declare an empty interface without any methods or constants (e.g., public interface Deletable {})[cite: 1].
-* Implementation: Have a target entity class implement the marker interface (e.g., class Entity implements Deletable {})[cite: 1].
-* Usage: Check if an object is an instance of the marker interface using the `instanceof` operator before executing specific logic[cite: 1]."
+  answer="* Creation: Declare an empty interface without any methods or constants (e.g., public interface Deletable {}).
+* Implementation: Have a target entity class implement the marker interface (e.g., class Entity implements Deletable {}).
+* Usage: Check if an object is an instance of the marker interface using the `instanceof` operator before executing specific logic."
 />
 
 <Flashcard
   question="What is an abstract class in Java and why is it used?"
-  answer="* Definition: A class declared with the 'abstract' keyword that can contain both abstract and concrete methods[cite: 1].
-* Instantiation: An instance of an abstract class cannot be directly created[cite: 1].
-* Purpose: Allows constructors, shared base functionality, and partial code reuse across related subclasses[cite: 1]."
+  answer="* Definition: A class declared with the 'abstract' keyword that can contain both abstract and concrete methods.
+* Instantiation: An instance of an abstract class cannot be directly created.
+* Purpose: Allows constructors, shared base functionality, and partial code reuse across related subclasses."
 />
 
 <Flashcard
   question="What is a functional interface and what is its main purpose?"
-  answer="* Definition: An interface that contains exactly one abstract method[cite: 1].
-* Lambda Expressions: Allows instances of the interface to be represented concisely using lambda expressions or method references[cite: 1].
-* Common Examples: Runnable, Callable, Predicate, Function, Consumer, and Supplier[cite: 1]."
+  answer="* Definition: An interface that contains exactly one abstract method.
+* Lambda Expressions: Allows instances of the interface to be represented concisely using lambda expressions or method references.
+* Common Examples: Runnable, Callable, Predicate, Function, Consumer, and Supplier."
 />

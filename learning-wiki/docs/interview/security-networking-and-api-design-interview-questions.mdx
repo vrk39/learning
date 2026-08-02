@@ -1,0 +1,104 @@
+---
+id: security-networking-and-api-design-interview-questions
+title: Security, Networking & API Design Interview Questions
+---
+
+import Flashcard from '@site/src/components/Flashcard';
+
+<Flashcard
+  question="What is idempotency in REST APIs and which HTTP methods are inherently idempotent?"
+  answer="* Definition: An operation is idempotent if making multiple identical requests produces the same result as making a single request.
+* Idempotent Methods: `GET`, `PUT`, `DELETE`, `HEAD`, and `OPTIONS`.
+* Non-Idempotent Methods: `POST` (repeating a POST request typically creates duplicate resources)."
+/>
+
+<Flashcard
+  question="What is the difference between Token Bucket and Leaky Bucket rate-limiting algorithms?"
+  answer="* Token Bucket: Tokens are added at a constant rate up to a max capacity; requests consume tokens, allowing bursts of traffic as long as tokens are available.
+* Leaky Bucket: Requests enter a queue of fixed capacity and are processed at a steady, constant rate, smoothing out traffic bursts and enforcing a strict output limit."
+/>
+
+<Flashcard
+  question="What is the difference between Sliding Window Log and Sliding Window Counter rate-limiting algorithms?"
+  answer="* Sliding Window Log: Keeps track of exact timestamps of each request in a log; highly accurate, but consumes heavy memory for large volumes of requests.
+* Sliding Window Counter: Combines the fixed window counter with a weighted rolling average from the previous window; memory-efficient and handles request spikes smoothly."
+/>
+
+<Flashcard
+  question="What is the difference between OAuth 2.0 and OpenID Connect (OIDC)?"
+  answer="* OAuth 2.0: An authorization framework focused on granting third-party applications limited access to user resources without exposing credentials (answers 'What is the user allowed to do?').
+* OpenID Connect (OIDC): An identity layer built on top of OAuth 2.0 that adds standardized authentication and uses JSON Web Tokens (JWT) called ID Tokens to verify user identity (answers 'Who is the user?')."
+/>
+
+<Flashcard
+  question="What is CORS (Cross-Origin Resource Sharing) and how do preflight requests work?"
+  answer="* Definition: A security mechanism implemented by web browsers that restricts web pages from making requests to a different domain than the one that served the web page.
+* Preflight Request: For complex HTTP requests (e.g., using custom headers or PUT/DELETE methods), the browser automatically sends an HTTP `OPTIONS` request first to verify if the server permits cross-origin communication before dispatching the actual request."
+/>
+
+<Flashcard
+  question="What are the trade-offs between Session-based Authentication and Token-based (JWT) Authentication?"
+  answer="* Session-based Authentication: Server stores user session state in memory or a centralized store (e.g., Redis); allows instant session revocation, but introduces scalability bottlenecks and memory overhead on the server.
+* Token-based (JWT) Authentication: Stateless architecture where the client stores a cryptographically signed token; highly scalable and decentralized, but making tokens immediately invalid before expiration requires complex token blacklisting."
+/>
+
+<Flashcard
+  question="What is Perfect Forward Secrecy (PFS) in cryptography and TLS?"
+  answer="* Definition: A security property of cryptographic protocols ensuring that session keys derived from public key exchanges will not be compromised even if the long-term private key of the server is compromised in the future.
+* Mechanism: Accomplished by using ephemeral Diffie-Hellman key exchanges where unique keys are generated for every session and immediately discarded."
+/>
+
+<Flashcard
+  question="What are the primary OAuth 2.0 grant types and their use cases?"
+  answer="* Authorization Code Grant (with PKCE): Most secure grant type using a temporary code exchange; ideal for server-side web apps, mobile apps, and single-page applications (SPAs).
+* Client Credentials Grant: Used for server-to-server machine communication where there is no end-user context.
+* Refresh Token Grant: Used to obtain a new access token without re-prompting the user for credentials."
+/>
+
+<Flashcard
+  question="What is Zero Trust Architecture (ZTA) in network security?"
+  answer="* Definition: A security paradigm based on the principle of 'never trust, always verify', meaning no user or device—inside or outside the network perimeter—is trusted by default.
+* Core Pillars: Requires continuous, explicit authentication, authorization, and micro-segmentation for every access request to applications and data."
+/>
+
+<Flashcard
+  question="What is Cross-Site Request Forgery (CSRF) and how is it prevented?"
+  answer="* Definition: An attack where a malicious website tricks a victim's web browser into executing unauthorized commands on a trusted site where the user is currently authenticated.
+* Prevention: Prevented using anti-CSRF tokens (synchronizer token pattern), SameSite cookie attributes (`Strict` or `Lax`), and requiring re-authentication for sensitive actions."
+/>
+
+<Flashcard
+  question="What is SQL Injection and how can parameterized queries prevent it?"
+  answer="* Definition: A security vulnerability where attackers inject malicious SQL strings into input fields to manipulate backend database queries.
+* Prevention: Parameterized queries (prepared statements) treat user input strictly as data parameters rather than executable SQL code, neutralizing injection vectors completely."
+/>
+
+<Flashcard
+  question="What is the difference between Recursive and Authoritative DNS servers?"
+  answer="* Recursive DNS Resolver: Acts as an intermediary for clients, querying multiple upstream servers to find and cache the requested IP address for a domain name.
+* Authoritative DNS Server: Holds the actual DNS record configurations (like A, CNAME, TXT records) for a domain and provides the definitive answer to recursive resolvers."
+/>
+
+<Flashcard
+  question="What is a Content Security Policy (CSP) header and how does it protect web applications?"
+  answer="* Definition: An HTTP response header that allows site operators to restrict and control the resources (such as JavaScript, CSS, images) that the browser is allowed to load for a given page.
+* Protection: Effectively mitigates Cross-Site Scripting (XSS) and data injection attacks by blocking unauthorized script executions."
+/>
+
+<Flashcard
+  question="What is a Session Fixation attack and how can it be mitigated?"
+  answer="* Definition: An attack where a malicious actor tricks a victim into authenticating using a pre-determined session identifier controlled by the attacker.
+* Mitigation: Prevented by generating a brand new session identifier and invalidating the old one immediately upon successful user login/authentication."
+/>
+
+<Flashcard
+  question="What is the difference between Symmetric and Asymmetric Encryption?"
+  answer="* Symmetric Encryption: Uses the exact same secret key for both encryption and decryption; extremely fast and efficient for large volumes of data (e.g., AES).
+* Asymmetric Encryption: Uses a key pair—a public key for encryption and a private key for decryption; slower performance, but solves the secure key distribution problem (e.g., RSA, ECC)."
+/>
+
+<Flashcard
+  question="What is Dynamic DNS (DDNS) and how does it work?"
+  answer="* Definition: A service that automatically updates DNS record mappings in real-time when an IP address changes.
+* Mechanism: Client devices or routers run a lightweight client daemon that notifies the DNS provider immediately whenever their public IP address is reassigned (commonly used for home servers or dynamic cloud environments)."
+/>

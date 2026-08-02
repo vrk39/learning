@@ -1,3 +1,8 @@
+---
+id: java-collections-interview-master-guide
+title: Java Collections Framework — Interview Master Guide
+---
+
 # Java Collections Framework — Interview Master Guide
 *Target: 8+ YOE / Architect-Lead role, with scenario coverage across 2–8+ yrs*
 

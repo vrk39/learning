@@ -1,0 +1,8 @@
+{
+  "label": "Q&A",
+  "position": 20,
+  "link": {
+    "type": "generated-index",
+    "description": "Flashcard-style architect / tech-lead level interview Q&A for the advanced topics."
+  }
+}
