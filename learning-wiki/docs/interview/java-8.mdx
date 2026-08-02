@@ -1,0 +1,105 @@
+<Flashcard
+  question="What are Lambda Expressions in Java 8 and why are they used?"
+  answer="* Definition: An anonymous function (a method without a name) that can be passed around as if it were an object.
+* Purpose: Reduces boilerplate code associated with anonymous inner classes, enabling clean functional programming paradigms."
+/>
+
+<Flashcard
+  question="What is a Functional Interface and what is the role of the @FunctionalInterface annotation?"
+  answer="* Definition: An interface containing exactly one abstract method.
+* @FunctionalInterface Annotation: Used to enforce the single-abstract-method rule at compile time; if a second abstract method is added, the compiler throws an error."
+/>
+
+<Flashcard
+  question="What is the Stream API in Java 8 and what is the difference between intermediate and terminal operations?"
+  answer="* Stream API: A sequence of elements supporting functional and declarative operations on collections of data.
+* Intermediate Operations: Operations like filter, map, and sorted that return another Stream lazily and are executed only when a terminal operation is invoked.
+* Terminal Operations: Operations like collect, forEach, and reduce that trigger the processing pipeline and return a result or side-effect."
+/>
+
+<Flashcard
+  question="What is the Optional class in Java 8 and how does it help avoid NullPointerException?"
+  answer="* Definition: A container object used to represent the presence or absence of a non-null value, eliminating the need for explicit null checks.
+* Prevention: Forces developers to handle cases where a value is missing explicitly using methods like `orElse()`, `orElseGet()`, or `ifPresent()`, preventing unexpected NullPointerExceptions."
+/>
+
+<Flashcard
+  question="What are method references in Java 8 and what are their types?"
+  answer="* Definition: A shorthand notation of a lambda expression to call an existing method.
+* Types:
+  1. Reference to a static method (`ContainingClass::staticMethod`)
+  2. Reference to an instance method of a particular object (`instance::method`)
+  3. Reference to an instance method of an arbitrary object of a particular type (`ContainingClass::method`)
+  4. Reference to a constructor (`ClassName::new`)"
+/>
+
+<Flashcard
+  question="What are default and static methods in Java 8 interfaces and why were they introduced?"
+  answer="* Default Methods: Methods inside interfaces with a default implementation using the `default` keyword, enabling backward compatibility when adding new methods to existing interfaces.
+* Static Methods: Utility methods defined directly inside interfaces that can be called without an instance of the implementing class."
+/>
+
+<Flashcard
+  question="What is the difference between map() and flatMap() in Java 8 Streams?"
+  answer="* map(): Transforms each element in a stream to another object (1-to-1 mapping), resulting in streams of streams if working with nested collections.
+* flatMap(): Transforms each element into a stream and then flattens all resulting streams into a single consolidated stream (1-to-many flattening mapping)."
+/>
+
+<Flashcard
+  question="What is the difference between findFirst() and findAny() in Java 8 Streams?"
+  answer="* findFirst(): Returns the first element of a stream, respecting encounter order (deterministic, especially useful in ordered streams like lists).
+* findAny(): Returns any element from the stream, optimized for parallel streams where returning any available match quickly without enforcing strict order improves performance."
+/>
+
+<Flashcard
+  question="What are the key classes in the new Date and Time API (java.time package) introduced in Java 8?"
+  answer="* LocalDate: Represents a date without a time or time zone (e.g., YYYY-MM-DD).
+* LocalTime: Represents a time without a date or time zone (e.g., HH:MM:SS).
+* LocalDateTime: Combines both date and time without a time zone.
+* ZonedDateTime: Represents a date and time with a specific time zone.
+* Duration & Period: Used to measure time-based and date-based amounts of time."
+/>
+
+<Flashcard
+  question="What are the core predefined functional interfaces in the java.util.function package?"
+  answer="* Predicate<T>: Takes one argument and returns a boolean (`test()` method), commonly used for filtering.
+* Consumer<T>: Takes one argument and returns no result (`accept()` method), used for side effects.
+* Supplier<T>: Takes no arguments and returns a result (`get()` method), used for lazy generation.
+* Function<T, R>: Takes an argument of type T and returns a result of type R (`apply()` method), used for data transformation."
+/>
+
+<Flashcard
+  question="What is the purpose of the Collectors class in Java 8 Streams?"
+  answer="* Definition: A utility class providing reduction operations such as accumulating elements into collections, summarizing elements, or grouping/partitioning data.
+* Key Methods: `Collectors.toList()`, `Collectors.toSet()`, `Collectors.joining()`, `Collectors.groupingBy()`, and `Collectors.partitioningBy()`."
+/>
+
+<Flashcard
+  question="What is the difference between peek() and forEach() in Java 8 Streams?"
+  answer="* peek(): An intermediate operation that returns a stream, allowing you to perform an action on each element as it passes through without consuming the stream (commonly used for debugging).
+* forEach(): A terminal operation that consumes the stream and performs an action, ending the stream pipeline."
+/>
+
+<Flashcard
+  question="How do Parallel Streams work in Java 8 and when should they be used?"
+  answer="* Mechanism: Splits the stream into multiple substreams, processing them concurrently across multiple threads using the common ForkJoinPool (`ForkJoinPool.commonPool()`).
+* Use Case: Best suited for large datasets with CPU-intensive operations where tasks are independent; avoid for small datasets, I/O-bound operations, or shared mutable state to prevent thread contention overhead."
+/>
+
+<Flashcard
+  question="What are primitive specialized streams (IntStream, LongStream, DoubleStream) and why are they used?"
+  answer="* Definition: Stream interfaces specifically tailored for primitive data types (`int`, `long`, `double`).
+* Purpose: Avoids performance and memory overhead caused by autoboxing and unboxing regular object streams (e.g., `Stream<Integer>`), while providing specialized built-in methods like `sum()`, `average()`, and `summaryStatistics()`."
+/>
+
+<Flashcard
+  question="What is the difference between forEach() and forEachOrdered() in Java 8 Streams?"
+  answer="* forEach(): Performs an action for each element, but does not guarantee encounter order when executed on parallel streams.
+* forEachOrdered(): Guarantees that actions are performed in the stream's defined encounter order, even when processing parallel streams (at the cost of some performance parallelism)."
+/>
+
+<Flashcard
+  question="What is the StringJoiner class in Java 8 and how is it used?"
+  answer="* Definition: A utility class introduced in `java.util` used to construct a sequence of characters separated by a specified delimiter.
+* Features: Supports optional prefixes and suffixes around the joined output (e.g., enclosing elements in brackets `[...]`), making it cleaner than manual StringBuilder manipulation for lists."
+/>
